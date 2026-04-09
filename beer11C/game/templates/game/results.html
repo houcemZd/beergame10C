@@ -107,10 +107,13 @@
     <div class="bullwhip-bar-track">
       <div class="bullwhip-bar-fill"
            style="width: {% widthratio ratio bullwhip_max 100 %}%;
+                  max-width: 100%;
                   background: {% if ratio < 1.5 %}var(--success){% elif ratio < 3 %}var(--accent){% else %}var(--danger){% endif %};">
       </div>
-      <!-- marker at ratio=1 to show the "perfect" baseline -->
+      <!-- marker at ratio=1 to show the "perfect" baseline (only shown when bullwhip_max >= 1) -->
+      {% if bullwhip_max >= 1 %}
       <div class="bullwhip-bar-marker" style="left:{% widthratio 1 bullwhip_max 100 %}%;"></div>
+      {% endif %}
     </div>
     <div class="bullwhip-bar-val">{{ ratio }}×</div>
   </div>
