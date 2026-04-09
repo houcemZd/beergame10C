@@ -1,0 +1,1698 @@
+{% extends "game/base.html" %}
+{% block title %}{{ role|title }} — {{ session.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Core layout ──────────────────────────────────────────────────────────── */
+.hud { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.9rem; margin-bottom:1.5rem; }
+.hud-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; text-align:center; }
+.hud-value { font-family:var(--font-mono); font-size:2rem; font-weight:700; line-height:1; margin:.25rem 0; }
+.hud-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+
+/* ── Lobby overlay ────────────────────────────────────────────────────────── */
+#lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.92); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
+#lobby-overlay.hidden { display:none; }
+.lobby-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:2rem; max-width:480px; width:90%; text-align:center; }
+.lobby-player-row { display:flex; align-items:center; justify-content:space-between; padding:.5rem .75rem; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:.5rem; font-size:.85rem; }
+.lobby-player-row.ready-state { border-color:var(--success); }
+
+/* ── Ready pills ──────────────────────────────────────────────────────────── */
+.ready-row { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.75rem; }
+.ready-pill { display:inline-flex; align-items:center; gap:.3rem; padding:.25rem .65rem; border-radius:999px; font-size:.7rem; font-weight:600; border:1px solid var(--border); color:var(--muted); transition:all .2s; }
+.ready-pill.done    { border-color:var(--success); color:var(--success); background:rgba(34,197,94,.1); }
+.ready-pill.order   { border-color:var(--accent);  color:var(--accent);  background:rgba(245,200,66,.08); }
+.ready-pill.ship    { border-color:var(--wholesaler-color); color:var(--wholesaler-color); background:rgba(59,130,246,.08); }
+.ready-pill.receive { border-color:var(--distributor-color); color:var(--distributor-color); background:rgba(168,85,247,.08); }
+.ready-pill.idle    { opacity:.4; }
+.ready-pill.offline { opacity:.3; }
+
+/* ── Phase panels ─────────────────────────────────────────────────────────── */
+.phase-panel { border-radius:var(--radius); padding:1.25rem 1.4rem; margin-bottom:1.5rem; display:none; }
+.phase-panel.active { display:block; }
+
+#panel-receive { border:2px solid rgba(168,85,247,.5); background:rgba(168,85,247,.05); }
+#panel-ship    { border:2px solid rgba(59,130,246,.5);  background:rgba(59,130,246,.05); }
+#panel-order   { border:2px solid var(--border);        background:var(--surface); }
+#panel-order.submitted-state { border-color:var(--success); }
+
+.panel-title { font-family:var(--font-mono); font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.65rem; }
+#panel-receive .panel-title { color:var(--distributor-color); }
+#panel-ship    .panel-title { color:var(--wholesaler-color); }
+#panel-order   .panel-title { color:var(--accent); }
+
+/* Big number highlight rows */
+.confirm-row {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--surface2); border-radius:8px; padding:.75rem 1rem; margin-bottom:.6rem;
+}
+.confirm-qty { font-family:var(--font-mono); font-size:2rem; font-weight:800; line-height:1; }
+.confirm-label { font-size:.82rem; }
+.confirm-sub   { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
+
+/* Order input */
+.order-input-big { font-family:var(--font-mono); font-size:2rem; text-align:center; padding:.75rem; width:100%; border-radius:10px; background:var(--surface2); border:1px solid var(--border); color:var(--text); margin:.75rem 0; outline:none; }
+.order-input-big:focus { border-color:var(--accent); }
+
+/* Phase step indicator */
+.phase-steps { display:flex; align-items:center; gap:.35rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.phase-step  { display:flex; align-items:center; gap:.3rem; font-size:.72rem; color:var(--muted); }
+.ph-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; background:var(--surface2); border:1px solid var(--border); flex-shrink:0; }
+.ph-dot.active { background:var(--accent);  color:#0d0f14; border-color:var(--accent); }
+.ph-dot.done   { background:var(--success); color:#0d0f14; border-color:var(--success); }
+.ph-line { flex:1; height:2px; background:var(--border); min-width:14px; max-width:30px; }
+.ph-line.done { background:var(--success); }
+
+/* ── Board map ────────────────────────────────────────────────────────────── */
+.bgb-wrap { overflow-x:auto; padding:.4rem 0 .6rem; }
+.bgb {
+  display:flex; align-items:stretch; gap:0; min-width:860px;
+  font-family:var(--font-mono);
+}
+
+/* Actor column */
+.bgb-actor {
+  display:flex; flex-direction:column; flex:1; min-width:0;
+  border:1.5px solid transparent; border-radius:8px;
+  transition:border-color .2s, background .2s;
+}
+.bgb-actor.you {
+  border-color:rgba(255,255,255,.2) !important;
+  background:rgba(255,255,255,.025);
+}
+.bgb-actor-hdr {
+  font-size:.62rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); text-align:center;
+  padding:.3rem .2rem .2rem; display:flex; align-items:center;
+  justify-content:center; gap:.3rem; white-space:nowrap;
+}
+.bgb-you-badge {
+  font-size:.54rem; padding:.08rem .35rem; border-radius:999px;
+  background:rgba(33,150,243,.2); color:#8ecbff;
+  border:1px solid rgba(33,150,243,.3); font-weight:900;
+}
+.bgb-actor-body {
+  display:flex; flex-direction:row; align-items:stretch;
+  flex:1; gap:2px; padding:0 3px 4px;
+}
+
+/* Slot column (orders-placed, incoming-orders, ship-delay) */
+.bgb-slot-col {
+  display:flex; flex-direction:column; gap:2px;
+  align-items:center; flex-shrink:0; width:38px;
+}
+.bgb-slot-lbl {
+  font-size:.43rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.03em; text-align:center; color:var(--muted);
+  line-height:1.15; height:22px; display:flex; align-items:center;
+  justify-content:center;
+}
+.amber-col .bgb-slot-lbl { color:rgba(245,200,66,.75); }
+.blue-col  .bgb-slot-lbl { color:rgba(59,130,246,.75); }
+
+/* Individual slot box */
+.bgb-slot {
+  width:100%; min-height:34px; border:1px solid var(--border);
+  border-radius:5px; background:var(--surface2);
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color .2s, background .2s;
+}
+.bgb-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
+.bgb-slot.blue  { border-color:rgba(59,130,246,.35);  background:rgba(59,130,246,.07); }
+.bgb-slot.arriving { border-color:var(--success) !important; background:rgba(34,197,94,.12) !important; animation:pulse-arr 1.2s infinite; }
+.bgb-slot.arriving .bgb-v { color:var(--success) !important; }
+.bgb-v {
+  font-family:var(--font-mono); font-size:.9rem; font-weight:800;
+  color:var(--muted); line-height:1;
+}
+.bgb-slot.amber .bgb-v { color:#ffd36a; }
+.bgb-slot.blue  .bgb-v { color:#8ecbff; }
+
+/* Inventory column */
+.bgb-inv-col {
+  display:flex; flex-direction:column; align-items:center;
+  flex:1; min-width:0; gap:2px;
+}
+.bgb-inv-box {
+  width:100%; flex:1; background:var(--surface2);
+  border:2px solid var(--border); border-radius:7px;
+  padding:4px 5px; text-align:center;
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:2px; transition:border-color .2s;
+}
+.bgb-inv-val { font-family:var(--font-mono); font-size:1.35rem; font-weight:800; line-height:1.1; }
+.bgb-inv-val.good { color:var(--success); }
+.bgb-inv-val.warn { color:var(--accent); }
+.bgb-inv-val.bad  { color:var(--danger); }
+.bgb-backlog { font-size:.56rem; padding:.1rem .4rem; border-radius:999px; font-weight:700; }
+.bgb-backlog.zero    { color:var(--muted); }
+.bgb-backlog.nonzero { color:var(--danger); background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.22); }
+
+/* Separator arrow between actors */
+.bgb-sep {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:5px; flex-shrink:0; width:18px;
+  padding-top:24px;
+}
+.bgb-arr-row { display:flex; align-items:center; gap:2px; }
+.bgb-arr-lbl { font-size:.41rem; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
+.bgb-arr { font-size:.7rem; font-weight:700; }
+.amber-arr { color:rgba(245,200,66,.7); }
+.blue-arr  { color:rgba(59,130,246,.7); }
+
+@keyframes pulse-arr   { 0%,100%{opacity:1} 50%{opacity:.55} }
+@keyframes pulse-ready { 0%,100%{box-shadow:0 0 0 rgba(245,200,66,.4)} 50%{box-shadow:0 0 18px rgba(245,200,66,.7)} }
+
+/* ── Board map animations ─────────────────────────────────────────────────── */
+
+/* Slot flash: item sliding out (departed) */
+@keyframes slot-depart {
+  0%   { transform: translateX(0);    opacity: 1; }
+  40%  { transform: translateX(-12px); opacity: 0; }
+  41%  { transform: translateX(12px);  opacity: 0; content: '·'; }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+/* Slot flash: item arriving (green pulse into box) */
+@keyframes slot-arrive {
+  0%   { transform: scale(1);    background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.35); }
+  30%  { transform: scale(1.12); background: rgba(34,197,94,.35);  border-color: var(--success); }
+  60%  { transform: scale(1.06); background: rgba(34,197,94,.2);   border-color: var(--success); }
+  100% { transform: scale(1);    background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.35); }
+}
+/* Inventory box: receive flash (green grow) */
+@keyframes inv-receive {
+  0%   { transform: scale(1);    border-color: rgba(34,197,94,.4); box-shadow: none; }
+  25%  { transform: scale(1.04); border-color: var(--success);     box-shadow: 0 0 18px rgba(34,197,94,.4); }
+  60%  { transform: scale(1.02); border-color: var(--success);     box-shadow: 0 0 8px rgba(34,197,94,.2); }
+  100% { transform: scale(1);    border-color: rgba(34,197,94,.4); box-shadow: none; }
+}
+/* Inventory box: ship flash (blue shrink) */
+@keyframes inv-ship {
+  0%   { transform: scale(1);    border-color: rgba(59,130,246,.4); box-shadow: none; }
+  25%  { transform: scale(.97);  border-color: var(--wholesaler-color); box-shadow: 0 0 14px rgba(59,130,246,.35); }
+  60%  { transform: scale(.99);  border-color: var(--wholesaler-color); box-shadow: 0 0 6px rgba(59,130,246,.2); }
+  100% { transform: scale(1);    border-color: rgba(59,130,246,.4); box-shadow: none; }
+}
+/* Order slot: amber pulse upstream */
+@keyframes order-placed {
+  0%   { transform: scale(1);    background: rgba(245,200,66,.07); border-color: rgba(245,200,66,.35); }
+  30%  { transform: scale(1.08); background: rgba(245,200,66,.3);  border-color: var(--accent); box-shadow: 0 0 12px rgba(245,200,66,.4); }
+  100% { transform: scale(1);    background: rgba(245,200,66,.07); border-color: rgba(245,200,66,.35); }
+}
+/* Ship slot: blue appear */
+@keyframes ship-appear {
+  0%   { transform: scale(.8) translateY(6px); opacity: 0; }
+  60%  { transform: scale(1.05) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0);    opacity: 1; }
+}
+
+.anim-arrive  { animation: slot-arrive  .7s ease forwards; }
+.anim-depart  { animation: slot-depart  .5s ease forwards; }
+.anim-inv-rcv { animation: inv-receive  .8s ease forwards; }
+.anim-inv-shp { animation: inv-ship     .7s ease forwards; }
+.anim-order   { animation: order-placed .6s ease forwards; }
+.anim-ship    { animation: ship-appear  .5s ease forwards; }
+.pl-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border-radius:6px; padding:.4rem .7rem; font-size:.78rem; margin-bottom:.3rem; border-left:3px solid transparent; }
+.pl-item.ship  { border-color:var(--wholesaler-color); }
+.pl-item.order { border-color:var(--accent); }
+.pl-bar { flex:1; height:4px; background:var(--border); border-radius:2px; margin:0 .6rem; overflow:hidden; }
+.pl-fill { height:100%; border-radius:2px; }
+
+/* ── Chart ────────────────────────────────────────────────────────────────── */
+.chart-wrap { position:relative; height:190px; }
+
+/* ── Log ──────────────────────────────────────────────────────────────────── */
+.log-entry { font-size:.72rem; color:var(--muted); padding:.22rem 0; border-bottom:1px solid rgba(255,255,255,.04); font-family:var(--font-mono); }
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+#toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.4rem; z-index:9999; pointer-events:none; }
+.toast { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .85rem; font-size:.78rem; color:var(--text); animation:slideIn .2s ease, fadeOut .3s ease 3.5s forwards; max-width:280px; }
+.toast.success { border-color:var(--success); }
+.toast.error   { border-color:var(--danger); color:var(--danger); }
+@keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:none;opacity:1} }
+@keyframes fadeOut { to{opacity:0;transform:translateX(120%)} }
+
+/* ── Conn dot ─────────────────────────────────────────────────────────────── */
+#conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--muted); margin-right:.3rem; transition:background .3s; }
+#conn-dot.online  { background:var(--success); box-shadow:0 0 5px var(--success); }
+#conn-dot.offline { background:var(--danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="toast-container"></div>
+
+<!-- ═══════════════ LOBBY OVERLAY ════════════════════════════════════════ -->
+<div id="lobby-overlay">
+  <div class="lobby-box">
+    <div style="font-size:2.5rem; margin-bottom:.5rem;">{{ emoji }}</div>
+    <h2 style="font-family:var(--font-mono); font-size:1.2rem; margin-bottom:.25rem;">
+      {{ player_session.name|default:role|title }}
+      <span class="role-badge role-{{ role }}" style="margin-left:.4rem;">{{ role }}</span>
+    </h2>
+    <p style="color:var(--muted); font-size:.85rem; margin-bottom:1.5rem;">{{ session.name }}</p>
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.85rem 1rem; margin-bottom:1.25rem; font-size:.8rem; color:var(--muted); text-align:left;">
+      {% if role == 'retailer' %}🛒 You serve customers. Demand is <strong style="color:var(--text)">visible only to you</strong>. Each turn: receive goods → confirm shipment → place order.
+      {% elif role == 'wholesaler' %}🏪 You supply the Retailer, order from the Distributor. You see only the Retailer's orders — not real demand.
+      {% elif role == 'distributor' %}🚚 You supply the Wholesaler, order from the Factory. Two steps removed from real demand.
+      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output completes in <strong style="color:var(--text)">2 weeks</strong>.
+      {% elif role == 'customer' %}👤 You set customer demand each week. Your submission triggers the supply chain.{% endif %}
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Players in lobby</div>
+      {% for r in roles %}
+      <div class="lobby-player-row" id="lobby-row-{{ r }}">
+        <span>{% if r == 'customer' %}👤{% elif r == 'retailer' %}🛒{% elif r == 'wholesaler' %}🏪{% elif r == 'distributor' %}🚚{% else %}🏭{% endif %} {{ r|title }}</span>
+        <span id="lobby-status-{{ r }}" style="font-size:.72rem; color:var(--muted);">waiting…</span>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary" id="ready-btn" onclick="markReady()" style="width:100%; justify-content:center; font-size:1rem; padding:.75rem;">✓ I'm Ready</button>
+    <div id="lobby-msg" style="font-size:.78rem; color:var(--muted); margin-top:.75rem;">Waiting for all players to be ready…</div>
+  </div>
+</div>
+
+<!-- ═══════════════ GAME SCREEN ══════════════════════════════════════════ -->
+<div id="game-screen">
+
+<!-- Header -->
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.1rem;">
+  <div style="display:flex; align-items:center; gap:.7rem;">
+    <span style="font-size:1.7rem;">{{ emoji }}</span>
+    <div>
+      <h2 style="font-family:var(--font-mono); font-size:1.15rem; line-height:1.2;">{{ player_session.name|default:role|title }} <span class="role-badge role-{{ role }}" style="margin-left:.3rem;">{{ role }}</span></h2>
+      <div style="font-size:.78rem; color:var(--muted);">{{ session.name }}</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:1rem;">
+    <div style="font-size:.78rem; color:var(--muted);"><span id="conn-dot"></span><span id="conn-label">Connecting…</span></div>
+    <div class="week-badge">Week <strong id="current-week">{{ session.current_week }}</strong> / {{ session.max_weeks }}</div>
+  </div>
+</div>
+
+<div class="progress-bar" style="margin-bottom:1.4rem;">
+  <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+</div>
+
+<!-- ═══════ BEER GAME BOARD ════════════════════════════════════════════ -->
+<div class="card" style="margin-bottom:1.5rem; padding:.85rem 1rem 1.1rem;">
+  <div style="display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-bottom:.6rem;">
+    <div class="card-title" style="margin-bottom:0; font-size:.75rem; letter-spacing:.12em;">BEER GAME BOARD</div>
+    <span style="font-size:.62rem; color:var(--muted);">
+      <span style="color:#ffd36a; font-size:.7rem;">■</span> Orders (→ upstream) &nbsp;
+      <span style="color:#8ecbff; font-size:.7rem;">■</span> Shipments (← downstream) &nbsp;
+      <span style="color:rgba(255,255,255,.2);">· = hidden from your position</span>
+    </span>
+  </div>
+  <div class="bgb-wrap"><div class="bgb" id="bgb-board">
+
+    <!-- ── CUSTOMER ──────────────────────────────────────────────────────── -->
+    <div class="bgb-actor" id="col-customer">
+      <div class="bgb-actor-hdr">👤 Customer</div>
+      <div class="bgb-actor-body">
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Orders<br>sold</div>
+          <div class="bgb-slot amber" id="cust-ord-1"><span class="bgb-v" id="cust-demand-val">—</span></div>
+          <div class="bgb-slot" style="opacity:.25;"><span class="bgb-v">·</span></div>
+        </div>
+        <!-- no inventory, no ship -->
+      </div>
+    </div>
+
+    <div class="bgb-sep">
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">dem→</span><span class="bgb-arr amber-arr">→</span></div>
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">←ship</span><span class="bgb-arr blue-arr">←</span></div>
+    </div>
+
+    <!-- ── RETAILER ──────────────────────────────────────────────────────── -->
+    <div class="bgb-actor" id="col-retailer">
+      <div class="bgb-actor-hdr">🛒 Retailer</div>
+      <div class="bgb-actor-body">
+        <!-- Orders placed → upstream -->
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Orders<br>placed</div>
+          <div class="bgb-slot amber" id="rt-ord-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="rt-ord-2"><span class="bgb-v">·</span></div>
+        </div>
+        <!-- Incoming orders ← from downstream (customer demand) -->
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Incoming<br>orders</div>
+          <div class="bgb-slot amber" id="rt-inc-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="rt-inc-2"><span class="bgb-v">·</span></div>
+        </div>
+        <!-- Inventory -->
+        <div class="bgb-inv-col">
+          <div class="bgb-slot-lbl">Current<br>inventory</div>
+          <div class="bgb-inv-box" id="rt-inv-box">
+            <div class="bgb-inv-val warn" id="rt-inv">—</div>
+            <div class="bgb-backlog zero" id="rt-blg">blg:0</div>
+          </div>
+        </div>
+        <!-- Shipping delay ← from wholesaler -->
+        <div class="bgb-slot-col blue-col">
+          <div class="bgb-slot-lbl">Shipping<br>delay</div>
+          <div class="bgb-slot blue" id="rt-ship-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot blue" id="rt-ship-2"><span class="bgb-v">·</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bgb-sep">
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">ord→</span><span class="bgb-arr amber-arr">→</span></div>
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">←ship</span><span class="bgb-arr blue-arr">←</span></div>
+    </div>
+
+    <!-- ── WHOLESALER ────────────────────────────────────────────────────── -->
+    <div class="bgb-actor" id="col-wholesaler">
+      <div class="bgb-actor-hdr">🏪 Wholesaler</div>
+      <div class="bgb-actor-body">
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Orders<br>placed</div>
+          <div class="bgb-slot amber" id="wh-ord-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="wh-ord-2"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Incoming<br>orders</div>
+          <div class="bgb-slot amber" id="wh-inc-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="wh-inc-2"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="bgb-inv-col">
+          <div class="bgb-slot-lbl">Current<br>inventory</div>
+          <div class="bgb-inv-box" id="wh-inv-box">
+            <div class="bgb-inv-val warn" id="wh-inv">—</div>
+            <div class="bgb-backlog zero" id="wh-blg">blg:0</div>
+          </div>
+        </div>
+        <div class="bgb-slot-col blue-col">
+          <div class="bgb-slot-lbl">Shipping<br>delay</div>
+          <div class="bgb-slot blue" id="wh-ship-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot blue" id="wh-ship-2"><span class="bgb-v">·</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bgb-sep">
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">ord→</span><span class="bgb-arr amber-arr">→</span></div>
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">←ship</span><span class="bgb-arr blue-arr">←</span></div>
+    </div>
+
+    <!-- ── DISTRIBUTOR ───────────────────────────────────────────────────── -->
+    <div class="bgb-actor" id="col-distributor">
+      <div class="bgb-actor-hdr">🚚 Distributor</div>
+      <div class="bgb-actor-body">
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Orders<br>placed</div>
+          <div class="bgb-slot amber" id="di-ord-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="di-ord-2"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Incoming<br>orders</div>
+          <div class="bgb-slot amber" id="di-inc-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="di-inc-2"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="bgb-inv-col">
+          <div class="bgb-slot-lbl">Current<br>inventory</div>
+          <div class="bgb-inv-box" id="di-inv-box">
+            <div class="bgb-inv-val warn" id="di-inv">—</div>
+            <div class="bgb-backlog zero" id="di-blg">blg:0</div>
+          </div>
+        </div>
+        <div class="bgb-slot-col blue-col">
+          <div class="bgb-slot-lbl">Shipping<br>delay</div>
+          <div class="bgb-slot blue" id="di-ship-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot blue" id="di-ship-2"><span class="bgb-v">·</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bgb-sep">
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">ord→</span><span class="bgb-arr amber-arr">→</span></div>
+      <div class="bgb-arr-row"><span class="bgb-arr-lbl">←ship</span><span class="bgb-arr blue-arr">←</span></div>
+    </div>
+
+    <!-- ── FACTORY ───────────────────────────────────────────────────────── -->
+    <!-- MIT layout: Prod.Requests | Inc.Orders | Inventory | Prod.Delay -->
+    <div class="bgb-actor" id="col-factory">
+      <div class="bgb-actor-hdr">🏭 Factory</div>
+      <div class="bgb-actor-body">
+        <!-- Production requests (factory's own self-orders in 1w delay) -->
+        <div class="bgb-slot-col" style="opacity:.85;">
+          <div class="bgb-slot-lbl" style="color:rgba(245,200,66,.6);">Prod.<br>requests</div>
+          <div class="bgb-slot" id="fa-req-1" style="border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.05);"><span class="bgb-v" style="color:rgba(245,200,66,.7);">·</span></div>
+          <div class="bgb-slot" id="fa-req-2" style="border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.05);"><span class="bgb-v" style="color:rgba(245,200,66,.7);">·</span></div>
+        </div>
+        <!-- Incoming orders from Distributor -->
+        <div class="bgb-slot-col amber-col">
+          <div class="bgb-slot-lbl">Incoming<br>orders</div>
+          <div class="bgb-slot amber" id="fa-inc-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot amber" id="fa-inc-2"><span class="bgb-v">·</span></div>
+        </div>
+        <!-- Inventory -->
+        <div class="bgb-inv-col">
+          <div class="bgb-slot-lbl">Current<br>inventory</div>
+          <div class="bgb-inv-box" id="fa-inv-box">
+            <div class="bgb-inv-val warn" id="fa-inv">—</div>
+            <div class="bgb-backlog zero" id="fa-blg">blg:0</div>
+          </div>
+        </div>
+        <!-- Production delay (units in production, 2w) -->
+        <div class="bgb-slot-col blue-col">
+          <div class="bgb-slot-lbl">Prod.<br>delay</div>
+          <div class="bgb-slot blue" id="fa-prod-1"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot blue" id="fa-prod-2"><span class="bgb-v">·</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div></div><!-- /.bgb /.bgb-wrap -->
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-card"><div class="hud-label">Inventory</div><div class="hud-value" id="hud-inv" style="color:var(--success)">—</div><div style="font-size:.68rem;color:var(--muted);">on hand</div></div>
+  <div class="hud-card"><div class="hud-label">Backlog</div><div class="hud-value" id="hud-blg" style="color:var(--danger)">—</div><div style="font-size:.68rem;color:var(--muted);">unfilled</div></div>
+  <div class="hud-card"><div class="hud-label">Total Cost</div><div class="hud-value" id="hud-cost" style="color:var(--accent);font-size:1.4rem;">$—</div><div style="font-size:.68rem;color:var(--muted);">accumulated</div></div>
+  {% if role == 'retailer' %}<div class="hud-card"><div class="hud-label">Customer Demand</div><div class="hud-value" id="hud-demand" style="color:var(--wholesaler-color)">—</div><div style="font-size:.68rem;color:var(--muted);">this week</div></div>{% endif %}
+</div>
+
+<!-- Players status -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-title">Players — Week Status</div>
+  <div class="ready-row" id="ready-row">
+    {% for r in roles %}<div class="ready-pill offline" id="pill-{{ r }}">○ {{ r|title }}</div>{% endfor %}
+  </div>
+  <div id="waiting-msg" style="font-size:.78rem; color:var(--muted);"></div>
+</div>
+
+<!-- Phase steps indicator -->
+{% if role != 'customer' %}
+<div class="phase-steps" id="phase-steps">
+  <div class="phase-step"><div class="ph-dot" id="ph1">1</div>
+    <span>{% if role == 'factory' %}Receive Production{% else %}Receive Goods{% endif %}</span></div>
+  <div class="ph-line" id="pl1"></div>
+  <div class="phase-step"><div class="ph-dot" id="ph2">2</div>
+    <span>{% if role == 'factory' %}Fill Incoming Order{% else %}Confirm Shipment{% endif %}</span></div>
+  <div class="ph-line" id="pl2"></div>
+  <div class="phase-step"><div class="ph-dot" id="ph3">3</div>
+    <span>{% if role == 'factory' %}Start Production{% else %}Place Order{% endif %}</span></div>
+</div>
+{% endif %}
+
+<!-- ════ PHASE 1: RECEIVE GOODS / READ PRODUCTION REQUEST ════════════════════ -->
+<div class="phase-panel" id="panel-receive">
+
+  {% if role == 'factory' %}
+  <!-- ── Factory: receive completed production + read incoming order ── -->
+  <div class="panel-title">📦 Step 1 — Receive Completed Production</div>
+
+  <div style="background:rgba(59,130,246,.06); border:1px solid rgba(59,130,246,.2); border-radius:8px; padding:.65rem .9rem; margin-bottom:.85rem; font-size:.78rem; color:var(--muted);">
+    Production you started <strong style="color:var(--text);">2 weeks ago</strong> has completed and is ready to enter your inventory.
+    You will also see the <strong style="color:var(--text);">Incoming Order from the Distributor</strong> — placed 2 weeks ago, now arriving at your desk.
+    You will fill that order in Step 2, then decide how much new production to start in Step 3.
+  </div>
+
+  <!-- Production completing this week (blue — from production delay pipeline) -->
+  <div class="confirm-row" style="border-left:3px solid rgba(59,130,246,.5); padding-left:1rem;" id="recv-prod-row">
+    <div>
+      <div class="confirm-label" style="font-weight:700; color:var(--wholesaler-color);">🏭 Production completing this week</div>
+      <div class="confirm-sub">Units that finished the 2-week production delay → added to your inventory</div>
+    </div>
+    <div class="confirm-qty" id="recv-prod-qty" style="color:var(--wholesaler-color);">—</div>
+  </div>
+
+  <div id="recv-none" style="display:none; background:var(--surface2); border-radius:8px; padding:.6rem .9rem; font-size:.82rem; color:var(--muted); margin-bottom:.6rem;">
+    No production completing this week.
+  </div>
+
+  <!-- Incoming order from Distributor (amber — order delay pipeline) -->
+  <div class="confirm-row" style="margin-top:.5rem; border-left:3px solid rgba(245,200,66,.6); padding-left:1rem;">
+    <div>
+      <div class="confirm-label" style="font-weight:700; color:var(--accent);">📋 Incoming Order (from Distributor)</div>
+      <div class="confirm-sub">Order placed by Distributor 2 weeks ago — you will ship this in Step 2</div>
+    </div>
+    <div class="confirm-qty" id="recv-qty" style="color:var(--accent);">—</div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-receive" onclick="doConfirmReceive()"
+    style="width:100%; justify-content:center; font-size:1rem; padding:.75rem; margin-top:.85rem; background:var(--wholesaler-color); color:#0d0f14;">
+    ✓ Goods Received — Proceed to Fill Order
+  </button>
+
+  {% else %}
+  <!-- ── All other roles: receive incoming shipment ── -->
+  <div class="panel-title">📦 Step 1 — Receive Incoming Shipment</div>
+
+  <div class="confirm-row" id="recv-row">
+    <div>
+      <div class="confirm-label" style="font-weight:700; color:var(--distributor-color);">📦 Shipment arriving from upstream</div>
+      <div class="confirm-sub">Shipped 2 weeks ago — ready to enter your inventory</div>
+    </div>
+    <div class="confirm-qty" id="recv-qty" style="color:var(--distributor-color);">—</div>
+  </div>
+
+  <div id="recv-none" style="display:none; background:var(--surface2); border-radius:8px; padding:.6rem .9rem; font-size:.82rem; color:var(--muted); margin-bottom:.6rem;">
+    No goods arriving this week.
+  </div>
+
+  <div style="background:rgba(168,85,247,.06); border:1px solid rgba(168,85,247,.18); border-radius:8px; padding:.6rem .85rem; margin:.6rem 0; font-size:.76rem; color:var(--muted);">
+    {% if role == 'retailer' %}
+    ℹ️ Once confirmed, these units are added to your <strong style="color:var(--text);">Current Inventory</strong>. You will then see the incoming order to fill.
+    {% endif %}
+  </div>
+
+  <button class="btn btn-primary" id="btn-receive" onclick="doConfirmReceive()"
+    style="width:100%; justify-content:center; font-size:1rem; padding:.75rem; background:var(--distributor-color); color:#0d0f14;">
+    ✓ Confirm Receipt — Add to Inventory
+  </button>
+  {% endif %}
+
+</div>
+
+<!-- ════ PHASE 2: CONFIRM SHIPMENT ══════════════════════════════════════════ -->
+<div class="phase-panel" id="panel-ship">
+  <div class="panel-title">
+    {% if role == 'factory' %}🚚 Step 2 — Ship to Distributor{% else %}🚚 Step 2 — Confirm Shipment to Downstream{% endif %}
+  </div>
+
+  <!-- Downstream order received -->
+  <div class="confirm-row" style="border-left:3px solid rgba(245,200,66,.5); padding-left:1rem;">
+    <div>
+      <div class="confirm-label" style="font-weight:700;">
+        {% if role == 'retailer' %}👤 Customer Order Received
+        {% elif role == 'wholesaler' %}🛒 Incoming Order from Retailer
+        {% elif role == 'distributor' %}🏪 Incoming Order from Wholesaler
+        {% elif role == 'factory' %}📋 Incoming Order from Distributor
+        {% else %}📋 Incoming Order{% endif %}
+      </div>
+      <div class="confirm-sub" id="ship-demand-sub">units demanded from you this week</div>
+    </div>
+    <div class="confirm-qty" id="ship-demand-qty" style="color:var(--accent);">—</div>
+  </div>
+
+  <!-- Computed shipment -->
+  <div class="confirm-row" style="margin-top:.5rem; border-left:3px solid rgba(59,130,246,.5); padding-left:1rem;">
+    <div>
+      <div class="confirm-label" style="font-weight:700; color:var(--wholesaler-color);">
+        {% if role == 'retailer' %}📤 You will ship to Customer
+        {% elif role == 'wholesaler' %}📤 You will ship to Retailer
+        {% elif role == 'distributor' %}📤 You will ship to Wholesaler
+        {% elif role == 'factory' %}📤 You will ship to Distributor
+        {% else %}📤 You will ship{% endif %}
+      </div>
+      <div class="confirm-sub" id="ship-amount-sub">min(available inventory, demand + backlog)</div>
+    </div>
+    <div class="confirm-qty" id="ship-qty" style="color:var(--wholesaler-color);">—</div>
+  </div>
+
+  <div id="ship-shortage-note" style="display:none; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); border-radius:8px; padding:.6rem .85rem; margin:.6rem 0; font-size:.76rem; color:var(--danger);">
+    ⚠️ Insufficient stock — partial shipment. Remainder goes to backlog.
+  </div>
+
+  <div style="background:rgba(59,130,246,.06); border:1px solid rgba(59,130,246,.18); border-radius:8px; padding:.6rem .85rem; margin:.6rem 0; font-size:.76rem; color:var(--muted);">
+    ℹ️ Shipment enters the <strong style="color:var(--text);">Shipping Delay</strong> and arrives in <strong style="color:var(--text);">2 weeks</strong>. Your inventory is deducted now.
+  </div>
+
+  <button class="btn btn-primary" id="btn-ship" onclick="doConfirmShip()"
+    style="width:100%; justify-content:center; font-size:1rem; padding:.75rem; background:var(--wholesaler-color); color:#0d0f14;">
+    ✓ Confirm — Send Shipment
+  </button>
+</div>
+
+<!-- ════ PHASE 3: PLACE ORDER / START PRODUCTION ══════════════════════════════ -->
+<div class="phase-panel" id="panel-order">
+  <div class="panel-title">
+    {% if role == 'factory' %}🏭 Step 3 — Start New Production Run{% else %}📋 Step 3 — Place Order Upstream{% endif %}
+  </div>
+
+  <div id="order-submit-section">
+    <!-- Post-ship summary -->
+    <div style="display:flex; gap:.75rem; margin-bottom:.85rem; flex-wrap:wrap;">
+      <div style="flex:1; min-width:100px; background:var(--surface2); border-radius:8px; padding:.6rem .85rem; text-align:center;">
+        <div style="font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:2px;">Current Inventory</div>
+        <div style="font-family:var(--font-mono); font-size:1.3rem; font-weight:800;" id="order-inv-display">—</div>
+      </div>
+      <div style="flex:1; min-width:100px; background:var(--surface2); border-radius:8px; padding:.6rem .85rem; text-align:center;">
+        <div style="font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:2px;">Backlog</div>
+        <div style="font-family:var(--font-mono); font-size:1.3rem; font-weight:800; color:var(--danger);" id="order-blg-display">—</div>
+      </div>
+      <div style="flex:1; min-width:100px; background:var(--surface2); border-radius:8px; padding:.6rem .85rem; text-align:center;">
+        <div style="font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:2px;">Suggested</div>
+        <div style="font-family:var(--font-mono); font-size:1.3rem; font-weight:800; color:var(--accent);" id="order-sug-display">—</div>
+      </div>
+    </div>
+
+    {% if role == 'factory' %}
+    <div style="background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.2); border-radius:8px; padding:.7rem .9rem; margin-bottom:.75rem; font-size:.78rem; color:var(--muted);">
+      🏭 <strong style="color:var(--text);">Your own decision</strong> — how many units do you want to start producing right now?
+      This is your <strong style="color:var(--text);">production request to yourself</strong>.
+      Units will enter the <strong style="color:var(--text);">Production Delay</strong> pipeline and be ready in <strong style="color:var(--text);">2 weeks</strong>.
+      There is no production limit.
+    </div>
+    {% endif %}
+
+    <input type="number" class="order-input-big" id="order-qty" min="0" placeholder="0" value="4" />
+
+    <div style="font-size:.76rem; color:var(--muted); margin-bottom:.85rem; text-align:center;">
+      {% if role == 'factory' %}
+        Production enters <strong style="color:var(--text);">Production Delay</strong> — completes in <strong style="color:var(--text);">2 weeks</strong>
+      {% else %}
+        Order placed travels <strong style="color:var(--text);">2 weeks</strong> upstream, shipment back in <strong style="color:var(--text);">2 more weeks</strong>
+      {% endif %}
+    </div>
+
+    <button class="btn btn-primary" onclick="doSubmitOrder()"
+      style="width:100%; justify-content:center; font-size:1rem; padding:.75rem;">
+      ✓ {% if role == 'factory' %}Start Production{% else %}Place Order{% endif %}
+    </button>
+  </div>
+
+  <div id="order-submitted-section" style="display:none; text-align:center; padding:1rem;">
+    <div style="font-size:2.2rem;">✅</div>
+    <div style="font-family:var(--font-mono); color:var(--success); margin-top:.5rem;">
+      {% if role == 'factory' %}Production Request Submitted!{% else %}Order Submitted!{% endif %}
+    </div>
+    <div style="color:var(--muted); font-size:.78rem; margin-top:.2rem; font-size:.72rem;" id="submitted-qty-label"></div>
+
+    <!-- Week ready button — player confirms ready for next week -->
+    <div style="margin-top:1.1rem; padding-top:1rem; border-top:1px solid var(--border);">
+      <div style="font-size:.76rem; color:var(--muted); margin-bottom:.65rem;">
+        Remplir formulaire hebdomadaire · puis confirmer
+      </div>
+      <button id="btn-week-ready" onclick="doWeekReady()"
+        style="width:100%; justify-content:center; font-size:.95rem; padding:.7rem;"
+        class="btn btn-primary">
+        ✓ Prêt pour la semaine suivante
+      </button>
+      <div style="color:var(--muted); font-size:.76rem; margin-top:.6rem;" id="waiting-count-label">
+        En attente des autres joueurs…
+      </div>
+    </div>
+  </div>
+
+  <div id="order-gameover-section" style="display:none; text-align:center; padding:1rem;">
+    <div style="font-size:2rem;">🏁</div>
+    <div style="font-family:var(--font-mono); color:var(--accent); margin-top:.5rem;">Game Over!</div>
+    <a id="results-link" href="#" class="btn btn-primary" style="margin-top:1rem;">📊 View Results</a>
+  </div>
+</div>
+
+<!-- Customer submit panel -->
+{% if role == 'customer' %}
+<div class="phase-panel active" id="panel-customer">
+  <div class="panel-title" style="color:var(--accent);">👤 Passer Commande — Semaine <span id="cust-week-num">{{ session.current_week|add:1 }}</span></div>
+
+  <div id="cust-submit-section">
+    <div style="font-size:.82rem; color:var(--muted); margin-bottom:.75rem;">
+      S'authentifier et passer commande sur la plateforme. Cette commande sera reçue par le Détaillant cette semaine.
+    </div>
+    <input type="number" class="order-input-big" id="cust-qty" min="0" placeholder="4" value="4" />
+    <button class="btn btn-primary" onclick="doCustomerSubmit()" style="width:100%; justify-content:center; font-size:1rem; padding:.75rem;">
+      ✓ Soumettre la Demande
+    </button>
+  </div>
+
+  <div id="cust-submitted-section" style="display:none;">
+    <div style="text-align:center; padding:.75rem 0 .5rem;">
+      <div style="font-size:2rem;">✅</div>
+      <div style="font-family:var(--font-mono); color:var(--success); margin-top:.5rem;">Demande soumise !</div>
+      <div style="color:var(--muted); font-size:.82rem; margin-top:.3rem;" id="cust-submitted-label"></div>
+    </div>
+
+    <!-- Customer also needs week-ready button -->
+    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+      <div style="font-size:.76rem; color:var(--muted); margin-bottom:.65rem;">
+        En attente des autres acteurs · confirmez quand vous êtes prêt
+      </div>
+      <button id="btn-week-ready" onclick="doWeekReady()"
+        style="width:100%; justify-content:center; font-size:.95rem; padding:.7rem;"
+        class="btn btn-primary">
+        ✓ Prêt pour la semaine suivante
+      </button>
+      <div style="color:var(--muted); font-size:.76rem; margin-top:.6rem;" id="waiting-count-label">
+        En attente des autres joueurs…
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pipeline detail -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-title">Pipeline Detail</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--wholesaler-color); margin-bottom:.4rem;">
+    {% if role == 'factory' %}🏭 In Production — Production Delay (2 weeks){% else %}📦 Shipping Delay — Incoming{% endif %}
+  </div>
+  <div id="pipeline-in"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
+  <div style="border-top:1px solid var(--border); margin:.65rem 0;"></div>
+  {% if role == 'factory' %}
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.4rem;">📋 Production Requests — Order Delay (1 week)</div>
+  <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None pending.</div></div>
+  {% else %}
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.4rem;">📋 Orders Placed — Outgoing</div>
+  <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
+  {% endif %}
+</div>
+
+<!-- Chart -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-title">Inventory History</div>
+  <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+</div>
+
+<!-- Log -->
+<div class="card" style="margin-bottom:2rem;">
+  <div class="card-title">Event Log</div>
+  <div id="event-log" style="max-height:150px; overflow-y:auto;"></div>
+</div>
+
+</div><!-- /#game-screen -->
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════════ -->
+<script>
+const WS_SCHEME  = location.protocol === 'https:' ? 'wss' : 'ws';
+const WS_URL     = `${WS_SCHEME}://${location.host}{{ ws_path }}`;
+const MY_ROLE    = "{{ role }}";
+const MAX_WEEKS  = {{ session.max_weeks }};
+const SESSION_ID = {{ session.id }};
+
+const ROLES  = ['customer','retailer','wholesaler','distributor','factory'];
+const COLORS = {retailer:'#f5c842',wholesaler:'#3b82f6',distributor:'#a855f7',factory:'#22c55e'};
+const EMOJIS = {customer:'👤',retailer:'🛒',wholesaler:'🏪',distributor:'🚚',factory:'🏭'};
+
+let ws, chart;
+let gameStarted = false;
+
+// ── WebSocket ──────────────────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen    = () => { setConn(true); log('sys', 'Connected'); };
+  ws.onclose   = e  => { setConn(false); if (e.code !== 1000) { log('sys','Reconnecting…'); setTimeout(connect, 3000); } };
+  ws.onerror   = ()  => setConn(false);
+  ws.onmessage = e  => handle(JSON.parse(e.data));
+}
+function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+
+// ── Message dispatcher ─────────────────────────────────────────────────────
+function handle(msg) {
+  switch (msg.type) {
+    case 'ping':          send({type:'pong'}); break;
+
+    // Week opened — server staged receive data → show phase 1
+    case 'phase_receive':
+      hideLobby(msg.status);
+      updateHUD(msg);
+      renderBoard(msg);
+      updatePipeline(msg.pipeline || [], msg.outgoing_orders || []);
+      updateChart(msg.history || []);
+      // For factory: demand_incoming = production request; pending_received = production completing
+      showReceivePanel(msg.pending_received ?? 0, msg.demand_incoming ?? 0);
+      updateReadyPills(msg);
+      if (MY_ROLE === 'factory') {
+        log('sys', `📋 Production request received: ${msg.demand_incoming ?? 0} units. Production completing: ${msg.pending_received ?? 0}`);
+      } else {
+        log('sys', `📦 Incoming shipment this week: ${msg.pending_received ?? 0} units`);
+      }
+      break;
+
+    // After confirm receive — show phase 2
+    case 'phase_ship':
+      showShipPanel(msg.demand_incoming, msg.received, msg.new_inventory, msg.backlog);
+      setPhaseIndicator(2);
+      updateMiniHUD(msg.new_inventory, msg.backlog);
+      // Animate: incoming ship slots depart → inventory box pulses green
+      animateBoardReceive(MY_ROLE, msg.received, msg.new_inventory, msg.backlog);
+      if (MY_ROLE === 'factory') {
+        log('sys', `📦 Production received: +${msg.received} units → inventory. Incoming order from Distributor: ${msg.demand_incoming}. Now fill the order.`);
+      } else {
+        log('sys', `📦 Received +${msg.received} units. Stock now: ${msg.new_inventory}`);
+      }
+      break;
+
+    // After confirm ship — show phase 3
+    case 'phase_order':
+      showOrderPanel(msg.shipped, msg.new_inventory, msg.new_backlog, msg.suggested_order);
+      setPhaseIndicator(3);
+      updateMiniHUD(msg.new_inventory, msg.new_backlog);
+      // Animate: inventory shrinks → downstream ship slot appears
+      animateBoardShip(MY_ROLE, msg.shipped, msg.new_inventory, msg.new_backlog);
+      if (MY_ROLE === 'factory') {
+        log('sys', `🚚 Shipped ${msg.shipped} to Distributor. Stock: ${msg.new_inventory}. Now decide your production run.`);
+      } else {
+        log('sys', `🚚 Shipped ${msg.shipped} downstream. Stock: ${msg.new_inventory}, Backlog: ${msg.new_backlog}`);
+      }
+      break;
+
+    // Player submitted order — show waiting screen
+    case 'phase_done':
+      showDonePanel(msg.order_placed ?? msg.quantity, msg);
+      setPhaseIndicator(3, true);
+      // Animate: amber order slot pulses (order placed upstream)
+      if (MY_ROLE !== 'customer') animateBoardOrder(MY_ROLE, msg.order_placed ?? msg.quantity);
+      break;
+
+    // New week opened — sent to customer to submit new demand
+    case 'week_open':
+      hideLobby(msg.status);
+      updateHUD(msg);
+      updateReadyPills(msg);
+      if (MY_ROLE === 'customer') {
+        resetCustomerPanel();
+        toast(`📅 Semaine ${msg.week + 1} — Soumettez votre demande`, 'success');
+        log('week', `Semaine ${msg.week + 1} ouverte — en attente de votre commande`);
+      }
+      break;
+
+    // Week complete + state update from server
+    case 'week_complete':
+    case 'state_update':
+    case 'game_started':
+      hideLobby(msg.status);
+      updateHUD(msg);
+      renderBoard(msg);
+      updatePipeline(msg.pipeline || [], msg.outgoing_orders || []);
+      updateChart(msg.history || []);
+      updateReadyPills(msg);
+      if (msg.is_finished) { showGameOver(msg); }
+      if (MY_ROLE === 'customer') resetCustomerPanel();
+      // Reset week-ready button for next week
+      {
+        const btn = document.getElementById('btn-week-ready');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '✓ Prêt pour la semaine suivante';
+          btn.style.boxShadow = '';
+          btn.style.animation = '';
+        }
+      }
+      break;
+
+    // Customer: retailer demand updated (late customer submit)
+    case 'demand_update':
+      const dEl = document.getElementById('ship-demand-qty');
+      if (dEl) dEl.textContent = msg.demand_incoming ?? '—';
+      const dSub = document.getElementById('ship-demand-sub');
+      if (dSub) dSub.textContent = `from customer (updated) — Week ${msg.week || ''}`;
+      break;
+
+    case 'ready_status':
+      updateReadyPills(msg);
+      updateLobbyRows(msg);
+      // If game has started, hide lobby overlay
+      if (msg.status === 'playing') hideLobby(msg.status);
+      // Update waiting count if order panel is shown
+      if (document.getElementById('waiting-count-label')) {
+        const done = (msg.submitted || []).length;
+        const total = msg.total || 5;
+        const rem = total - done;
+        const wl = document.getElementById('waiting-count-label');
+        if (wl && rem > 0) wl.textContent = `En attente de ${rem} joueur(s)…`;
+      }
+      break;
+
+    case 'week_ready_status':
+      {
+        const readyCount = (msg.ready_for_next || []).length;
+        const total      = msg.total || 5;
+        const wl = document.getElementById('waiting-count-label');
+        if (wl) wl.textContent = readyCount >= total
+          ? '⏳ Semaine suivante en cours…'
+          : `${readyCount} / ${total} prêts pour la semaine suivante`;
+        // Highlight pills of those who are ready
+        ROLES.forEach(r => {
+          const pill = document.getElementById('pill-' + r);
+          if (!pill) return;
+          const name = r.charAt(0).toUpperCase() + r.slice(1);
+          if ((msg.ready_for_next || []).includes(r)) {
+            pill.className = 'ready-pill done';
+            pill.textContent = '✓ ' + name;
+          }
+        });
+      }
+      break;
+
+    case 'all_phases_done':
+      // All players finished their 3 phases — show week-ready button if not yet clicked
+      {
+        const btn = document.getElementById('btn-week-ready');
+        if (btn && !btn.disabled) {
+          btn.style.boxShadow = '0 0 16px rgba(245,200,66,.5)';
+          btn.style.animation = 'none';
+        }
+        toast('✅ Tous les joueurs ont terminé — confirmez la semaine suivante!', 'success');
+        log('week', 'Toutes les phases complètes — en attente de confirmation');
+      }
+      break;
+
+    case 'player_joined':  toast(`${EMOJIS[msg.role]||''} ${msg.name} joined`, 'success'); log('sys', `${msg.name} connected (${msg.role})`); break;
+    case 'player_left':    toast(`${msg.name} left`); log('sys', `${msg.name} disconnected (${msg.role})`); break;
+    case 'error':          toast(msg.message, 'error'); break;
+    case 'game_over':      showGameOver(msg); break;
+  }
+}
+
+// ── Panel management ───────────────────────────────────────────────────────
+function hideAllPanels() {
+  ['panel-receive','panel-ship','panel-order'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+}
+
+function showReceivePanel(receivedQty, demandIncoming) {
+  hideAllPanels();
+  setPhaseIndicator(1);
+
+  const panel = document.getElementById('panel-receive');
+  if (!panel) return;
+  panel.classList.add('active');
+
+  if (MY_ROLE === 'factory') {
+    // Factory phase 1:
+    //   recv-prod-qty = production completing this week (blue, top row)
+    //   recv-qty      = incoming order from Distributor (amber, bottom row)
+    const prodEl  = document.getElementById('recv-prod-qty');  // production completing
+    const prodRow = document.getElementById('recv-prod-row');
+    const orderEl = document.getElementById('recv-qty');        // incoming order from Distributor
+    const noneEl  = document.getElementById('recv-none');
+
+    // Production completing (receivedQty = units arriving from production delay)
+    if (prodEl) prodEl.textContent = receivedQty > 0 ? '+' + receivedQty : '0';
+    if (prodRow) prodRow.style.display = 'flex';
+    if (noneEl)  noneEl.style.display  = receivedQty > 0 ? 'none' : 'block';
+
+    // Incoming order from Distributor (demandIncoming)
+    if (orderEl) orderEl.textContent = demandIncoming ?? '—';
+  } else {
+    // Non-factory: show incoming shipment
+    const qEl  = document.getElementById('recv-qty');
+    const nEl  = document.getElementById('recv-none');
+    const rEl  = document.getElementById('recv-row');
+
+    if (receivedQty > 0) {
+      if (qEl) qEl.textContent = '+' + receivedQty;
+      if (rEl) rEl.style.display = 'flex';
+      if (nEl) nEl.style.display = 'none';
+    } else {
+      if (qEl) qEl.textContent = '0';
+      if (rEl) rEl.style.display = 'none';
+      if (nEl) nEl.style.display = 'block';
+    }
+  }
+
+  const btn = document.getElementById('btn-receive');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = MY_ROLE === 'factory'
+      ? '✓ Confirm Receipt — Add to Inventory'
+      : '✓ Confirm Receipt — Add to Inventory';
+  }
+}
+
+function showShipPanel(demandQty, justReceived, currentInv, currentBlg) {
+  hideAllPanels();
+  const panel = document.getElementById('panel-ship');
+  if (!panel) return;
+  panel.classList.add('active');
+
+  const totalDemand = demandQty || 0;
+  const totalBacklog = currentBlg || 0;
+  const available   = currentInv || 0;
+  const willShip    = Math.min(available, totalDemand + totalBacklog);
+  const shortage    = totalDemand + totalBacklog - willShip;
+
+  document.getElementById('ship-demand-qty').textContent = totalDemand;
+  document.getElementById('ship-demand-sub').textContent =
+    MY_ROLE === 'retailer'     ? 'from Customer — units to fulfill' :
+    MY_ROLE === 'wholesaler'   ? `from Retailer (+ backlog: ${totalBacklog})` :
+    MY_ROLE === 'distributor'  ? `from Wholesaler (+ backlog: ${totalBacklog})` :
+    MY_ROLE === 'factory'      ? `Incoming Order from Distributor (+ backlog: ${totalBacklog})` :
+                                 `from downstream (+ backlog: ${totalBacklog})`;
+
+  document.getElementById('ship-qty').textContent = willShip;
+  document.getElementById('ship-amount-sub').textContent =
+    `min(${available} on hand, ${totalDemand + totalBacklog} total demand) = ${willShip} shipped`;
+
+  const shortNote = document.getElementById('ship-shortage-note');
+  if (shortNote) shortNote.style.display = shortage > 0 ? 'block' : 'none';
+
+  const btn = document.getElementById('btn-ship');
+  if (btn) { btn.disabled = false; btn.textContent = '✓ Confirm — Send Shipment'; }
+}
+
+function showOrderPanel(shippedQty, newInv, newBlg, suggestedOrder) {
+  hideAllPanels();
+  const panel = document.getElementById('panel-order');
+  if (!panel) return;
+  panel.classList.add('active');
+  panel.classList.remove('submitted-state');
+
+  document.getElementById('order-submit-section').style.display = 'block';
+  document.getElementById('order-submitted-section').style.display = 'none';
+  document.getElementById('order-gameover-section').style.display = 'none';
+
+  const invEl = document.getElementById('order-inv-display');
+  const blgEl = document.getElementById('order-blg-display');
+  const sugEl = document.getElementById('order-sug-display');
+  if (invEl) invEl.textContent = newInv ?? '—';
+  if (blgEl) blgEl.textContent = newBlg ?? '—';
+  if (sugEl) sugEl.textContent = suggestedOrder ?? '—';
+
+  const qEl = document.getElementById('order-qty');
+  if (qEl && suggestedOrder != null) qEl.value = suggestedOrder;
+}
+
+function showDonePanel(orderQty, msg) {
+  const panel = document.getElementById('panel-order');
+  if (!panel) { return; }
+  panel.classList.add('active', 'submitted-state');
+  document.getElementById('order-submit-section').style.display  = 'none';
+  document.getElementById('order-submitted-section').style.display = 'block';
+  const ql = document.getElementById('submitted-qty-label');
+  if (MY_ROLE === 'factory') {
+    // Factory: production request → 1w order delay → then 2w production delay
+    if (ql) ql.textContent = `Production request: ${orderQty} units → 1w delay → production starts next week (ready in ~3 weeks)`;
+    log('order', `Production request: ${orderQty} units placed`);
+    toast(`✓ Production request: ${orderQty} units`, 'success');
+  } else {
+    if (ql) ql.textContent = `Order placed: ${orderQty} units → 2w delay upstream`;
+    log('order', `Order placed: ${orderQty} units`);
+    toast(`✓ Order placed: ${orderQty}`, 'success');
+  }
+}
+
+function showGameOver(msg) {
+  hideAllPanels();
+  const panel = document.getElementById('panel-order');
+  if (panel) {
+    panel.classList.add('active');
+    document.getElementById('order-submit-section').style.display   = 'none';
+    document.getElementById('order-submitted-section').style.display = 'none';
+    document.getElementById('order-gameover-section').style.display  = 'block';
+  }
+  const rl = document.getElementById('results-link');
+  if (rl) rl.href = msg.results_url || `/game/${SESSION_ID}/results/`;
+  toast('🏁 Game over!', 'success');
+}
+
+function resetCustomerPanel() {
+  const ss = document.getElementById('cust-submit-section');
+  const ds = document.getElementById('cust-submitted-section');
+  if (ss) ss.style.display = 'block';
+  if (ds) ds.style.display = 'none';
+  const qEl = document.getElementById('cust-qty');
+  if (qEl) { qEl.disabled = false; qEl.value = 4; }
+  // Reset week-ready button
+  const btn = document.getElementById('btn-week-ready');
+  if (btn) { btn.disabled = false; btn.textContent = '✓ Prêt pour la semaine suivante'; btn.style.boxShadow = ''; }
+  // Update week number display
+  const wn = document.getElementById('cust-week-num');
+  if (wn) wn.textContent = (parseInt(document.getElementById('current-week')?.textContent || 0)) + 1;
+}
+
+// ── Phase indicator ────────────────────────────────────────────────────────
+function setPhaseIndicator(activeStep, done3) {
+  const dots  = ['ph1','ph2','ph3'];
+  const lines = ['pl1','pl2'];
+  dots.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const step = i + 1;
+    if (done3 && step === 3) { el.className = 'ph-dot done'; el.textContent = '✓'; }
+    else if (step < activeStep) { el.className = 'ph-dot done'; el.textContent = '✓'; }
+    else if (step === activeStep) { el.className = 'ph-dot active'; el.textContent = step; }
+    else { el.className = 'ph-dot'; el.textContent = step; }
+  });
+  lines.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'ph-line ' + (i + 1 < activeStep ? 'done' : '');
+  });
+}
+
+// ── Action handlers ────────────────────────────────────────────────────────
+function doConfirmReceive() {
+  const btn = document.getElementById('btn-receive');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Confirming…'; }
+  send({type: 'confirm_receive'});
+  log('sys', '📦 Confirmed receipt of goods');
+}
+
+function doConfirmShip() {
+  const btn = document.getElementById('btn-ship');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending shipment…'; }
+  send({type: 'confirm_ship'});
+  log('sys', '🚚 Confirmed shipment to downstream');
+}
+
+function doSubmitOrder() {
+  const raw = (document.getElementById('order-qty')?.value || '').trim();
+  const qty = parseInt(raw, 10);
+  if (raw === '' || isNaN(qty) || qty < 0) { toast('Enter a valid non-negative number', 'error'); return; }
+  send({type: 'submit_order', quantity: qty});
+}
+
+function doCustomerSubmit() {
+  const raw = (document.getElementById('cust-qty')?.value || '').trim();
+  const qty = parseInt(raw, 10);
+  if (raw === '' || isNaN(qty) || qty < 0) { toast('Entrez une quantité valide', 'error'); return; }
+  send({type: 'submit_order', quantity: qty});
+  document.getElementById('cust-submit-section').style.display  = 'none';
+  document.getElementById('cust-submitted-section').style.display = 'block';
+  const lbl = document.getElementById('cust-submitted-label');
+  if (lbl) lbl.textContent = `Demande: ${qty} unités · En attente des autres joueurs…`;
+  log('order', `Demande client: ${qty} unités`);
+  toast(`Demande soumise: ${qty} unités`, 'success');
+}
+
+// ── Lobby ──────────────────────────────────────────────────────────────────
+function markReady() {
+  send({type:'player_ready'});
+
+  // Optimistic UI update — show immediately without waiting for server
+  const rb = document.getElementById('ready-btn');
+  if (rb) { rb.disabled = true; rb.textContent = '⏳ Waiting for others…'; rb.style.opacity = '.7'; }
+
+  const lm = document.getElementById('lobby-msg');
+  if (lm) { lm.textContent = '✓ You are ready! Waiting for others…'; lm.style.color = 'var(--accent)'; }
+
+  // Mark our own row immediately
+  const row = document.getElementById('lobby-row-' + MY_ROLE);
+  const st  = document.getElementById('lobby-status-' + MY_ROLE);
+  if (row) row.classList.add('ready-state');
+  if (st)  { st.textContent = '✓ Ready'; st.style.color = 'var(--success)'; }
+
+  log('sys', 'Clicked Ready — waiting for other players');
+}
+
+function hideLobby(status) {
+  if ((status === 'playing' || status === GameSession?.STATUS_PLAYING) && !gameStarted) {
+    gameStarted = true;
+    const ov = document.getElementById('lobby-overlay');
+    if (ov) {
+      ov.style.transition = 'opacity .4s';
+      ov.style.opacity = '0';
+      setTimeout(() => ov.classList.add('hidden'), 400);
+    }
+    log('sys', '🚀 Game started — Week 1');
+  }
+}
+
+function updateLobbyRows(msg) {
+  const ready     = msg.ready     || [];
+  const connected = msg.connected || [];
+  const total     = msg.total     || 5;
+
+  ROLES.forEach(r => {
+    const row = document.getElementById('lobby-row-' + r);
+    const st  = document.getElementById('lobby-status-' + r);
+    if (!row || !st) return;
+    if (ready.includes(r)) {
+      row.classList.add('ready-state');
+      st.textContent = '✓ Ready';
+      st.style.color = 'var(--success)';
+    } else if (connected.includes(r)) {
+      row.classList.remove('ready-state');
+      st.textContent = '● Connected';
+      st.style.color = 'var(--accent)';
+    } else {
+      row.classList.remove('ready-state');
+      st.textContent = '○ Waiting…';
+      st.style.color = 'var(--muted)';
+    }
+  });
+
+  const readyCount = ready.length;
+  const lm = document.getElementById('lobby-msg');
+  if (lm) {
+    if (readyCount >= total) {
+      lm.textContent = '✓ All ready! Starting…';
+      lm.style.color = 'var(--success)';
+    } else {
+      lm.textContent = `${readyCount} / ${total} ready — waiting for others…`;
+      lm.style.color = readyCount > 0 ? 'var(--accent)' : 'var(--muted)';
+    }
+  }
+}
+
+// ── Ready pills — show per-player phase ────────────────────────────────────
+function updateReadyPills(msg) {
+  const phases    = msg.phases    || {};
+  const connected = msg.connected || [];
+  const submitted = msg.submitted || [];
+
+  const phaseLabel = {
+    idle:    'idle',
+    receive: 'receive',
+    ship:    'ship',
+    order:   'order',
+    done:    'done',
+  };
+  const phaseEmoji = {idle:'○', receive:'📦', ship:'🚚', order:'📋', done:'✓'};
+
+  ROLES.forEach(r => {
+    const pill = document.getElementById('pill-' + r);
+    if (!pill) return;
+    const name = r.charAt(0).toUpperCase() + r.slice(1);
+    const phase = phases[r] || (submitted.includes(r) ? 'done' : connected.includes(r) ? 'idle' : null);
+
+    if (!connected.includes(r) && !submitted.includes(r)) {
+      pill.className = 'ready-pill offline';
+      pill.textContent = '○ ' + name;
+      return;
+    }
+    const cls = phase ? 'ready-pill ' + phase : 'ready-pill idle';
+    pill.className = cls;
+    pill.textContent = `${phaseEmoji[phase]||'●'} ${name}`;
+  });
+
+  const done  = Object.values(phases).filter(p => p === 'done').length;
+  const total = ROLES.filter(r => connected.includes(r)).length || (msg.total || 5);
+  const wm = document.getElementById('waiting-msg');
+  if (wm) wm.textContent = done >= total ? 'All done — week processing…' : `${done}/${total} players done`;
+}
+
+// ── HUD & board ────────────────────────────────────────────────────────────
+function updateHUD(msg) {
+  const w = msg.week || 0;
+  document.getElementById('current-week').textContent = w;
+  const pf = document.getElementById('progress-fill');
+  if (pf) pf.style.width = Math.round(w / MAX_WEEKS * 100) + '%';
+
+  const inv  = msg.own?.inventory ?? 0;
+  const blg  = msg.own?.backlog   ?? 0;
+  const cost = msg.own?.total_cost ?? 0;
+
+  const hInv = document.getElementById('hud-inv');
+  hInv.textContent = inv;
+  hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+
+  const hBlg = document.getElementById('hud-blg');
+  hBlg.textContent = blg;
+  hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
+
+  document.getElementById('hud-cost').textContent = '$' + Number(cost).toFixed(1);
+
+  const dem = document.getElementById('hud-demand');
+  if (dem) dem.textContent = msg.map?.demand_customer_to_retailer?.this_week ?? '—';
+}
+
+function updateMiniHUD(inv, blg) {
+  const hInv = document.getElementById('hud-inv');
+  hInv.textContent = inv ?? '—';
+  hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+  const hBlg = document.getElementById('hud-blg');
+  hBlg.textContent = blg ?? '—';
+  hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
+}
+
+// ── Board rendering ────────────────────────────────────────────────────────
+function setBoxVal(id, v) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const val = box.querySelector('.bgb-v');
+  if (val) val.textContent = (v == null) ? '·' : v;
+}
+
+function setInv(prefix, inv, blg) {
+  const vEl = document.getElementById(prefix + '-inv');
+  const bEl = document.getElementById(prefix + '-blg');
+  const xEl = document.getElementById(prefix + '-inv-box');
+  if (!vEl) return;
+  if (xEl) { xEl.style.opacity = ''; xEl.style.filter = ''; }
+  vEl.textContent = inv ?? '—';
+  vEl.className   = 'bgb-inv-val ' + (inv > 8 ? 'good' : inv > 0 ? 'warn' : 'bad');
+  if (xEl) xEl.style.borderColor = inv > 8 ? 'rgba(34,197,94,.4)' : inv > 0 ? 'rgba(245,200,66,.4)' : 'rgba(239,68,68,.4)';
+  if (bEl) {
+    if (blg > 0) { bEl.className = 'bgb-backlog nonzero'; bEl.textContent = `blg:${blg}`; }
+    else         { bEl.className = 'bgb-backlog zero';    bEl.textContent = 'blg:0'; }
+  }
+}
+
+function setSlot(id, item, cls) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const v = box.querySelector('.bgb-v');
+  box.className     = 'bgb-slot ' + (cls || '');
+  box.style.opacity = '';
+  box.style.filter  = '';
+  if (item) {
+    if (v) v.textContent = item.quantity;
+    if (item.weeks_away === 0) box.classList.add('arriving');
+  } else {
+    if (v) v.textContent = '·';
+  }
+}
+
+function setSlots(id1, id2, items, cls) {
+  const sorted = Array.isArray(items) ? [...items].sort((a,b)=>a.weeks_away-b.weeks_away) : [];
+  setSlot(id1, sorted[0], cls);
+  setSlot(id2, sorted[1], cls);
+}
+
+function blankSlot(id) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const v = box.querySelector('.bgb-v');
+  box.className     = 'bgb-slot';
+  box.style.opacity = '0.18';
+  box.style.filter  = '';
+  if (v) v.textContent = '·';
+}
+
+function blankInv(prefix) {
+  const box = document.getElementById(prefix + '-inv-box');
+  if (box) box.style.opacity = '0.18';
+}
+
+function renderBoard(msg) {
+  const role = msg.role;
+  const m    = msg.map || {};
+  const own  = msg.own || {};
+
+  // Highlight YOU
+  ['col-customer','col-retailer','col-wholesaler','col-distributor','col-factory'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('you');
+    const b = el.querySelector('.bgb-you-badge');
+    if (b) b.remove();
+  });
+  const myColEl = document.getElementById('col-' + role);
+  if (myColEl) {
+    myColEl.classList.add('you');
+    const hdr = myColEl.querySelector('.bgb-actor-hdr');
+    if (hdr && !hdr.querySelector('.bgb-you-badge')) {
+      const b = document.createElement('span');
+      b.className = 'bgb-you-badge'; b.textContent = 'YOU';
+      hdr.appendChild(b);
+    }
+  }
+
+  // Blank ALL slots and inventories first
+  ['rt-ord-1','rt-ord-2','rt-inc-1','rt-inc-2','rt-ship-1','rt-ship-2',
+   'wh-ord-1','wh-ord-2','wh-inc-1','wh-inc-2','wh-ship-1','wh-ship-2',
+   'di-ord-1','di-ord-2','di-inc-1','di-inc-2','di-ship-1','di-ship-2',
+   'fa-req-1','fa-req-2','fa-inc-1','fa-inc-2','fa-prod-1','fa-prod-2',
+  ].forEach(blankSlot);
+  ['rt','wh','di','fa'].forEach(blankInv);
+
+  // Customer demand box
+  if (role === 'retailer' && m.demand_customer_to_retailer) {
+    const d   = m.demand_customer_to_retailer.this_week;
+    const bEl = document.getElementById('cust-ord-1');
+    const vEl = bEl?.querySelector('.bgb-v');
+    if (vEl) vEl.textContent = d ?? '—';
+    if (bEl) bEl.className = 'bgb-slot amber' + (d != null ? ' arriving' : '');
+  }
+
+  /*
+   * MIT Beer Game privacy rules — each role sees only:
+   * Their own slots + the pipeline slots directly connected to them
+   *
+   * Retailer:    rt-ord(own) rt-inc(cust demand) rt-inv rt-ship | wh-inc(=rt-ord) wh-ship(=rt-ship)
+   * Wholesaler:  wh-ord(own) wh-inc(rt orders)  wh-inv wh-ship | rt-ord(=wh-inc) rt-ship(what I sent) di-ship(=wh-ship)
+   * Distributor: di-ord(own) di-inc(wh orders)  di-inv di-ship | wh-ord(=di-inc) wh-ship(what I sent) fa-inc(=di-ord) fa-prod(=di-ship)
+   * Factory:     fa-req(own) fa-inc(di orders)  fa-inv fa-prod  | di-ord(=fa-inc) di-ship(what I sent)
+   */
+
+  if (role === 'retailer') {
+    setSlots('rt-ord-1','rt-ord-2',   m.outgoing_orders_from_me,    'amber');
+    setSlots('rt-inc-1','rt-inc-2',   m.incoming_orders_to_me,      'amber');
+    setInv('rt', own.inventory, own.backlog);
+    setSlots('rt-ship-1','rt-ship-2', m.incoming_shipments_to_me,   'blue');
+    // Wholesaler slots visible to retailer:
+    setSlots('wh-inc-1','wh-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at wh
+    setSlots('wh-ship-1','wh-ship-2', m.incoming_shipments_to_me,   'blue');  // goods wh sent to me
+  }
+
+  else if (role === 'wholesaler') {
+    setSlots('wh-ord-1','wh-ord-2',   m.outgoing_orders_from_me,    'amber');
+    setSlots('wh-inc-1','wh-inc-2',   m.incoming_orders_to_me,      'amber');
+    setInv('wh', own.inventory, own.backlog);
+    setSlots('wh-ship-1','wh-ship-2', m.incoming_shipments_to_me,   'blue');
+    // Retailer slots visible to wholesaler:
+    setSlots('rt-ord-1','rt-ord-2',   m.incoming_orders_to_me,      'amber'); // retailer orders = my incoming
+    setSlots('rt-ship-1','rt-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to retailer
+    // Distributor slots visible to wholesaler (only the pipeline TO me):
+    setSlots('di-ship-1','di-ship-2', m.incoming_shipments_to_me,   'blue');  // goods di sent to me = wh-ship
+    setSlots('di-inc-1','di-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at di
+    // di-ord, di-inv, factory → stay blanked
+  }
+
+  else if (role === 'distributor') {
+    setSlots('di-ord-1','di-ord-2',   m.outgoing_orders_from_me,    'amber');
+    setSlots('di-inc-1','di-inc-2',   m.incoming_orders_to_me,      'amber');
+    setInv('di', own.inventory, own.backlog);
+    setSlots('di-ship-1','di-ship-2', m.incoming_shipments_to_me,   'blue');
+    // Wholesaler slots visible to distributor:
+    setSlots('wh-ord-1','wh-ord-2',   m.incoming_orders_to_me,      'amber'); // wh orders = my incoming
+    setSlots('wh-ship-1','wh-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to wh
+    // Factory slots visible to distributor (only the pipeline TO me):
+    setSlots('fa-inc-1','fa-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at factory
+    setSlots('fa-prod-1','fa-prod-2', m.incoming_shipments_to_me,   'blue');  // factory shipped to me
+    // fa-req, fa-inv, wh-inv, rt-* → stay blanked
+  }
+
+  else if (role === 'factory') {
+    setSlots('fa-req-1','fa-req-2',   m.factory_pending_requests,   'amber'); // own prod requests
+    setSlots('fa-inc-1','fa-inc-2',   m.incoming_orders_to_me,      'amber'); // di orders arriving
+    setInv('fa', own.inventory, own.backlog);
+    setSlots('fa-prod-1','fa-prod-2', m.factory_production_delay,   'blue');
+    // Distributor slots visible to factory:
+    setSlots('di-ord-1','di-ord-2',   m.incoming_orders_to_me,      'amber'); // di orders = my incoming
+    setSlots('di-ship-1','di-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to di
+    setSlots('di-inc-1','di-inc-2',   m.incoming_orders_to_me,      'amber'); // same, in di-inc slots
+    // wh-*, rt-* → stay blanked
+  }
+}
+
+// ── Pipeline detail ────────────────────────────────────────────────────────
+function plItem(qty, arrives, weeksAway, cls, lbl) {
+  const pct = Math.max(5, Math.round((1 - weeksAway/2)*100));
+  const clr = cls === 'ship' ? '#3b82f6' : '#f5c842';
+  return `<div class="pl-item ${cls}">
+    <span style="font-family:var(--font-mono);font-weight:700;color:${clr};">${qty}</span>
+    <span style="color:var(--muted);font-size:.7rem;margin:0 .5rem;">${lbl}</span>
+    <div class="pl-bar"><div class="pl-fill" style="width:${pct}%;background:${clr};"></div></div>
+    <span style="font-size:.7rem;color:var(--muted);">W${arrives} (${weeksAway}w)</span>
+  </div>`;
+}
+
+function updatePipeline(inc, out) {
+  const iEl = document.getElementById('pipeline-in');
+  const oEl = document.getElementById('pipeline-out');
+
+  // Incoming (pipeline-in): production delay for factory, shipping delay for others
+  const inLabel = MY_ROLE === 'factory' ? '🏭 in production' : '📦 arriving';
+  if (iEl) iEl.innerHTML = inc.length
+    ? inc.map(s => plItem(s.quantity, s.arrives_week, s.weeks_away, 'ship', inLabel)).join('')
+    : '<div style="color:var(--muted);font-size:.78rem;">None in transit.</div>';
+
+  // Outgoing (pipeline-out): production requests (1w) for factory, orders placed (2w) for others
+  const outLabel = MY_ROLE === 'factory' ? '📋 prod. request (1w delay)' : '📋 ordered upstream';
+  if (oEl) oEl.innerHTML = (!out || !out.length)
+    ? '<div style="color:var(--muted);font-size:.78rem;">None in transit.</div>'
+    : out.map(o => plItem(o.quantity, o.arrives_week, o.weeks_away, 'order', outLabel)).join('');
+}
+
+// ── Chart ──────────────────────────────────────────────────────────────────
+function updateChart(history) {
+  const color = COLORS[MY_ROLE] || '#f5c842';
+  const labels = history.map(h=>'W'+h.week);
+  const inv = history.map(h=>h.inventory), blg = history.map(h=>h.backlog), ord = history.map(h=>h.order_placed);
+  if (chart) { chart.data.labels=labels; chart.data.datasets[0].data=inv; chart.data.datasets[1].data=blg; chart.data.datasets[2].data=ord; chart.update(); return; }
+  const ctx = document.getElementById('myChart');
+  if (!ctx) return;
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets:[
+      {label:'Inventory', data:inv, borderColor:color, backgroundColor:color+'22', fill:true, tension:.3, pointRadius:3},
+      {label:'Backlog',   data:blg, borderColor:'#ef4444', backgroundColor:'transparent', tension:.3, pointRadius:3},
+      {label:'Ordered',   data:ord, borderColor:color+'77', backgroundColor:'transparent', tension:.2, pointRadius:2, borderDash:[4,4]},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9ca3af',font:{size:11}}}},scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#2a2f3d'}},y:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#2a2f3d'}}}}
+  });
+}
+
+// ── Board animations ───────────────────────────────────────────────────────
+
+/**
+ * animateBoardReceive — called after "Confirm Receipt"
+ * Factory: prod-delay slots depart (completing) → inventory pulses green
+ *          prod-request slot moves to prod-delay (production started)
+ * Others: ship slots depart → inventory pulses green
+ */
+function animateBoardReceive(role, receivedQty, newInv, newBlg) {
+  const pre = role === 'factory' ? 'fa' : role.slice(0,2);
+
+  if (role === 'factory') {
+    // The oldest production-delay slot completes → departs into inventory
+    flashDepart('fa-prod-1');
+    setTimeout(() => flashDepart('fa-prod-2'), 120);
+    // The pending production request (amber fa-req-1) moves into production delay (blue)
+    setTimeout(() => {
+      const reqBox = document.getElementById('fa-req-1');
+      if (reqBox) {
+        const v = reqBox.querySelector('.bgb-v');
+        const prodQty = v ? v.textContent : '·';
+        reqBox.classList.add('anim-depart');
+        reqBox.addEventListener('animationend', () => {
+          reqBox.classList.remove('anim-depart');
+          if (v) v.textContent = '·';
+        }, {once: true});
+        // Flash into production delay
+        setTimeout(() => {
+          const prodBox = document.getElementById('fa-prod-1');
+          if (prodBox) {
+            const pv = prodBox.querySelector('.bgb-v');
+            const pl = prodBox.querySelector('.bgb-slot-lbl');
+            if (pv) pv.textContent = prodQty;
+            if (pl) pl.textContent = '2w';
+            prodBox.className = 'bgb-slot blue anim-ship';
+            prodBox.addEventListener('animationend', () => prodBox.classList.remove('anim-ship'), {once:true});
+          }
+        }, 300);
+      }
+    }, 200);
+  } else {
+    // Non-factory: incoming ship slots depart
+    const slot1Id = pre + '-ship-1';
+    const slot2Id = pre + '-ship-2';
+    flashDepart(slot1Id);
+    setTimeout(() => flashDepart(slot2Id), 120);
+  }
+
+  // Inventory box receives — pulse green then update value
+  setTimeout(() => {
+    const invBox = document.getElementById(pre + '-inv-box');
+    const invVal = document.getElementById(pre + '-inv');
+    if (invBox) {
+      invBox.classList.remove('anim-inv-rcv', 'anim-inv-shp');
+      void invBox.offsetWidth;
+      invBox.classList.add('anim-inv-rcv');
+      invBox.addEventListener('animationend', () => invBox.classList.remove('anim-inv-rcv'), {once:true});
+    }
+    if (invVal) {
+      invVal.textContent = newInv ?? '—';
+      invVal.className   = 'bgb-inv-val ' + (newInv > 8 ? 'good' : newInv > 0 ? 'warn' : 'bad');
+    }
+    const blgEl = document.getElementById(pre + '-blg');
+    if (blgEl) {
+      if ((newBlg ?? 0) > 0) { blgEl.className = 'bgb-backlog nonzero'; blgEl.textContent = `backlog: ${newBlg}`; }
+      else                   { blgEl.className = 'bgb-backlog zero';    blgEl.textContent = 'backlog: 0'; }
+    }
+  }, 250);
+}
+
+/**
+ * animateBoardShip — called after "Confirm Ship"
+ * Inventory box shrinks (blue), new downstream ship slot appears
+ */
+function animateBoardShip(role, shippedQty, newInv, newBlg) {
+  const pre = role === 'factory' ? 'fa' : role.slice(0,2);
+
+  // Inventory box ship pulse
+  const invBox = document.getElementById(pre + '-inv-box');
+  const invVal = document.getElementById(pre + '-inv');
+  if (invBox) {
+    invBox.classList.remove('anim-inv-rcv', 'anim-inv-shp');
+    void invBox.offsetWidth;
+    invBox.classList.add('anim-inv-shp');
+    invBox.addEventListener('animationend', () => invBox.classList.remove('anim-inv-shp'), {once:true});
+  }
+  if (invVal) {
+    setTimeout(() => {
+      invVal.textContent = newInv ?? '—';
+      invVal.className   = 'bgb-inv-val ' + (newInv > 8 ? 'good' : newInv > 0 ? 'warn' : 'bad');
+    }, 200);
+  }
+
+  // Update backlog
+  const blgEl = document.getElementById(pre + '-blg');
+  if (blgEl) {
+    setTimeout(() => {
+      if ((newBlg ?? 0) > 0) { blgEl.className = 'bgb-backlog nonzero'; blgEl.textContent = `backlog: ${newBlg}`; }
+      else                   { blgEl.className = 'bgb-backlog zero';    blgEl.textContent = 'backlog: 0'; }
+    }, 200);
+  }
+
+  // The downstream's ship slot flashes in (a new shipment is now in transit)
+  // For the viewer's own board: animate their outgoing ship slots
+  // We animate slot 1 as the "new" arriving one (closest = slot 1 after renderBoard update)
+  const downShipSlot = getDownstreamShipSlot(role);
+  if (downShipSlot && shippedQty > 0) {
+    setTimeout(() => {
+      const box = document.getElementById(downShipSlot);
+      if (!box) return;
+      const vEl = box.querySelector('.bgb-v');
+      const lEl = box.querySelector('.bgb-slot-lbl');
+      if (vEl) vEl.textContent = shippedQty;
+      if (lEl) lEl.textContent = '2w';
+      box.className = 'bgb-slot blue anim-ship';
+      box.addEventListener('animationend', () => box.classList.remove('anim-ship'), {once:true});
+    }, 350);
+  }
+}
+
+/**
+ * animateBoardOrder — called after order/production request submitted
+ * Factory: fa-req-1 pulses amber (production request → 1-week delay)
+ * Others:  pre-ord-1 pulses amber (order placed → 2-week delay upstream)
+ */
+function animateBoardOrder(role, orderQty) {
+  const pre    = role === 'factory' ? 'fa' : role.slice(0,2);
+  const slotId = role === 'factory' ? 'fa-req-1' : pre + '-ord-1';
+  const label  = role === 'factory' ? '1w' : '2w';
+  setTimeout(() => {
+    const box = document.getElementById(slotId);
+    if (!box) return;
+    const vEl = box.querySelector('.bgb-v');
+    const lEl = box.querySelector('.bgb-slot-lbl');
+    if (vEl) vEl.textContent = orderQty;
+    if (lEl) lEl.textContent = label;
+    box.className = 'bgb-slot amber anim-order';
+    box.addEventListener('animationend', () => box.classList.remove('anim-order'), {once:true});
+  }, 150);
+}
+
+function flashDepart(slotId) {
+  const box = document.getElementById(slotId);
+  if (!box) return;
+  box.classList.add('anim-depart');
+  box.addEventListener('animationend', () => {
+    box.classList.remove('anim-depart');
+    const vEl = box.querySelector('.bgb-v');
+    if (vEl) vEl.textContent = '·';
+  }, {once:true});
+}
+
+function getDownstreamShipSlot(role) {
+  // Returns the slot id where the shipment FROM this role TO downstream appears
+  const map = {
+    wholesaler:  'rt-ship-1',  // wholesaler ships to retailer
+    distributor: 'wh-ship-1',  // distributor ships to wholesaler
+    factory:     'di-ship-1',  // factory ships to distributor
+    retailer:    null,         // retailer ships to customer (no board slot)
+  };
+  return map[role] || null;
+}
+
+function doWeekReady() {
+  const btn = document.getElementById('btn-week-ready');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ En attente des autres…'; }
+  send({type: 'week_ready'});
+  log('sys', '✓ Prêt pour la semaine suivante');
+}
+
+// ── Misc ───────────────────────────────────────────────────────────────────
+function setConn(on) { document.getElementById('conn-dot').className=on?'online':'offline'; document.getElementById('conn-label').textContent=on?'Connected':'Reconnecting…'; }
+function log(type, msg) { const el=document.getElementById('event-log'); if(!el)return; const ic=type==='week'?'📅':type==='order'?'📤':'🔌'; el.innerHTML=`<div class="log-entry">${ic} <span style="font-size:.65rem;color:var(--muted)">${new Date().toLocaleTimeString()}</span> ${msg}</div>`+el.innerHTML; }
+function toast(msg, type='') { const c=document.getElementById('toast-container'); if(!c)return; const d=document.createElement('div'); d.className='toast '+type; d.textContent=msg; c.appendChild(d); setTimeout(()=>d.remove(),3600); }
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+{% if session.status == 'playing' %}
+gameStarted = true;
+document.getElementById('lobby-overlay').classList.add('hidden');
+{% endif %}
+
+connect();
+</script>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends "game/base.html" %}
+{% block title %}{{ role|title }} View — {{ session.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pipeline-slot {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:0.6rem 1rem; font-size:0.82rem;
+  }
+  .delay-track {
+    display:flex; gap:4px; align-items:center; margin:0.5rem 0;
+  }
+  .delay-box {
+    flex:1; height:28px; border-radius:4px; border:1px solid var(--border);
+    background:var(--surface2); display:flex; align-items:center;
+    justify-content:center; font-family:var(--font-mono); font-size:0.72rem;
+    position:relative; transition:background .3s;
+  }
+  .delay-box.filled { border-color:var(--accent); background:rgba(245,200,66,0.12); }
+  .delay-box.arriving { border-color:var(--success); background:rgba(34,197,94,0.15); animation: pulse-green 1s infinite; }
+  @keyframes pulse-green { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .chart-wrap { position:relative; height:200px; }
+  .info-rule { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+  <div style="display:flex; align-items:center; gap:1rem;">
+    <span style="font-size:2.5rem;">{{ emoji }}</span>
+    <div>
+      <h2 style="font-family:var(--font-mono); font-size:1.3rem;">
+        {{ player.name }}
+        <span class="role-badge role-{{ role }}" style="margin-left:.5rem;">{{ role }}</span>
+      </h2>
+      <div style="font-size:0.8rem; color:var(--muted);">{{ session.name }} · Week {{ session.current_week }}/{{ session.max_weeks }}</div>
+    </div>
+  </div>
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <!-- Switch role links -->
+    {% for r in roles %}
+    <a href="{% url 'client_view' session.id r %}"
+       class="btn btn-ghost btn-sm {% if r == role %}btn-primary{% endif %}"
+       style="font-size:0.72rem; padding:0.25rem 0.65rem;">
+      {{ role_emojis|default_if_none:'' }}
+      {% if r == 'retailer' %}🛒{% elif r == 'wholesaler' %}🏪{% elif r == 'distributor' %}🚚{% else %}🏭{% endif %}
+      {{ r|slice:":4"|upper }}
+    </a>
+    {% endfor %}
+    <a href="{% url 'dashboard' session.id %}" class="btn btn-ghost btn-sm">← Dashboard</a>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div style="margin-bottom:1.5rem;">
+  <div class="progress-bar">
+    <div class="progress-fill" style="width:{% widthratio session.current_week session.max_weeks 100 %}%"></div>
+  </div>
+</div>
+
+<!-- HUD stats -->
+<div class="grid-4" style="margin-bottom:1.5rem;">
+  <div class="card" style="text-align:center;">
+    <div class="card-title">Inventory</div>
+    <div style="font-family:var(--font-mono); font-size:2rem; font-weight:700;
+      color:{% if player.inventory > 6 %}var(--success){% elif player.inventory > 0 %}var(--accent){% else %}var(--danger){% endif %};">
+      {{ player.inventory }}
+    </div>
+    <div style="font-size:0.7rem; color:var(--muted);">units on hand</div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div class="card-title">Backlog</div>
+    <div style="font-family:var(--font-mono); font-size:2rem; font-weight:700;
+      color:{% if player.backlog == 0 %}var(--success){% elif player.backlog < 5 %}var(--accent){% else %}var(--danger){% endif %};">
+      {{ player.backlog }}
+    </div>
+    <div style="font-size:0.7rem; color:var(--muted);">unfilled orders</div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div class="card-title">Total Cost</div>
+    <div style="font-family:var(--font-mono); font-size:2rem; font-weight:700; color:var(--accent);">
+      ${{ player.total_cost|floatformat:1 }}
+    </div>
+    <div style="font-size:0.7rem; color:var(--muted);">accumulated</div>
+  </div>
+  {% if role == 'retailer' and upcoming_demand %}
+  <div class="card" style="text-align:center;">
+    <div class="card-title">Next Demand</div>
+    <div style="font-family:var(--font-mono); font-size:2rem; font-weight:700; color:var(--wholesaler-color);">
+      {{ upcoming_demand }}
+    </div>
+    <div style="font-size:0.7rem; color:var(--muted);">customer units</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Delay pipeline visualization -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-title">Pipeline Delays</div>
+
+  <!-- Ship delay: incoming shipments -->
+  <div style="margin-bottom:1rem;">
+    <div style="font-size:0.75rem; color:var(--wholesaler-color); margin-bottom:0.4rem; font-family:var(--font-mono);">
+      📦 INCOMING SHIPMENTS (ship delay — 2 weeks)
+    </div>
+    {% if incoming %}
+      {% for s in incoming %}
+      <div class="pipeline-slot" style="margin-bottom:0.3rem; border-color:var(--wholesaler-color)33;">
+        <span style="font-family:var(--font-mono); color:var(--wholesaler-color); font-size:1rem;">+{{ s.quantity }}</span>
+        <span style="color:var(--muted); font-size:0.75rem;">units</span>
+        <span style="color:var(--text);">arrives Week {{ s.arrives_on_week }}</span>
+        <span class="role-badge" style="background:rgba(59,130,246,0.15); color:var(--wholesaler-color);">
+          {% if s.arrives_on_week <= session.current_week %}NOW{% else %}in {{ s.arrives_on_week|add:"-"|add:session.current_week }}w{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="color:var(--muted); font-size:0.82rem; padding:0.5rem 0;">No shipments in transit.</div>
+    {% endif %}
+  </div>
+
+  <hr class="info-rule"/>
+
+  <!-- Order delay: outgoing orders -->
+  {% if role != 'factory' %}
+  <div>
+    <div style="font-size:0.75rem; color:var(--accent); margin-bottom:0.4rem; font-family:var(--font-mono);">
+      📋 OUTGOING ORDERS (order delay — 2 weeks)
+    </div>
+    {% if outgoing %}
+      {% for o in outgoing %}
+      <div class="pipeline-slot" style="margin-bottom:0.3rem; border-color:var(--accent)33;">
+        <span style="font-family:var(--font-mono); color:var(--accent); font-size:1rem;">{{ o.quantity }}</span>
+        <span style="color:var(--muted); font-size:0.75rem;">units ordered</span>
+        <span style="color:var(--text);">arrives upstream Week {{ o.arrives_on_week }}</span>
+        <span class="role-badge" style="background:rgba(245,200,66,0.12); color:var(--accent);">
+          {% if o.arrives_on_week <= session.current_week %}NOW{% else %}in {{ o.arrives_on_week|add:"-"|add:session.current_week }}w{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="color:var(--muted); font-size:0.82rem; padding:0.5rem 0;">No orders in transit.</div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div style="color:var(--muted); font-size:0.82rem;">Factory has no upstream supplier. Production enters pipeline directly.</div>
+  {% endif %}
+</div>
+
+<!-- History chart -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-title">My History</div>
+  <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+</div>
+
+<!-- History table -->
+<div class="card" style="margin-bottom:1.5rem; overflow-x:auto;">
+  <div class="card-title">Week Log</div>
+  <table style="width:100%; border-collapse:collapse; font-size:0.78rem; font-family:var(--font-mono);">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="text-align:left; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Wk</th>
+        <th style="text-align:right; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Inv</th>
+        <th style="text-align:right; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Bklg</th>
+        <th style="text-align:right; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Ordered</th>
+        <th style="text-align:right; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Rcvd</th>
+        <th style="text-align:right; padding:.3rem .5rem; color:var(--muted); font-size:.7rem;">Cost</th>
+      </tr>
+    </thead>
+    <tbody id="history-tbody"></tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const H = {{ history|safe }};
+  const color = {
+    retailer:'#f5c842', wholesaler:'#3b82f6', distributor:'#a855f7', factory:'#22c55e'
+  }['{{ role }}'] || '#f5c842';
+
+  // Chart
+  const ctx = document.getElementById('myChart');
+  if(ctx && H.length){
+    new Chart(ctx, {
+      type:'line',
+      data:{
+        labels: H.map(h=>'W'+h.week),
+        datasets:[
+          {label:'Inventory', data:H.map(h=>h.inventory), borderColor:color, backgroundColor:color+'22', fill:true, tension:0.3, pointRadius:3},
+          {label:'Backlog',   data:H.map(h=>h.backlog),   borderColor:'#ef4444', backgroundColor:'transparent', tension:0.3, pointRadius:3},
+          {label:'Ordered',   data:H.map(h=>h.order_placed), borderColor:color+'88', backgroundColor:'transparent', tension:0.2, pointRadius:2, borderDash:[4,4]},
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#9ca3af', font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:'#6b7280',font:{size:10}}, grid:{color:'#2a2f3d'}},
+          y:{ticks:{color:'#6b7280',font:{size:10}}, grid:{color:'#2a2f3d'}},
+        }
+      }
+    });
+  }
+
+  // History table
+  const tbody = document.getElementById('history-tbody');
+  H.forEach(h=>{
+    const inv_cls = h.inventory>0 ? 'color:var(--success)' : 'color:var(--muted)';
+    const blg_cls = h.backlog>0   ? 'color:var(--danger)'  : 'color:var(--success)';
+    tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+      <td style="padding:.3rem .5rem; color:var(--muted)">${h.week}</td>
+      <td style="padding:.3rem .5rem; text-align:right; ${inv_cls}">${h.inventory}</td>
+      <td style="padding:.3rem .5rem; text-align:right; ${blg_cls}">${h.backlog}</td>
+      <td style="padding:.3rem .5rem; text-align:right">${h.order_placed}</td>
+      <td style="padding:.3rem .5rem; text-align:right">${h.shipment_received}</td>
+      <td style="padding:.3rem .5rem; text-align:right; color:var(--accent)">$${h.cost_this_week.toFixed(1)}</td>
+    </tr>`;
+  });
+});
+</script>
+{% endblock %}

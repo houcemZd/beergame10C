@@ -1,0 +1,76 @@
+{% extends "game/base.html" %}
+{% block title %}Rejoindre — {{ role|title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:440px; margin:4rem auto; text-align:center;">
+
+  <div style="font-size:4rem; margin-bottom:.75rem;">{{ emoji }}</div>
+  <h2 style="font-family:var(--font-mono); font-size:1.4rem; margin-bottom:.2rem;">
+    Vous êtes le <span class="role-badge role-{{ role }}" style="font-size:.95rem; padding:.3rem .8rem;">{{ role }}</span>
+  </h2>
+  <p style="color:var(--muted); font-size:.83rem; margin-bottom:1.75rem;">
+    {{ session.name }} &nbsp;·&nbsp; {{ session.max_weeks }} semaines
+  </p>
+
+  <div class="card" style="text-align:left;">
+
+    {% if already_claimed %}
+    <!-- Fast rejoin — user already owns this role -->
+    <div style="text-align:center; padding:.5rem 0 1rem;">
+      <div style="font-size:1.5rem; margin-bottom:.4rem;">👋</div>
+      <div style="font-family:var(--font-mono); color:var(--success); font-size:.95rem; margin-bottom:.25rem;">
+        Ce rôle vous appartient déjà
+      </div>
+      <div style="color:var(--muted); font-size:.78rem; margin-bottom:1.25rem;">
+        Rejoignez directement la partie.
+      </div>
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="name" value="{{ default_name }}" />
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem;">
+        Rejoindre la partie →
+      </button>
+    </form>
+
+    {% else %}
+    <!-- First join — enter name -->
+    <div class="card-title" style="margin-bottom:1rem;">Entrez votre nom pour rejoindre</div>
+    <form method="POST">
+      {% csrf_token %}
+      <div style="margin-bottom:1.1rem;">
+        <input type="text" name="name"
+               placeholder="Votre prénom (ex. Alice)"
+               autofocus maxlength="50"
+               value="{{ default_name }}"
+               style="font-size:1rem; padding:.75rem 1rem;" />
+      </div>
+
+      <!-- Role description -->
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.85rem; margin-bottom:1.1rem; font-size:.8rem; color:var(--muted);">
+        {% if role == 'customer' %}
+          👤 <strong style="color:var(--text)">Client Final :</strong> Vous passez des commandes chaque semaine. Votre comportement déclenche l'effet coup de fouet.
+        {% elif role == 'retailer' %}
+          🛒 <strong style="color:var(--text)">Détaillant :</strong> Vous servez le client. Vous seul voyez la demande réelle. Vos commandes remontent vers le Grossiste.
+        {% elif role == 'wholesaler' %}
+          🏪 <strong style="color:var(--text)">Grossiste :</strong> Vous approvisionnez le Détaillant et commandez au Distributeur. La demande réelle vous est cachée.
+        {% elif role == 'distributor' %}
+          🚚 <strong style="color:var(--text)">Distributeur :</strong> Vous approvisionnez le Grossiste et commandez à l'Usine. Deux maillons vous séparent du client.
+        {% elif role == 'factory' %}
+          🏭 <strong style="color:var(--text)">Usine :</strong> Vous produisez les marchandises. Délai de production : <strong style="color:var(--text)">2 semaines</strong>. Pas de fournisseur amont.
+        {% endif %}
+      </div>
+
+      <div style="background:rgba(245,200,66,.07); border:1px solid rgba(245,200,66,.2); border-radius:8px; padding:.7rem; margin-bottom:1.1rem; font-size:.76rem; color:var(--muted);">
+        ⚠️ <strong style="color:var(--text)">Rappel :</strong> Délais commandes et livraisons = <strong style="color:var(--text)">2 semaines</strong>. Ne paniquez pas !
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem;">
+        Rejoindre la partie →
+      </button>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

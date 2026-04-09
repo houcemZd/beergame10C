@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Supply Chain Live View</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #080c14; }
+canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+let W, H;
+
+// ── Palette ──────────────────────────────────────────────────────────────────
+const P = {
+  sky1: '#06090f', sky2: '#0d1a2e',
+  water: '#0a1628', waterShimmer: '#1a3060',
+  road: '#12151d', roadLine: '#2a3040', roadEdge: '#1a1e28',
+  ground: '#0c0f16',
+  retailer: '#f5c842', wholesaler: '#3b82f6',
+  distributor: '#a855f7', factory: '#22c55e',
+  muted: '#6b7280', text: '#e8eaf0', dim: '#2a2f3d',
+};
+
+// Role config
+const ROLES = ['retailer','wholesaler','distributor','factory'];
+const EMOJIS = {retailer:'🛒',wholesaler:'🏪',distributor:'🚚',factory:'🏭'};
+const NAMES = {retailer:'RETAILER',wholesaler:'WHOLESALER',distributor:'DISTRIBUTOR',factory:'FACTORY'};
+const ROLE_COLOR = {retailer:P.retailer,wholesaler:P.wholesaler,distributor:P.distributor,factory:P.factory};
+
+// ── State ────────────────────────────────────────────────────────────────────
+let gameState = {
+  week: 0, players: {
+    retailer:{inventory:12,backlog:0}, wholesaler:{inventory:12,backlog:0},
+    distributor:{inventory:12,backlog:0}, factory:{inventory:12,backlog:0},
+  }, pipeline: []
+};
+let nodes = [], vehicles = [], particles = [], clouds = [], stars = [];
+let t = 0, lastTs = 0, demoTimer = 0, demoWeek = 0;
+
+window.addEventListener('message', e => {
+  if (e.data?.type === 'game_state') {
+    gameState = e.data.state;
+    gameState.pipeline?.forEach(p => spawnVehicle(p));
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  W = C.width  = C.offsetWidth;
+  H = C.height = C.offsetHeight;
+
+  const mx = W * 0.10, spacing = (W - mx * 2) / 3;
+  const nodeY = H * 0.38;
+  nodes = ROLES.map((role, i) => ({
+    role, x: mx + i * spacing, y: nodeY,
+    color: ROLE_COLOR[role], pulse: 0, pulseR: 0,
+  }));
+
+  // Static stars
+  stars = Array.from({length: 120}, () => ({
+    x: Math.random() * W, y: Math.random() * H * 0.45,
+    r: Math.random() * 1.2, twinkle: Math.random() * Math.PI * 2,
+    speed: 0.5 + Math.random() * 1.5,
+  }));
+
+  // Clouds
+  clouds = Array.from({length: 5}, (_, i) => ({
+    x: i * (W / 5) + Math.random() * 100,
+    y: 30 + Math.random() * 60,
+    w: 100 + Math.random() * 80,
+    speed: 0.015 + Math.random() * 0.01,
+    opacity: 0.03 + Math.random() * 0.05,
+  }));
+
+  particles = [];
+  vehicles  = [];
+}
+
+// ── Vehicles ─────────────────────────────────────────────────────────────────
+function spawnVehicle(p) {
+  const fromNode = nodes.find(n => n.role === (p.from || 'factory'));
+  const toNode   = nodes.find(n => n.role === (p.to   || 'retailer'));
+  if (!fromNode || !toNode) return;
+  const isTruck = p.type !== 'ship';
+  vehicles.push({
+    fromRole: p.from || 'factory',
+    toRole:   p.to   || 'retailer',
+    qty:      p.qty  || 4,
+    type:     p.type || 'truck',
+    color:    ROLE_COLOR[p.from] || P.factory,
+    progress: 0,
+    speed:    isTruck ? (0.0008 + Math.random() * 0.0004) : (0.0005 + Math.random() * 0.0002),
+    bob:      Math.random() * Math.PI * 2,
+    done:     false,
+    // truck wobble
+    wobble: 0, wobbleV: 0,
+  });
+}
+
+function autoSpawn() {
+  const pairs = [
+    ['factory','distributor','truck'],
+    ['distributor','wholesaler','ship'],
+    ['wholesaler','retailer','truck'],
+  ];
+  const [from, to, type] = pairs[demoWeek % pairs.length];
+  spawnVehicle({from, to, qty: 4 + Math.floor(Math.random()*8), type});
+  // Occasionally extra vehicle
+  if (Math.random() > 0.5) {
+    const [f2, t2, tp2] = pairs[Math.floor(Math.random()*pairs.length)];
+    spawnVehicle({from:f2, to:t2, qty:4+Math.floor(Math.random()*6), type:tp2});
+  }
+  demoWeek++;
+}
+
+// ── Particles ─────────────────────────────────────────────────────────────────
+function burst(x, y, color, n=12) {
+  for (let i = 0; i < n; i++) {
+    const a = (Math.PI*2*i/n) + Math.random()*0.5;
+    const spd = 1.5 + Math.random()*2.5;
+    particles.push({
+      x, y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd,
+      life: 1, color, r: 1.5 + Math.random()*2.5,
+    });
+  }
+}
+
+// ── Background ────────────────────────────────────────────────────────────────
+function drawBg() {
+  // Sky gradient
+  const sg = ctx.createLinearGradient(0,0,0,H*0.5);
+  sg.addColorStop(0, P.sky1); sg.addColorStop(1, P.sky2);
+  ctx.fillStyle = sg; ctx.fillRect(0,0,W,H);
+
+  // Stars
+  stars.forEach(s => {
+    const bright = 0.3 + 0.3 * Math.sin(t * s.speed + s.twinkle);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${bright})`; ctx.fill();
+  });
+
+  // Clouds
+  clouds.forEach(cl => {
+    cl.x = (cl.x + cl.speed) % (W + 200);
+    ctx.save(); ctx.globalAlpha = cl.opacity;
+    ctx.fillStyle = '#c8d8f0';
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.arc(cl.x + i*cl.w/5, cl.y + Math.sin(i)*8, cl.w/6 + i*4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Horizon glow
+  const hg = ctx.createLinearGradient(0,H*0.40,0,H*0.52);
+  hg.addColorStop(0,'rgba(59,130,246,0.0)');
+  hg.addColorStop(1,'rgba(59,130,246,0.04)');
+  ctx.fillStyle = hg; ctx.fillRect(0,H*0.40,W,H*0.12);
+}
+
+function drawWater() {
+  const wy = H * 0.51, wh = H * 0.10;
+  // Base
+  ctx.fillStyle = P.water; ctx.fillRect(0, wy, W, wh);
+  // Shimmer waves
+  for (let i = 0; i < 8; i++) {
+    const wx = ((t * 30 + i * W/8)) % (W + 80) - 40;
+    const wvy = wy + 8 + Math.sin(t + i) * 4;
+    ctx.strokeStyle = `rgba(59,130,246,${0.05 + 0.04*Math.sin(t+i)})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(wx, wvy);
+    ctx.bezierCurveTo(wx+20, wvy-4, wx+40, wvy+4, wx+60, wvy);
+    ctx.stroke();
+  }
+  // Reflection of nodes
+  nodes.forEach(n => {
+    const rg = ctx.createRadialGradient(n.x, wy, 0, n.x, wy, 80);
+    rg.addColorStop(0, n.color+'11'); rg.addColorStop(1,'transparent');
+    ctx.fillStyle = rg; ctx.fillRect(n.x-80, wy, 160, wh);
+  });
+  // Shore lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,wy); ctx.lineTo(W,wy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,wy+wh); ctx.lineTo(W,wy+wh); ctx.stroke();
+}
+
+function drawRoad() {
+  const ry = H * 0.63, rh = H * 0.08;
+  // Road surface
+  ctx.fillStyle = P.road; ctx.fillRect(0, ry, W, rh);
+  // Edge highlights
+  ctx.fillStyle = P.roadEdge; ctx.fillRect(0,ry,W,3);
+  ctx.fillStyle = P.roadEdge; ctx.fillRect(0,ry+rh-3,W,3);
+  // Center dashes
+  const dashW = 32, gapW = 20, total = dashW + gapW;
+  const offset = (t * 25) % total;
+  ctx.fillStyle = 'rgba(245,200,66,0.2)';
+  for (let x = -total + offset; x < W + total; x += total) {
+    ctx.fillRect(x, ry + rh/2 - 1.5, dashW, 3);
+  }
+}
+
+function drawGround() {
+  ctx.fillStyle = P.ground;
+  ctx.fillRect(0, H*0.71, W, H*0.29);
+}
+
+// ── Connection paths ─────────────────────────────────────────────────────────
+function drawConnections() {
+  // Draw faint arcs between nodes — both road and water level
+  for (let i = 0; i < nodes.length-1; i++) {
+    const a = nodes[i], b = nodes[i+1];
+    // Aerial connector
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1; ctx.setLineDash([6,10]);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y+52); ctx.lineTo(b.x,b.y+52); ctx.stroke();
+    ctx.setLineDash([]);
+    // Drop to ground
+    [a.x, b.x].forEach(nx => {
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth=1; ctx.setLineDash([2,8]);
+      ctx.beginPath(); ctx.moveTo(nx,a.y+52); ctx.lineTo(nx,H*0.63); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+}
+
+// ── Node (warehouse building) ─────────────────────────────────────────────────
+function drawNode(node) {
+  const {x, y, color, role, pulse} = node;
+  const state = gameState.players[role] || {};
+  const inv = state.inventory ?? 0;
+  const blg = state.backlog  ?? 0;
+
+  // Pulse ring
+  if (pulse > 0) {
+    node.pulseR += 1.2;
+    ctx.beginPath(); ctx.arc(x, y, 42 + node.pulseR, 0, Math.PI*2);
+    ctx.strokeStyle = color + Math.floor(pulse*200).toString(16).padStart(2,'0');
+    ctx.lineWidth = 2; ctx.stroke();
+    node.pulse  = Math.max(0, pulse - 0.018);
+    if (node.pulse === 0) node.pulseR = 0;
+  }
+
+  // Building shadow
+  ctx.save();
+  ctx.shadowColor = color + '44'; ctx.shadowBlur = pulse > 0 ? 30 : 16;
+
+  // Building body (warehouse shape)
+  ctx.fillStyle = '#161920';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+
+  // Main rect
+  rrect(x-28, y-32, 56, 54, 6);
+  ctx.fill(); ctx.stroke();
+
+  // Roof triangle
+  ctx.beginPath();
+  ctx.moveTo(x-32, y-32); ctx.lineTo(x, y-52); ctx.lineTo(x+32, y-32);
+  ctx.closePath();
+  ctx.fillStyle = '#0d0f14'; ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+  ctx.restore();
+
+  // Door
+  ctx.fillStyle = color + '33';
+  rrect(x-9, y+4, 18, 18, 3); ctx.fill();
+  ctx.strokeStyle = color+'66'; ctx.lineWidth=1; ctx.stroke();
+
+  // Windows
+  ctx.fillStyle = color + '22';
+  [[-17,-18],[7,-18]].forEach(([dx,dy]) => {
+    rrect(x+dx, y+dy, 10, 10, 2); ctx.fill();
+    ctx.strokeStyle = color+'44'; ctx.lineWidth=0.5; ctx.stroke();
+  });
+
+  // Emoji icon on roof
+  ctx.font = '15px serif'; ctx.textAlign = 'center';
+  ctx.fillText(EMOJIS[role], x, y-36);
+
+  // Role label
+  ctx.font = `bold 9px 'Space Mono', monospace`;
+  ctx.fillStyle = color; ctx.textAlign = 'center';
+  ctx.fillText(NAMES[role], x, y + 38);
+
+  // Inventory bar
+  const bw = 70, bh = 7, bx = x - bw/2, by = y + 46;
+  ctx.fillStyle = '#1e222d'; rrect(bx,by,bw,bh,3); ctx.fill();
+  const fillPct = Math.min(1, inv / 20);
+  const fc = inv > 8 ? '#22c55e' : inv > 3 ? '#f5c842' : '#ef4444';
+  ctx.fillStyle = fc;
+  rrect(bx,by,Math.max(4,bw*fillPct),bh,3); ctx.fill();
+
+  // Stats
+  ctx.font = '8px monospace'; ctx.textAlign = 'left';
+  ctx.fillStyle = inv>0 ? '#22c55e' : '#ef4444';
+  ctx.fillText(`INV:${inv}`, bx, by+20);
+  ctx.fillStyle = blg>0 ? '#ef4444' : '#6b7280';
+  ctx.fillText(`BLG:${blg}`, bx+38, by+20);
+}
+
+// ── Truck ─────────────────────────────────────────────────────────────────────
+function drawTruck(v, rx, ry) {
+  const {color, qty} = v;
+  const dir = v.tx > v.fromX ? 1 : -1;
+
+  ctx.save(); ctx.translate(rx, ry);
+  if (dir < 0) ctx.scale(-1,1);
+  ctx.shadowColor = color; ctx.shadowBlur = 10;
+
+  // Trailer
+  ctx.fillStyle = '#1a1e28';
+  rrect(-4,-11,36,20,3); ctx.fill();
+  ctx.strokeStyle = color+'88'; ctx.lineWidth=1; ctx.stroke();
+
+  // Cargo stripes
+  for (let i=0;i<3;i++) {
+    ctx.fillStyle = color + '33';
+    rrect(1+i*11,-9,8,16,1); ctx.fill();
+  }
+
+  // Cab
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 14;
+  rrect(-22,-11,18,20,3); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Cab window
+  ctx.fillStyle = '#0d1520';
+  rrect(-19,-9,12,9,2); ctx.fill();
+  ctx.strokeStyle = color+'88'; ctx.lineWidth=0.5; ctx.stroke();
+
+  // Wheels (4)
+  ctx.shadowBlur = 0;
+  [[-16,10],[-6,10],[10,10],[24,10]].forEach(([wx,wy]) => {
+    ctx.beginPath(); ctx.arc(wx,wy,5,0,Math.PI*2);
+    ctx.fillStyle='#222'; ctx.fill();
+    ctx.strokeStyle='#444'; ctx.lineWidth=1; ctx.stroke();
+    // Hub
+    ctx.beginPath(); ctx.arc(wx,wy,2,0,Math.PI*2);
+    ctx.fillStyle=color+'88'; ctx.fill();
+  });
+
+  // Headlight
+  ctx.beginPath(); ctx.arc(-24,-3,3,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,240,180,0.6)'; ctx.fill();
+  // Headlight beam
+  const beamGrad = ctx.createLinearGradient(-27,-3,-70,-3);
+  beamGrad.addColorStop(0,'rgba(255,240,160,0.15)');
+  beamGrad.addColorStop(1,'rgba(255,240,160,0)');
+  ctx.fillStyle=beamGrad;
+  ctx.beginPath();
+  ctx.moveTo(-27,-3); ctx.lineTo(-70,-14); ctx.lineTo(-70,8); ctx.closePath();
+  ctx.fill();
+
+  // Exhaust smoke
+  if (Math.random()>0.75) {
+    particles.push({
+      x:rx+dir*(-30), y:ry-11,
+      vx:-dir*0.4+Math.random()*0.4,
+      vy:-1.2-Math.random()*0.6,
+      life:1, color:'rgba(200,210,220,0.35)', r:2+Math.random()*2,
+    });
+  }
+
+  // Qty badge
+  ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.arc(18,-16,9,0,Math.PI*2);
+  ctx.fillStyle='#0d0f14'; ctx.fill();
+  ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+  ctx.font='bold 8px monospace'; ctx.textAlign='center';
+  ctx.fillStyle=color; ctx.fillText(qty,18,-13);
+
+  ctx.restore();
+}
+
+// ── Ship ──────────────────────────────────────────────────────────────────────
+function drawShip(v, sx, sy) {
+  const {color, qty} = v;
+  ctx.save(); ctx.translate(sx, sy);
+  ctx.shadowColor = color; ctx.shadowBlur = 14;
+
+  // Wake trail
+  ctx.strokeStyle = 'rgba(100,160,255,0.12)';
+  ctx.lineWidth = 3; ctx.setLineDash([4,6]);
+  ctx.beginPath(); ctx.moveTo(-60,6); ctx.lineTo(-30,4); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Hull
+  ctx.fillStyle = '#1a2438';
+  ctx.beginPath();
+  ctx.moveTo(-38, 0);
+  ctx.bezierCurveTo(-44,12,-30,18,0,20);
+  ctx.bezierCurveTo(30,18,44,12,38,0);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Waterline stripe
+  ctx.strokeStyle = color+'44'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(-36,6); ctx.bezierCurveTo(-20,10,20,10,36,6); ctx.stroke();
+
+  // Superstructure
+  ctx.fillStyle='#121828';
+  rrect(-12,-22,28,22,4); ctx.fill();
+  ctx.strokeStyle=color+'66'; ctx.lineWidth=1; ctx.stroke();
+
+  // Bridge windows
+  ctx.fillStyle=color+'33';
+  [[-9,-18],[3,-18],[-9,-9],[3,-9]].forEach(([wx,wy])=>{
+    rrect(wx,wy,8,6,1); ctx.fill();
+  });
+
+  // Containers on deck
+  const cColors=[color,'#3b82f6','#a855f7','#22c55e','#ef4444'];
+  for(let i=0;i<4;i++){
+    ctx.fillStyle=cColors[i%cColors.length]+'cc';
+    rrect(-38+i*13+2,-4,12,10,1); ctx.fill();
+    ctx.strokeStyle=cColors[i%cColors.length]+'55'; ctx.lineWidth=0.5; ctx.stroke();
+  }
+
+  // Mast + flag
+  ctx.strokeStyle=color+'66'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(10,-22); ctx.lineTo(10,-38); ctx.stroke();
+  ctx.fillStyle=color+'aa';
+  ctx.beginPath(); ctx.moveTo(10,-38); ctx.lineTo(22,-34); ctx.lineTo(10,-30); ctx.closePath(); ctx.fill();
+
+  // Funnel
+  ctx.fillStyle='#222'; rrect(-3,-26,8,8,2); ctx.fill();
+  ctx.strokeStyle=color+'44'; ctx.lineWidth=1; ctx.stroke();
+  // Smoke from funnel
+  if(Math.random()>0.6){
+    particles.push({x:sx+1,y:sy-28,vx:(Math.random()-0.5)*0.4,vy:-1-Math.random(),life:1,color:'rgba(180,190,200,0.25)',r:2+Math.random()*2});
+  }
+
+  // Bow wave
+  ctx.strokeStyle='rgba(120,170,255,0.2)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(38,2); ctx.quadraticCurveTo(50,6,60,10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(38,6); ctx.quadraticCurveTo(52,10,64,16); ctx.stroke();
+
+  // Qty badge
+  ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.arc(0,-30,9,0,Math.PI*2);
+  ctx.fillStyle='#0d0f14'; ctx.fill();
+  ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+  ctx.font='bold 8px monospace'; ctx.textAlign='center';
+  ctx.fillStyle=color; ctx.fillText(qty,0,-27);
+
+  ctx.restore();
+}
+
+// ── Vehicle update + render ───────────────────────────────────────────────────
+function updateVehicles(dt) {
+  vehicles = vehicles.filter(v => !v.done);
+  vehicles.forEach(v => {
+    const fromNode = nodes.find(n=>n.role===v.fromRole);
+    const toNode   = nodes.find(n=>n.role===v.toRole);
+    if(!fromNode||!toNode) return;
+    v.fromX = fromNode.x; v.fromY = fromNode.y;
+    v.tx = toNode.x; v.ty = toNode.y;
+    v.progress = Math.min(1, v.progress + v.speed * dt);
+
+    const isTruck = v.type !== 'ship';
+    const rx = fromNode.x + (toNode.x - fromNode.x) * v.progress;
+    const roadY = H * 0.63 + H*0.04 + Math.sin(t*3+v.bob)*1.5;
+    const waterY = H * 0.56 + Math.sin(t*1.2+v.bob)*3;
+    const vy = isTruck ? roadY : waterY;
+
+    if(v.progress>=1){
+      v.done=true;
+      burst(toNode.x, toNode.y, v.color, 14);
+      toNode.pulse=1; toNode.pulseR=0;
+      return;
+    }
+
+    if(isTruck) drawTruck(v, rx, vy);
+    else        drawShip(v, rx, vy);
+  });
+}
+
+// ── Particles ─────────────────────────────────────────────────────────────────
+function updateParticles() {
+  particles = particles.filter(p=>p.life>0.05);
+  particles.forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r*p.life, 0, Math.PI*2);
+    const c = p.color;
+    ctx.fillStyle = c.startsWith('rgba')
+      ? c.replace(/[\d.]+\)$/,`${p.life.toFixed(2)})`)
+      : c + Math.floor(p.life*255).toString(16).padStart(2,'0');
+    ctx.fill();
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.04; // gravity
+    p.life-=0.018;
+  });
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────────────
+function drawHUD() {
+  const w = gameState.week || demoWeek;
+  // Week chip
+  ctx.fillStyle='rgba(13,15,20,0.75)';
+  rrect(14,14,112,30,6); ctx.fill();
+  ctx.strokeStyle=P.dim; ctx.lineWidth=1; ctx.stroke();
+  ctx.font='bold 10px monospace'; ctx.textAlign='left';
+  ctx.fillStyle=P.retailer; ctx.fillText(`WEEK ${w}`, 24, 33);
+
+  // Vehicle legend
+  const legends=[['🚛','TRUCK (orders)','#e8eaf0'],['🚢','SHIP (bulk)','#3b82f6']];
+  legends.forEach(([em,lb,cl],i)=>{
+    ctx.fillStyle='rgba(13,15,20,0.6)';
+    rrect(14+i*150, H-38, 140, 26, 5); ctx.fill();
+    ctx.strokeStyle=P.dim; ctx.lineWidth=1; ctx.stroke();
+    ctx.font='10px serif'; ctx.fillText(em, 24+i*150, H-20);
+    ctx.font='8px monospace'; ctx.fillStyle=cl;
+    ctx.fillText(lb, 40+i*150, H-20);
+  });
+}
+
+// ── Util ──────────────────────────────────────────────────────────────────────
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+function loop(ts) {
+  const dt = ts - lastTs; lastTs = ts; t = ts / 1000;
+
+  // Resize if needed
+  if (C.offsetWidth !== W || C.offsetHeight !== H) init();
+
+  ctx.clearRect(0,0,W,H);
+
+  drawBg();
+  drawWater();
+  drawRoad();
+  drawGround();
+  drawConnections();
+  nodes.forEach(drawNode);
+  updateVehicles(dt);
+  updateParticles();
+  drawHUD();
+
+  // Demo auto-spawn
+  demoTimer += dt;
+  if(demoTimer > 2800){ demoTimer=0; autoSpawn(); demoWeek++; }
+
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', init);
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

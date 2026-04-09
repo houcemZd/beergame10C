@@ -1,0 +1,74 @@
+{% extends "game/base.html" %}
+{% block title %}New Game{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 3rem auto;">
+  <h2 style="font-family: var(--font-mono); font-size: 1.4rem; margin-bottom: 0.5rem;">
+    New <span style="color: var(--accent)">Session</span>
+  </h2>
+  <p class="text-muted mb-2" style="font-size:0.875rem;">Configure and launch a new Beer Game simulation.</p>
+
+  <div class="card">
+    <form method="POST">
+      {% csrf_token %}
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display:block; font-size:0.8rem; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:.08em;">Session Name</label>
+        <input type="text" name="name" value="Beer Game #1" />
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display:block; font-size:0.8rem; color:var(--muted); margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:.08em;">Game Mode</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+          <div id="card-single" onclick="selectMode('single')" style="cursor:pointer; border:2px solid var(--accent); border-radius:10px; padding:1rem; text-align:center; transition:all .15s;">
+            <div style="font-size:1.5rem;">🖥️</div>
+            <div style="font-weight:600; margin-top:0.3rem; font-size:0.9rem;">Single Player</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:0.2rem;">You control all 4 roles</div>
+          </div>
+          <div id="card-multi" onclick="selectMode('multi')" style="cursor:pointer; border:2px solid var(--border); border-radius:10px; padding:1rem; text-align:center; transition:all .15s;">
+            <div style="font-size:1.5rem;">👥</div>
+            <div style="font-weight:600; margin-top:0.3rem; font-size:0.9rem;">Multiplayer</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:0.2rem;">4 players, real-time</div>
+          </div>
+        </div>
+        <input type="hidden" name="mode" id="mode-input" value="single" />
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display:block; font-size:0.8rem; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:.08em;">Number of Weeks</label>
+        <select name="max_weeks">
+          <option value="12">12 weeks (short)</option>
+          <option value="20" selected>20 weeks (standard)</option>
+          <option value="30">30 weeks (long)</option>
+          <option value="40">40 weeks (extended)</option>
+        </select>
+      </div>
+
+      <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:0.75rem;">Supply Chain Roles</div>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;"><span class="role-badge role-retailer">Retailer</span><span style="font-size:0.8rem; color:var(--muted);">Serves end customers. Demand hidden.</span></div>
+          <div style="display:flex; align-items:center; gap:0.75rem;"><span class="role-badge role-wholesaler">Wholesaler</span><span style="font-size:0.8rem; color:var(--muted);">Supplies the retailer.</span></div>
+          <div style="display:flex; align-items:center; gap:0.75rem;"><span class="role-badge role-distributor">Distributor</span><span style="font-size:0.8rem; color:var(--muted);">Supplies the wholesaler.</span></div>
+          <div style="display:flex; align-items:center; gap:0.75rem;"><span class="role-badge role-factory">Factory</span><span style="font-size:0.8rem; color:var(--muted);">Produces goods. No upstream.</span></div>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,200,66,.07); border:1px solid rgba(245,200,66,.2); border-radius:8px; padding:0.75rem; margin-bottom:1.5rem; font-size:0.8rem; color:var(--muted);">
+        💡 Starts with <strong style="color:var(--text)">12 units</strong> inventory. Delays = <strong style="color:var(--text)">2 weeks</strong>. Holding = <strong style="color:var(--text)">$0.50</strong>, backlog = <strong style="color:var(--text)">$1.00</strong> per unit/week.
+      </div>
+
+      <div style="display:flex; gap:0.75rem;">
+        <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">🚀 Launch Game</button>
+        <a href="{% url 'home' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function selectMode(mode) {
+  document.getElementById('mode-input').value = mode;
+  document.getElementById('card-single').style.borderColor = mode==='single' ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('card-multi').style.borderColor  = mode==='multi'  ? 'var(--accent)' : 'var(--border)';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,421 @@
+{% extends "game/base.html" %}
+{% block title %}Lobby — {{ session.name }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.lobby-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+@media (max-width:860px) { .lobby-grid { grid-template-columns:1fr; } }
+
+/* ── Role cards ──────────────────────────────────────────────────────────── */
+.role-card {
+  border:2px solid var(--border); border-radius:14px; padding:1.1rem 1.2rem;
+  background:var(--surface2); transition:border-color .25s, background .25s;
+  position:relative; overflow:hidden;
+}
+.role-card.joined  { border-color:var(--success); background:rgba(34,197,94,.04); }
+.role-card.joined::after {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at top left,rgba(34,197,94,.07),transparent 60%);
+  pointer-events:none;
+}
+
+.rc-top { display:flex; align-items:flex-start; gap:.85rem; margin-bottom:.7rem; }
+.rc-emoji { font-size:1.9rem; line-height:1; flex-shrink:0; margin-top:.1rem; }
+.rc-info  { flex:1; min-width:0; }
+.rc-title { font-family:var(--font-mono); font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.rc-desc  { font-size:.72rem; color:var(--muted); margin-top:.2rem; line-height:1.45; }
+.rc-dot   { width:9px; height:9px; border-radius:50%; background:var(--border); flex-shrink:0; margin-top:.45rem; transition:background .3s,box-shadow .3s; }
+.rc-dot.on  { background:var(--success); box-shadow:0 0 7px var(--success); }
+.rc-dot.off { background:var(--accent);  animation:blink 1.6s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.35} }
+
+/* Name tag that slides in when player joins */
+.rc-name-tag {
+  display:inline-flex; align-items:center; gap:.3rem;
+  padding:.18rem .55rem; border-radius:999px; font-size:.7rem; font-weight:700;
+  font-family:var(--font-mono); color:var(--success);
+  background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3);
+  margin-bottom:.55rem; opacity:0; transform:translateY(3px);
+  transition:opacity .3s,transform .3s;
+}
+.rc-name-tag.show { opacity:1; transform:none; }
+
+/* Link row */
+.link-row { display:flex; align-items:center; gap:.45rem; flex-wrap:nowrap; }
+.link-pill {
+  flex:1; min-width:0; font-family:var(--font-mono); font-size:.65rem;
+  color:var(--muted); background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; padding:.3rem .6rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.btn-lnk {
+  flex-shrink:0; border-radius:6px; padding:.3rem .7rem; font-size:.72rem;
+  font-weight:700; cursor:pointer; white-space:nowrap; border:1px solid var(--border);
+  background:var(--surface); color:var(--muted); transition:all .15s;
+  display:inline-flex; align-items:center; gap:.3rem; text-decoration:none;
+}
+.btn-lnk:hover      { border-color:var(--accent); color:var(--accent); text-decoration:none; }
+.btn-lnk.copied     { border-color:var(--success); color:var(--success); }
+.btn-lnk.btn-open   { background:var(--accent); color:#0d0f14; border-color:var(--accent); }
+.btn-lnk.btn-open:hover { background:#fdd835; color:#0d0f14; }
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
+.orb {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.28rem .7rem; border-radius:999px; font-size:.7rem; font-weight:600;
+  border:1px solid var(--border); color:var(--muted); transition:all .2s;
+}
+.orb.joined { border-color:var(--success); color:var(--success); background:rgba(34,197,94,.08); }
+
+/* ── Board preview ───────────────────────────────────────────────────────── */
+.lbp { display:flex; align-items:flex-end; gap:.3rem; overflow-x:auto; padding:.4rem 0 .6rem; }
+.lbp-col { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; min-width:60px; }
+.lbp-name { font-size:.55rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); white-space:nowrap; margin-bottom:2px; }
+.lbp-slot {
+  width:100%; border:1px solid var(--border); border-radius:4px;
+  background:var(--surface); text-align:center; padding:2px 3px;
+  font-family:var(--font-mono); font-size:.8rem; font-weight:800; color:var(--muted);
+  min-height:26px; display:flex; align-items:center; justify-content:center;
+}
+.lbp-slot.a { border-color:rgba(245,200,66,.4); background:rgba(245,200,66,.08); color:#ffd36a; }
+.lbp-slot.b { border-color:rgba(59,130,246,.4);  background:rgba(59,130,246,.08); color:#8ecbff; }
+.lbp-slot.inv {
+  border-width:2px; border-color:rgba(34,197,94,.45); background:rgba(34,197,94,.07);
+  color:var(--success); font-size:.9rem; min-height:32px;
+}
+.lbp-lbl { font-size:.48rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; text-align:center; line-height:1.2; }
+.lbp-arr { color:var(--muted); font-size:.65rem; padding-bottom:30px; flex-shrink:0; }
+
+/* ── QR overlay ──────────────────────────────────────────────────────────── */
+.qr-ov { display:none; position:fixed; inset:0; z-index:500; background:rgba(13,15,20,.8); backdrop-filter:blur(3px); align-items:center; justify-content:center; }
+.qr-ov.open { display:flex; }
+.qr-box { background:#fff; border-radius:14px; padding:1.4rem 1.4rem 1rem; text-align:center; animation:popIn .2s ease; }
+@keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+.qr-title { font-size:.8rem; font-weight:700; color:#0d0f14; margin-bottom:.75rem; font-family:monospace; }
+.qr-close { margin-top:.75rem; width:100%; background:#0d0f14; color:#fff; border:none; border-radius:8px; padding:.5rem; font-size:.82rem; cursor:pointer; font-weight:600; }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#tcont { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.4rem; z-index:9999; pointer-events:none; }
+.t { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .85rem; font-size:.78rem; color:var(--text); animation:sin .2s ease,sout .3s ease 3s forwards; max-width:260px; }
+.t.ok { border-color:var(--success); }
+@keyframes sin  { from{transform:translateX(110%);opacity:0} to{transform:none;opacity:1} }
+@keyframes sout { to{opacity:0} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="tcont"></div>
+
+<!-- QR overlay -->
+<div class="qr-ov" id="qr-ov" onclick="closeQR()">
+  <div class="qr-box" onclick="event.stopPropagation()">
+    <div class="qr-title" id="qr-title">Scan to join</div>
+    <div id="qr-el"></div>
+    <button class="qr-close" onclick="closeQR()">✕ Close</button>
+  </div>
+</div>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<div style="text-align:center; padding:1.75rem 0 1.5rem;">
+  <div style="font-family:var(--font-mono); font-size:.7rem; color:var(--muted); letter-spacing:.18em; text-transform:uppercase; margin-bottom:.4rem;">Multiplayer Lobby</div>
+  <h2 style="font-family:var(--font-mono); font-size:1.9rem; margin-bottom:.5rem;">{{ session.name }}</h2>
+  <div style="display:flex; align-items:center; justify-content:center; gap:.75rem; flex-wrap:wrap;">
+    <div class="week-badge"><strong>{{ session.max_weeks }}</strong> weeks · Week 0 / {{ session.max_weeks }}</div>
+    <div style="font-size:.75rem; color:var(--muted);">Send each link to a different player</div>
+  </div>
+</div>
+
+<!-- ── Status bar ─────────────────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.4rem; padding:.8rem 1.2rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+    <div style="display:flex; gap:.4rem; flex-wrap:wrap;" id="orb-row">
+      {% for link in role_links %}
+      <div class="orb" id="orb-{{ link.role }}">{{ link.emoji }} {{ link.role|title }}</div>
+      {% endfor %}
+    </div>
+    <div id="status-msg" style="font-family:var(--font-mono); font-size:.82rem; color:var(--muted);">
+      Waiting for players…
+    </div>
+  </div>
+</div>
+
+<div class="lobby-grid">
+
+<!-- ══ LEFT: Role invite cards ══════════════════════════════════════════════ -->
+<div style="display:flex; flex-direction:column; gap:.85rem;">
+
+  <div style="font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em;">Player Invite Links</div>
+
+  {% for link in role_links %}
+  <div class="role-card" id="card-{{ link.role }}">
+
+    <div class="rc-top">
+      <span class="rc-emoji">{{ link.emoji }}</span>
+      <div class="rc-info">
+        <div class="rc-title">
+          {{ link.role|title }}
+          <span class="role-badge role-{{ link.role }}">{{ link.role }}</span>
+        </div>
+        <div class="rc-desc">
+          {% if link.role == 'customer' %}S'authentifie et passe commande sur la plateforme chaque semaine
+          {% elif link.role == 'retailer' %}Reçoit marchandises · livre client · passe commandes au Grossiste
+          {% elif link.role == 'wholesaler' %}Reçoit marchandises · livre Détaillant · passe commandes au Distributeur
+          {% elif link.role == 'distributor' %}Reçoit marchandises · livre Grossiste · passe commandes à l'Usine
+          {% elif link.role == 'factory' %}Reçoit demandes · livre Distributeur · lance production{% endif %}
+        </div>
+      </div>
+      <div class="rc-dot off" id="dot-{{ link.role }}"></div>
+    </div>
+
+    <!-- Player name (appears on join) -->
+    <div class="rc-name-tag" id="ntag-{{ link.role }}">
+      ✓ <span id="ntext-{{ link.role }}">Joined</span>
+    </div>
+
+    <!-- Link row — token stored as data attribute, no template interpolation in onclick -->
+    <div class="link-row">
+      <span class="link-pill" id="pill-{{ link.role }}">{{ link.url }}</span>
+      <button class="btn-lnk" id="bcopy-{{ link.role }}"
+              data-url="{{ link.url }}" data-role="{{ link.role }}"
+              onclick="doCopy(this)">📋 Copy</button>
+      <a class="btn-lnk btn-open"
+         href="{{ link.url }}"
+         target="_blank" rel="noopener noreferrer">↗ Open</a>
+      <button class="btn-lnk" data-url="{{ link.url }}" data-role="{{ link.role }}"
+              onclick="doQR(this)" title="QR Code">▣</button>
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- ══ RIGHT: Board preview + instructions ══════════════════════════════════ -->
+<div>
+
+  <!-- Board preview -->
+  <div class="card" style="margin-bottom:1.2rem;">
+    <div class="card-title" style="margin-bottom:.3rem;">Initial Board State</div>
+    <p style="font-size:.68rem; color:var(--muted); margin-bottom:.75rem;">
+      <span style="color:#ffd36a;">■</span> Orders placed &nbsp;
+      <span style="color:#8ecbff;">■</span> Shipping / Production delay &nbsp;
+      <span style="color:var(--success);">■</span> Inventory
+    </p>
+
+    <div class="lbp">
+      <!-- Customer column -->
+      <div class="lbp-col">
+        <div class="lbp-name">👤 Client</div>
+        <div class="lbp-slot a">—</div>
+        <div class="lbp-lbl">Commande</div>
+        <div style="flex:1; min-height:20px;"></div>
+        <div class="lbp-slot" style="opacity:.3;">—</div>
+        <div class="lbp-lbl">No stock</div>
+        <div class="lbp-slot" style="opacity:.3; margin-top:2px;">—</div>
+        <div class="lbp-lbl"></div>
+      </div>
+
+      <div class="lbp-arr">→</div>
+
+      {% for player in initial_players %}
+      {% with role=player.role %}
+
+      <div class="lbp-col">
+        <div class="lbp-name">
+          {% if role == 'retailer' %}🛒{% elif role == 'wholesaler' %}🏪{% elif role == 'distributor' %}🚚{% else %}🏭{% endif %}
+          {{ role|slice:":4"|upper }}
+        </div>
+
+        <!-- Orders placed / Production requests (top amber slots) -->
+        <div class="lbp-slot a">{{ initial_orders }}</div>
+        <div class="lbp-lbl">{% if role == 'factory' %}Prod req.{% else %}Orders placed{% endif %}</div>
+        <div class="lbp-slot a">{{ initial_orders }}</div>
+        <div class="lbp-lbl">{% if role == 'factory' %}Prod req.{% else %}Inc. orders{% endif %}</div>
+
+        <!-- Inventory -->
+        <div class="lbp-slot inv">{{ player.inventory }}</div>
+        <div class="lbp-lbl">Inventory</div>
+
+        <!-- Shipping / Production delay (bottom blue slots) -->
+        <div class="lbp-slot b" style="margin-top:2px;">{{ initial_ships }}</div>
+        <div class="lbp-lbl">{% if role == 'factory' %}Prod delay{% else %}Ship delay{% endif %}</div>
+        <div class="lbp-slot b">{{ initial_ships }}</div>
+        <div class="lbp-lbl">{% if role == 'factory' %}Prod delay{% else %}Ship delay{% endif %}</div>
+      </div>
+
+      {% if not forloop.last %}<div class="lbp-arr">⇄</div>{% endif %}
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Activity diagram summary -->
+  <div class="card" style="margin-bottom:1.2rem;">
+    <div class="card-title">Déroulement chaque semaine</div>
+    <div style="display:flex; flex-direction:column; gap:.55rem; margin-top:.3rem;">
+
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">1</span>
+        <span><strong style="color:var(--text);">Client Final</strong> — S'authentifie et passe commande sur la plateforme</span>
+      </div>
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--distributor-color); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">2</span>
+        <span><strong style="color:var(--text);">Réception marchandises</strong> — chaque acteur reçoit et confirme les livraisons entrantes → mise à jour stock</span>
+      </div>
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--wholesaler-color); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">3</span>
+        <span><strong style="color:var(--text);">Livraison aval</strong> — reçoit la demande client (incoming orders), stock suffisant ? → livrer ou créer backlog</span>
+      </div>
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">4</span>
+        <span><strong style="color:var(--text);">Passer commandes</strong> — remplit formulaire hebdomadaire (orders placed) vers fournisseur amont</span>
+      </div>
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--factory-color); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">★</span>
+        <span><strong style="color:var(--text);">Usine</strong> — reçoit ordre de fabrication → si &gt; 0, lancer production avec délai 2 semaines</span>
+      </div>
+      <div style="display:flex; gap:.7rem; align-items:flex-start; font-size:.78rem; color:var(--muted);">
+        <span style="color:var(--success); font-family:var(--font-mono); font-weight:800; flex-shrink:0; min-width:22px;">✓</span>
+        <span><strong style="color:var(--text);">Fin de semaine</strong> — chaque acteur clique <em>Prêt pour semaine suivante</em> → semaine avance quand tous prêts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo tip -->
+  <div style="background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.2); border-radius:10px; padding:.85rem 1rem; font-size:.76rem; color:var(--muted);">
+    🎯 <strong style="color:var(--text);">Demo:</strong> Cliquez <strong style="color:var(--text);">↗ Open</strong> sur chaque rôle pour ouvrir 5 onglets sur une seule machine. Les QR codes permettent de jouer depuis d'autres appareils sur le même réseau.
+  </div>
+
+</div>
+</div><!-- /.lobby-grid -->
+
+<div style="display:flex; gap:.75rem; justify-content:center; margin-top:2rem; padding-bottom:2rem;">
+  <a href="{% url 'home' %}" class="btn btn-ghost">← Sessions</a>
+</div>
+
+<script>
+const SESSION_ID = {{ session.id }};
+// Build role→url map from server-rendered data attributes (avoids template-in-JS issues)
+const ROLE_URLS = {};
+document.querySelectorAll('[id^="pill-"]').forEach(el => {
+  const role = el.id.replace('pill-', '');
+  ROLE_URLS[role] = el.textContent.trim();
+});
+
+// ── Polling ────────────────────────────────────────────────────────────────
+let poll = setInterval(fetchStatus, 2500);
+fetchStatus();
+
+async function fetchStatus() {
+  try {
+    const r = await fetch(`/game/${SESSION_ID}/lobby-status/`);
+    if (!r.ok) return;
+    const d = await r.json();
+    updateUI(d);
+    if (d.game_started) {
+      clearInterval(poll);
+      toast('🚀 Tous les joueurs sont prêts — jeu en cours!', 'ok');
+    }
+  } catch(e) {}
+}
+
+function updateUI(d) {
+  const joined    = d.joined    || [];
+  const connected = d.connected || [];
+  let count = 0;
+
+  Object.keys(ROLE_URLS).forEach(role => {
+    const isIn = joined.includes(role) || connected.includes(role);
+    if (isIn) count++;
+
+    // Card
+    const card = document.getElementById('card-' + role);
+    if (card) card.classList.toggle('joined', isIn);
+
+    // Dot
+    const dot = document.getElementById('dot-' + role);
+    if (dot) dot.className = 'rc-dot ' + (isIn ? 'on' : 'off');
+
+    // Name tag
+    const tag  = document.getElementById('ntag-'  + role);
+    const nEl  = document.getElementById('ntext-' + role);
+    if (isIn && d.names?.[role]) {
+      if (nEl)  nEl.textContent = d.names[role];
+      if (tag)  tag.classList.add('show');
+    } else {
+      if (tag)  tag.classList.remove('show');
+    }
+
+    // Orb
+    const orb = document.getElementById('orb-' + role);
+    if (orb) orb.className = 'orb ' + (isIn ? 'joined' : '');
+  });
+
+  // Status message
+  const total = Object.keys(ROLE_URLS).length;
+  const msg   = document.getElementById('status-msg');
+  if (msg) {
+    if (count === 0)      { msg.textContent = 'En attente de joueurs…'; msg.style.color = 'var(--muted)'; }
+    else if (count < total){ msg.textContent = `${count} / ${total} joueurs connectés`; msg.style.color = 'var(--accent)'; }
+    else                   { msg.textContent = '✓ Tous les joueurs sont là!'; msg.style.color = 'var(--success)'; }
+  }
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────
+function doCopy(btn) {
+  const url  = btn.dataset.url;
+  const role = btn.dataset.role;
+  if (!url) return;
+
+  const doIt = () => {
+    btn.textContent = '✓ Copié!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2200);
+    toast(`Lien copié — ${role}`, 'ok');
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(doIt).catch(() => fallbackCopy(url, doIt));
+  } else {
+    fallbackCopy(url, doIt);
+  }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+// ── QR ────────────────────────────────────────────────────────────────────
+let qrInst = null;
+function doQR(btn) {
+  const url  = btn.dataset.url;
+  const role = btn.dataset.role;
+  const el   = document.getElementById('qr-el');
+  const ov   = document.getElementById('qr-ov');
+  el.innerHTML = '';
+  if (qrInst) { try { qrInst.clear(); } catch(e){} qrInst = null; }
+  document.getElementById('qr-title').textContent = role.charAt(0).toUpperCase() + role.slice(1) + ' — Scanner pour rejoindre';
+  ov.classList.add('open');
+  qrInst = new QRCode(el, { text: url, width:200, height:200, colorDark:'#0d0f14', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.M });
+}
+function closeQR() { document.getElementById('qr-ov').classList.remove('open'); }
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, type='') {
+  const c = document.getElementById('tcont');
+  if (!c) return;
+  const d = document.createElement('div');
+  d.className = 't ' + type; d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+</script>
+{% endblock %}

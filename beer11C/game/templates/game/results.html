@@ -1,0 +1,171 @@
+{% extends "game/base.html" %}
+{% block title %}Results — {{ session.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .kpi-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .kpi-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+  .kpi-value { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; margin: 0.4rem 0; }
+  .kpi-sub { font-size: 0.75rem; color: var(--muted); }
+  .chart-wrap { position: relative; height: 280px; }
+  .bullwhip-bar-row { display: flex; align-items:center; gap: 1rem; margin-bottom: 0.75rem; }
+  .bullwhip-bar-label { width: 90px; font-size: 0.8rem; text-align: right; color: var(--muted); }
+  .bullwhip-bar-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bullwhip-bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .bullwhip-bar-val   { width: 50px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; align-items:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;">
+  <div>
+    <h2 style="font-family: var(--font-mono); font-size: 1.4rem;">
+      📊 Results — <span style="color:var(--accent)">{{ session.name }}</span>
+    </h2>
+    <p style="color:var(--muted); font-size:0.875rem;">{{ session.max_weeks }} weeks completed</p>
+  </div>
+  <div style="margin-left:auto; display:flex; gap:0.75rem;">
+    <a href="{% url 'dashboard' session.id %}" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <a href="{% url 'home' %}" class="btn btn-ghost btn-sm">Sessions</a>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="kpi-grid mb-2">
+  {% for player in players %}
+  <div class="kpi-box">
+    <div class="kpi-label"><span class="role-badge role-{{ player.role }}">{{ player.role }}</span></div>
+    <div class="kpi-value" style="color: var(--{% if player.role == 'retailer' %}retailer{% elif player.role == 'wholesaler' %}wholesaler{% elif player.role == 'distributor' %}distributor{% else %}factory{% endif %}-color)">
+      ${{ player.total_cost|floatformat:0 }}
+    </div>
+    <div class="kpi-sub">Total supply chain cost</div>
+  </div>
+  {% endfor %}
+
+  {% with total=0 %}
+  <div class="kpi-box" style="border-color: var(--accent);">
+    <div class="kpi-label">Total Chain Cost</div>
+    <div class="kpi-value" style="color: var(--accent);">
+      ${% for player in players %}{{ player.total_cost|floatformat:0 }}{% endfor %}
+    </div>
+    <div class="kpi-sub">Sum across all roles</div>
+  </div>
+  {% endwith %}
+</div>
+
+<!-- Bullwhip Effect -->
+{% if bullwhip %}
+<div class="result-card mb-2">
+  <div class="card-title">Bullwhip Effect Index (σ_orders / σ_demand)</div>
+  <p style="color:var(--muted); font-size:0.8rem; margin-bottom:1rem;">
+    A ratio &gt; 1 means the role amplifies demand variability — the classic bullwhip effect.
+    Ratio = 1 means perfect demand matching.
+  </p>
+  {% for role, ratio in bullwhip.items %}
+  <div class="bullwhip-bar-row">
+    <div class="bullwhip-bar-label">{{ role|title }}</div>
+    <div class="bullwhip-bar-track">
+      <div class="bullwhip-bar-fill"
+           style="width: {% widthratio ratio 10 100 %}%;
+                  max-width: 100%;
+                  background: {% if ratio < 1.5 %}var(--success){% elif ratio < 3 %}var(--accent){% else %}var(--danger){% endif %};">
+      </div>
+    </div>
+    <div class="bullwhip-bar-val">{{ ratio }}×</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Charts -->
+<div class="result-card mb-2">
+  <div class="card-title">Inventory History (All Roles)</div>
+  <div class="chart-wrap">
+    <canvas id="inventoryChart"></canvas>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+  <div class="result-card">
+    <div class="card-title">Orders Placed — Bullwhip Amplification</div>
+    <div class="chart-wrap">
+      <canvas id="ordersChart"></canvas>
+    </div>
+  </div>
+  <div class="result-card">
+    <div class="card-title">Backlog Over Time</div>
+    <div class="chart-wrap">
+      <canvas id="backlogChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="result-card mb-2">
+  <div class="card-title">Cumulative Cost Comparison</div>
+  <div class="chart-wrap">
+    <canvas id="costChart"></canvas>
+  </div>
+</div>
+
+<!-- Action row -->
+<div style="display:flex; gap:1rem; justify-content:center; margin-bottom:3rem;">
+  <a href="{% url 'new_game' %}" class="btn btn-primary">🚀 Play Again</a>
+  <a href="{% url 'home' %}" class="btn btn-ghost">← All Sessions</a>
+</div>
+
+<script>
+const RAW = {{ chart_data|safe }};
+const COLORS = {
+  retailer: '#f5c842', wholesaler: '#3b82f6',
+  distributor: '#a855f7', factory: '#22c55e',
+};
+
+function labels() { return RAW['retailer']?.history.map(h => `W${h.week}`) || []; }
+
+function makeChart(id, field, fill = false) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels(),
+      datasets: Object.entries(COLORS).map(([role, color]) => ({
+        label: role.charAt(0).toUpperCase() + role.slice(1),
+        data: RAW[role]?.history.map(h => h[field]) || [],
+        borderColor: color,
+        backgroundColor: fill ? color + '22' : 'transparent',
+        fill, tension: 0.3, pointRadius: 3,
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: '#2a2f3d' } },
+        y: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: '#2a2f3d' } },
+      }
+    }
+  });
+}
+
+makeChart('inventoryChart', 'inventory', true);
+makeChart('ordersChart',    'order_placed');
+makeChart('backlogChart',   'backlog');
+makeChart('costChart',      'cumulative_cost');
+</script>
+{% endblock %}

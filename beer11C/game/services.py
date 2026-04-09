@@ -1,0 +1,646 @@
+"""
+Beer Game Engine — Phase-gated turn system
+==========================================
+
+Physical Beer Game sequence each week:
+
+  Phase 1 — RECEIVE:  server stages incoming goods; player clicks "Confirm Receive"
+                       → inventory += arriving shipments (production completing for factory)
+                       → factory also converts last week's production request into production
+  Phase 2 — SHIP:     server computes downstream demand; player sees it and confirms
+                       → ship to downstream, backlog updated
+  Phase 3 — ORDER:    player decides upstream order qty and submits
+                       → non-factory: PipelineOrder upstream, ORDER_DELAY=2 weeks
+                       → factory: PipelineOrder to SELF, 1-week production request delay
+                         (next week, factory reads this request and starts actual production
+                          which then takes 2 more weeks in production delay)
+
+Factory pipeline summary:
+  Week N:   Factory places Production Request = X (→ PipelineOrder, arrives week N+1)
+  Week N+1: Factory reads request, confirms → X enters Production Delay (PipelineShipment, arrives N+3)
+  Week N+3: X units complete and enter inventory
+
+Key rules:
+  - order placed in week W arrives upstream in W + ORDER_DELAY (2 weeks)
+  - factory production request placed in W arrives back at factory in W + 1 (1 week)
+  - production started in W completes in W + SHIP_DELAY (2 weeks)
+  - customer role skips receive/ship phases; submitting demand counts as 'done'
+"""
+
+import statistics as _stats
+from .models import (
+    GameSession, Player, PlayerSession, WeeklyState,
+    PipelineOrder, PipelineShipment, CustomerDemand,
+)
+
+ORDER_DELAY = 2
+SHIP_DELAY  = 2
+CHAIN_ORDER = {'retailer': 1, 'wholesaler': 2, 'distributor': 3, 'factory': 4}
+
+NON_CUSTOMER_ROLES = ['retailer', 'wholesaler', 'distributor', 'factory']
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Initialisation
+# ─────────────────────────────────────────────────────────────────────────────
+
+def initialise_session(session, init_orders_placed=4, init_incoming=4):
+    """
+    Steady-state pipeline initialisation.
+
+    For non-factory roles:
+      - PipelineShipment × 2: goods in transit (ship delay), arriving weeks 1 & 2
+      - PipelineOrder    × 2: orders placed upstream, arriving weeks 1 & 2
+
+    For factory:
+      - PipelineShipment × 2: production in progress (production delay), arriving weeks 1 & 2
+      - PipelineOrder    × 2: production REQUESTS placed last week (1-week delay),
+                               arriving week 1 (so factory reads it in week 1 and starts production)
+        Note: only 1 pre-game production request needed since the delay is 1 week.
+    """
+    for player in session.players.all():
+        # Ship delay / Production delay slots (blue): goods arriving weeks 1 & 2
+        for arrival_week in [1, 2]:
+            PipelineShipment.objects.create(
+                receiver=player,
+                quantity=init_incoming,
+                shipped_on_week=arrival_week - SHIP_DELAY,
+                arrives_on_week=arrival_week,
+            )
+
+        if player.role == 'factory':
+            # Factory production request (1-week order delay):
+            # The request placed in week 0 arrives in week 1 → factory starts that production.
+            PipelineOrder.objects.create(
+                sender=player,
+                quantity=init_orders_placed,
+                placed_on_week=0,
+                arrives_on_week=1,
+                fulfilled=False,
+            )
+        else:
+            # Non-factory: orders placed upstream (2-week order delay)
+            for arrival_week in [1, 2]:
+                PipelineOrder.objects.create(
+                    sender=player,
+                    quantity=init_orders_placed,
+                    placed_on_week=arrival_week - ORDER_DELAY,
+                    arrives_on_week=arrival_week,
+                    fulfilled=False,
+                )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 0 — Open a new week (server-side staging)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def open_week(session):
+    """
+    Called once per week, before any player acts.
+    Computes for each PlayerSession:
+      - pending_received_qty  : units arriving this week
+      - pending_order_qty     : downstream demand (order or customer demand)
+    Sets every non-customer PlayerSession to PHASE_RECEIVE.
+    Customer stays PHASE_IDLE (will submit demand separately).
+
+    IMPORTANT: Does NOT mutate Player.inventory or Player.backlog yet.
+    Returns a dict of {role: {received, order_qty}} for broadcasting.
+    """
+    week    = session.current_week + 1
+    players = {p.role: p for p in session.players.all()}
+    staging = {}
+
+    # --- Compute arriving shipments (production completing / goods arriving) ---
+    for role, player in players.items():
+        arriving = PipelineShipment.objects.filter(
+            receiver=player, arrives_on_week=week, delivered=False
+        )
+        received = sum(s.quantity for s in arriving)
+        staging[role] = {'received': received}
+
+    # --- Compute incoming orders / production requests ---
+    customer_qty = session.pending_customer_demand or 0
+
+    for role, player in players.items():
+        if role == 'retailer':
+            order_qty = customer_qty
+        elif role == 'factory':
+            # Factory's "incoming order" = the production request it placed last week
+            # stored as a self-directed PipelineOrder with arrives_on_week == week
+            pending_requests = PipelineOrder.objects.filter(
+                sender=player,
+                arrives_on_week=week,
+                fulfilled=False,
+            )
+            order_qty = sum(o.quantity for o in pending_requests)
+        else:
+            downstream = player.get_downstream()
+            if downstream:
+                arriving_orders = PipelineOrder.objects.filter(
+                    sender=downstream, arrives_on_week=week, fulfilled=False
+                )
+                order_qty = sum(o.quantity for o in arriving_orders)
+            else:
+                order_qty = 0
+        staging[role]['order_qty'] = order_qty
+
+    # --- Update PlayerSession staging fields ---
+    for ps in session.player_sessions.all():
+        if ps.role == 'customer':
+            # customer doesn't go through receive/ship
+            ps.turn_phase           = PlayerSession.PHASE_IDLE
+            ps.pending_received_qty = 0
+            ps.pending_order_qty    = 0
+            ps.pending_ship_qty     = None
+            ps.pending_order        = None
+        else:
+            s = staging.get(ps.role, {})
+            ps.turn_phase           = PlayerSession.PHASE_RECEIVE
+            ps.pending_received_qty = s.get('received', 0)
+            ps.pending_order_qty    = s.get('order_qty', 0)
+            ps.pending_ship_qty     = None
+            ps.pending_order        = None
+        ps.save(update_fields=[
+            'turn_phase', 'pending_received_qty',
+            'pending_order_qty', 'pending_ship_qty', 'pending_order'
+        ])
+
+    return staging
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 1 — Confirm Receive
+# ─────────────────────────────────────────────────────────────────────────────
+
+def apply_receive(ps):
+    """
+    Phase 1 — Confirm Receive.
+
+    For non-factory:
+      - Mark arriving PipelineShipments as delivered → add to inventory.
+
+    For factory (two sub-steps):
+      A) Receive completed production:
+         PipelineShipments arriving this week (from production started 2 weeks ago)
+         → add to inventory.
+      B) Read & start production request:
+         PipelineOrders placed by the factory itself last week (arrives_on_week == week)
+         → convert each into a PipelineShipment (production delay, 2 weeks).
+         → mark those PipelineOrders as fulfilled.
+         The quantity of this production request is stored in staging
+         so the panel can display it.
+
+    Returns {received, production_started, new_inventory, backlog}
+    """
+    session = ps.game_session
+    week    = session.current_week + 1
+    player  = session.players.filter(role=ps.role).first()
+    if not player:
+        return {}
+
+    # ── A: Receive completed production (PipelineShipments arriving now) ──────
+    arriving_ships = PipelineShipment.objects.filter(
+        receiver=player, arrives_on_week=week, delivered=False
+    )
+    received = sum(s.quantity for s in arriving_ships)
+    arriving_ships.update(delivered=True)
+    player.inventory += received
+    player.save(update_fields=['inventory'])
+
+    production_started = 0
+    if ps.role == 'factory':
+        # ── B: Convert last week's production request into actual production ──
+        pending_requests = PipelineOrder.objects.filter(
+            sender=player,
+            arrives_on_week=week,
+            fulfilled=False,
+        )
+        production_started = sum(o.quantity for o in pending_requests)
+        if production_started > 0:
+            PipelineShipment.objects.create(
+                receiver=player,
+                quantity=production_started,
+                shipped_on_week=week,
+                arrives_on_week=week + SHIP_DELAY,  # completes in 2 weeks
+            )
+        pending_requests.update(fulfilled=True)
+
+        # Stage the production_started qty so the consumer can display it
+        ps.pending_received_qty = production_started  # what started production (was requested)
+        # pending_received_qty now means "production started this week"
+        # The actual units received (from 2 weeks ago) are in `received`
+
+    ps.turn_phase = PlayerSession.PHASE_SHIP
+    ps.save(update_fields=['turn_phase', 'pending_received_qty'])
+
+    # Refresh retailer's demand if customer already submitted
+    if ps.role == 'retailer' and session.pending_customer_demand is not None:
+        ps.pending_order_qty = session.pending_customer_demand
+        ps.save(update_fields=['pending_order_qty'])
+
+    return {
+        'received':           received,            # units entering inventory now
+        'production_started': production_started,  # units entering production delay now
+        'new_inventory':      player.inventory,
+        'backlog':            player.backlog,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 2 — Confirm Shipment
+# ─────────────────────────────────────────────────────────────────────────────
+
+def apply_ship(ps):
+    """
+    Player confirmed the shipment to downstream.
+    - Compute how much can be shipped (inventory vs. demand + backlog)
+    - Deduct from Player.inventory, update Player.backlog
+    - Create PipelineShipment to downstream
+    - Advance ps.turn_phase to PHASE_ORDER
+    Returns {shipped, new_inventory, new_backlog, demand_received}
+    """
+    session = ps.game_session
+    week    = session.current_week + 1
+    player  = session.players.filter(role=ps.role).first()
+    if not player:
+        return {}
+
+    # For retailer, use actual customer demand now (should be set by customer submit)
+    if ps.role == 'retailer':
+        order_qty = session.pending_customer_demand or ps.pending_order_qty
+        # Update staging to reflect real demand
+        ps.pending_order_qty = order_qty
+    else:
+        order_qty = ps.pending_order_qty
+
+        # Mark the downstream PipelineOrders as fulfilled NOW (so upstream doesn't double-count)
+        downstream = player.get_downstream()
+        if downstream:
+            arriving_orders = PipelineOrder.objects.filter(
+                sender=downstream, arrives_on_week=week, fulfilled=False
+            )
+            # Recalculate in case of late customer demand updates
+            order_qty = sum(o.quantity for o in arriving_orders)
+            arriving_orders.update(fulfilled=True)
+            ps.pending_order_qty = order_qty
+
+    total_demand = order_qty + player.backlog
+    available    = player.inventory
+
+    if available >= total_demand:
+        shipped         = total_demand
+        player.inventory -= total_demand
+        player.backlog    = 0
+    else:
+        shipped          = available
+        player.backlog   = total_demand - available
+        player.inventory = 0
+
+    # Create shipment to downstream
+    downstream = player.get_downstream()
+    if downstream and shipped > 0:
+        PipelineShipment.objects.create(
+            receiver=downstream,
+            quantity=shipped,
+            shipped_on_week=week,
+            arrives_on_week=week + SHIP_DELAY,
+        )
+
+    player.save(update_fields=['inventory', 'backlog'])
+
+    ps.pending_ship_qty = shipped
+    ps.pending_order_qty = order_qty
+    ps.turn_phase = PlayerSession.PHASE_ORDER
+    ps.save(update_fields=['turn_phase', 'pending_ship_qty', 'pending_order_qty'])
+
+    return {
+        'shipped':         shipped,
+        'demand_received': order_qty,
+        'new_inventory':   player.inventory,
+        'new_backlog':     player.backlog,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 3 — Submit Order (upstream order / production)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def apply_order(ps, order_qty):
+    """
+    Player submits their upstream order / factory production request.
+
+    For non-factory roles:
+      - Creates PipelineOrder → arrives at upstream after ORDER_DELAY (2 weeks)
+
+    For factory:
+      - Creates PipelineOrder TO ITSELF with ORDER_DELAY=1 week.
+        This represents the 1-week "production request" delay before
+        production actually starts.
+      - At the NEXT week's Phase 1, the factory reads this order,
+        and apply_receive converts it into a PipelineShipment (production delay, 2 weeks).
+
+    Returns {order_placed}
+    """
+    session = ps.game_session
+    week    = session.current_week + 1
+    player  = session.players.filter(role=ps.role).first()
+    if not player:
+        return {}
+
+    if ps.role == 'factory':
+        # Production request: 1-week order delay before production starts.
+        # We store as a self-directed PipelineOrder using the player as both
+        # sender AND we mark upstream=None. We use a sentinel: sender=player,
+        # arrives_on_week = week + 1.
+        if order_qty > 0:
+            PipelineOrder.objects.create(
+                sender=player,
+                quantity=order_qty,
+                placed_on_week=week,
+                arrives_on_week=week + 1,   # 1-week production request delay
+                fulfilled=False,
+            )
+    else:
+        upstream = player.get_upstream()
+        if upstream and order_qty > 0:
+            PipelineOrder.objects.create(
+                sender=player,
+                quantity=order_qty,
+                placed_on_week=week,
+                arrives_on_week=week + ORDER_DELAY,
+            )
+
+    ps.pending_order = order_qty
+    ps.turn_phase    = PlayerSession.PHASE_DONE
+    ps.save(update_fields=['pending_order', 'turn_phase'])
+
+    session.mark_submitted(ps.role)
+
+    return {'order_placed': order_qty}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Week close — costs + snapshot (called when all roles are DONE)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def close_week(session):
+    """
+    Called after all PlayerSessions reach PHASE_DONE.
+    Calculates costs, saves WeeklyState snapshots, advances session.current_week.
+    Returns summary dict.
+    """
+    week    = session.current_week + 1
+    summary = {}
+    players = {p.role: p for p in session.players.all()}
+
+    for role, player in players.items():
+        ps = session.player_sessions.filter(role=role).first()
+        if not ps:
+            continue
+
+        cost = (player.inventory * player.holding_cost +
+                player.backlog   * player.backlog_cost)
+        player.total_cost += cost
+        player.save(update_fields=['total_cost'])
+
+        order_placed      = ps.pending_order        or 0
+        shipment_received = ps.pending_received_qty or 0
+        shipped           = ps.pending_ship_qty      or 0
+        order_received    = ps.pending_order_qty     or 0
+
+        WeeklyState.objects.create(
+            player=player, week=week,
+            inventory=player.inventory,
+            backlog=player.backlog,
+            order_placed=order_placed,
+            order_received=order_received,
+            shipment_sent=shipped,
+            shipment_received=shipment_received,
+            cost_this_week=cost,
+            cumulative_cost=player.total_cost,
+        )
+
+        summary[role] = {
+            'inventory':         player.inventory,
+            'backlog':           player.backlog,
+            'order_placed':      order_placed,
+            'order_received':    order_received,
+            'shipped':           shipped,
+            'shipment_received': shipment_received,
+            'cost_this_week':    cost,
+            'total_cost':        player.total_cost,
+        }
+
+    # Customer demand history
+    customer_qty = session.pending_customer_demand or 0
+    CustomerDemand.objects.create(session=session, week=week, quantity=customer_qty)
+
+    # Advance week
+    session.current_week = week
+    if session.current_week >= session.max_weeks:
+        session.is_active = False
+        session.status    = GameSession.STATUS_FINISHED
+    session.reset_submissions()  # clears submitted_roles + pending_customer_demand
+    session.save(update_fields=['current_week', 'is_active', 'status'])
+
+    # Reset all PlayerSession phases to IDLE
+    session.player_sessions.update(
+        turn_phase=PlayerSession.PHASE_IDLE,
+        pending_received_qty=0,
+        pending_order_qty=0,
+        pending_ship_qty=None,
+        pending_order=None,
+    )
+
+    return summary
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Legacy single-call process_week (used by single-player / HTTP views)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def process_week(session, player_orders: dict):
+    """
+    Original single-pass week processing for single-player mode (HTTP form submit).
+    player_orders = {player_id: order_qty}
+    """
+    week    = session.current_week + 1
+    summary = {}
+    players = {p.role: p for p in session.players.all()}
+
+    for player in players.values():
+        # Receive completing production (PipelineShipments) → inventory
+        arriving = PipelineShipment.objects.filter(
+            receiver=player, arrives_on_week=week, delivered=False
+        )
+        received = sum(s.quantity for s in arriving)
+        arriving.update(delivered=True)
+        player.inventory += received
+        player._received  = received
+
+        # Factory: also convert pending production requests into actual production
+        if player.role == 'factory':
+            pending_requests = PipelineOrder.objects.filter(
+                sender=player, arrives_on_week=week, fulfilled=False
+            )
+            production_started = sum(o.quantity for o in pending_requests)
+            if production_started > 0:
+                PipelineShipment.objects.create(
+                    receiver=player,
+                    quantity=production_started,
+                    shipped_on_week=week,
+                    arrives_on_week=week + SHIP_DELAY,
+                )
+            pending_requests.update(fulfilled=True)
+
+    customer_qty = session.pending_customer_demand or 0
+
+    for player in players.values():
+        if player.role == 'retailer':
+            player._incoming_order = customer_qty
+        elif player.role == 'factory':
+            # Factory's "incoming order" = its own production request arriving this week
+            # (already processed above — just read from distributor's orders)
+            downstream = player.get_downstream()  # distributor
+            if downstream:
+                arriving_orders = PipelineOrder.objects.filter(
+                    sender=downstream, arrives_on_week=week, fulfilled=False
+                )
+                qty = sum(o.quantity for o in arriving_orders)
+                arriving_orders.update(fulfilled=True)
+            else:
+                qty = 0
+            player._incoming_order = qty
+        else:
+            downstream = player.get_downstream()
+            arriving_orders = PipelineOrder.objects.filter(
+                sender=downstream, arrives_on_week=week, fulfilled=False
+            )
+            qty = sum(o.quantity for o in arriving_orders)
+            arriving_orders.update(fulfilled=True)
+            player._incoming_order = qty
+
+    for player in players.values():
+        total_demand = player._incoming_order + player.backlog
+        available    = player.inventory
+        if available >= total_demand:
+            shipped = total_demand
+            player.inventory -= total_demand
+            player.backlog    = 0
+        else:
+            shipped = available
+            player.backlog   = total_demand - available
+            player.inventory = 0
+        player._shipped = shipped
+        downstream = player.get_downstream()
+        if downstream and shipped > 0:
+            PipelineShipment.objects.create(
+                receiver=downstream,
+                quantity=shipped,
+                shipped_on_week=week,
+                arrives_on_week=week + SHIP_DELAY,
+            )
+
+    for player in players.values():
+        order_qty = player_orders.get(player.id, _ai_order(player))
+        if player.role == 'factory':
+            # Production request: 1-week delay before actual production starts
+            if order_qty > 0:
+                PipelineOrder.objects.create(
+                    sender=player,
+                    quantity=order_qty,
+                    placed_on_week=week,
+                    arrives_on_week=week + 1,   # 1-week production request delay
+                    fulfilled=False,
+                )
+        else:
+            upstream = player.get_upstream()
+            if upstream and order_qty > 0:
+                PipelineOrder.objects.create(
+                    sender=player,
+                    quantity=order_qty,
+                    placed_on_week=week,
+                    arrives_on_week=week + ORDER_DELAY,
+                )
+        player._order_placed = order_qty
+
+    for player in players.values():
+        cost = (player.inventory * player.holding_cost +
+                player.backlog   * player.backlog_cost)
+        player.total_cost    += cost
+        player._cost_this_week = cost
+
+    for player in players.values():
+        player.save()
+        WeeklyState.objects.create(
+            player=player, week=week,
+            inventory=player.inventory,
+            backlog=player.backlog,
+            order_placed=player._order_placed,
+            order_received=player._incoming_order,
+            shipment_sent=player._shipped,
+            shipment_received=player._received,
+            cost_this_week=player._cost_this_week,
+            cumulative_cost=player.total_cost,
+        )
+        summary[player.role] = {
+            'inventory':         player.inventory,
+            'backlog':           player.backlog,
+            'order_placed':      player._order_placed,
+            'order_received':    player._incoming_order,
+            'shipped':           player._shipped,
+            'shipment_received': player._received,
+            'cost_this_week':    player._cost_this_week,
+            'total_cost':        player.total_cost,
+        }
+
+    CustomerDemand.objects.create(session=session, week=week, quantity=customer_qty)
+    session.current_week = week
+    if session.current_week >= session.max_weeks:
+        session.is_active = False
+        session.status = GameSession.STATUS_FINISHED
+    session.save()
+    return summary
+
+
+def _ai_order(player):
+    """Pipeline-aware base-stock policy (used by single-player AI)."""
+    target = 16
+    in_transit = sum(
+        s.quantity for s in PipelineShipment.objects.filter(
+            receiver=player, delivered=False
+        )
+    )
+    return max(0, target - player.inventory - in_transit + player.backlog)
+
+
+def get_bullwhip_data(session):
+    demand_vals = list(
+        CustomerDemand.objects.filter(session=session)
+        .order_by('week').values_list('quantity', flat=True)
+    )
+    if len(demand_vals) < 2:
+        return {}
+    demand_std = _stats.stdev(demand_vals) or 1.0
+    result = {}
+    for player in session.players.all():
+        orders = list(player.history.values_list('order_placed', flat=True))
+        if len(orders) >= 2:
+            result[player.role] = round(_stats.stdev(orders) / demand_std, 2)
+    return result
+
+
+def get_chart_data(session):
+    data = {}
+    for player in session.players.all():
+        history = list(player.history.values(
+            'week', 'inventory', 'backlog',
+            'order_placed', 'shipment_received', 'cost_this_week', 'cumulative_cost'
+        ))
+        data[player.role] = {'name': player.name, 'history': history}
+    demand_hist = list(
+        CustomerDemand.objects.filter(session=session)
+        .order_by('week').values('week', 'quantity')
+    )
+    data['customer'] = {'name': 'Customer', 'history': demand_hist}
+    return data
