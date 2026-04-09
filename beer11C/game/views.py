@@ -524,7 +524,4 @@ def chart_data_api(request, session_id):
     return JsonResponse(get_chart_data(get_object_or_404(GameSession, id=session_id)))
 
 
-# ── Supply chain viz ──────────────────────────────────────────────────────────
-@login_required
-def supply_chain_viz(request):
-    return render(request, 'game/supply_chain_viz.html')
+

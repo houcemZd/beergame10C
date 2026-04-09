@@ -11,8 +11,6 @@ urlpatterns = [
     # ── Game ──────────────────────────────────────────────────────────────────
     path('',                                        views.home,             name='home'),
     path('new/',                                    views.new_game,         name='new_game'),
-    path('viz/',                                    views.supply_chain_viz, name='supply_chain_viz'),
-
     # Multiplayer
     path('game/<int:session_id>/lobby/',            views.lobby,            name='lobby'),
     path('game/<int:session_id>/lobby-status/',     views.lobby_status,     name='lobby_status'),
