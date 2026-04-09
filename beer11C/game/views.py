@@ -506,10 +506,14 @@ def results(request, session_id):
     bullwhip   = get_bullwhip_data(session)
     total_cost = sum(p.total_cost for p in players)
     demand_history = list(CustomerDemand.objects.filter(session=session).order_by('week'))
+    winner_role = min(players, key=lambda p: p.total_cost).role if players else None
+    bullwhip_max = max(bullwhip.values(), default=10) if bullwhip else 10
     return render(request, 'game/results.html', {
         'session': session, 'players': players,
         'chart_data': chart_data, 'bullwhip': bullwhip,
         'total_cost': total_cost, 'demand_history': demand_history,
+        'winner_role': winner_role,
+        'bullwhip_max': bullwhip_max,
     })
 
 
