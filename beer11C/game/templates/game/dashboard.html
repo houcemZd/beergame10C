@@ -188,7 +188,7 @@
         {% endif %}
         <div class="bc-box" style="border-color:#f5c84222; min-width:46px;">
           <div class="bc-lbl">
-  {% if player.role == 'factory' %}Production<br>requests{% else %}Incoming<br>requests{% endif %}
+  {% if player.role == 'factory' %}Orders from<br>Distributor{% else %}Incoming<br>requests{% endif %}
 </div>
           <div class="bc-val bc-amber" id="io-{{ player.role }}">
             {% for k,v in last_week_states.items %}{% if k == player.role %}{{ v.order_received }}{% endif %}{% endfor %}
