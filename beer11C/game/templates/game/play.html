@@ -276,7 +276,7 @@
       {% if role == 'retailer' %}🛒 You serve customers. Demand is <strong style="color:var(--text)">visible only to you</strong>. Each turn: receive goods → confirm shipment → place order.
       {% elif role == 'wholesaler' %}🏪 You supply the Retailer, order from the Distributor. You see only the Retailer's orders — not real demand.
       {% elif role == 'distributor' %}🚚 You supply the Wholesaler, order from the Factory. Two steps removed from real demand.
-      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output is ready in <strong style="color:var(--text)">~3 weeks</strong> (1w request + 2w production).
+      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output is ready in <strong style="color:var(--text)">3 weeks</strong> (1w request + 2w production).
       {% elif role == 'customer' %}👤 You set customer demand each week. Your submission triggers the supply chain.{% endif %}
     </div>
     <div style="margin-bottom:1.25rem;">
@@ -676,7 +676,7 @@
     <div style="background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.2); border-radius:8px; padding:.7rem .9rem; margin-bottom:.75rem; font-size:.78rem; color:var(--muted);">
       🏭 <strong style="color:var(--text);">Your own decision</strong> — how many units do you want to start producing right now?
       This is your <strong style="color:var(--text);">production request to yourself</strong>.
-      Units will enter the <strong style="color:var(--text);">Production Delay</strong> pipeline and be ready in <strong style="color:var(--text);">~3 weeks total</strong>
+      Units will enter the <strong style="color:var(--text);">Production Delay</strong> pipeline and be ready in <strong style="color:var(--text);">3 weeks total</strong>
       (1-week request delay + 2-week production delay).
       There is no production limit.
     </div>
@@ -686,7 +686,7 @@
 
     <div style="font-size:.76rem; color:var(--muted); margin-bottom:.85rem; text-align:center;">
       {% if role == 'factory' %}
-        Production request enters <strong style="color:var(--text);">1-week delay</strong>, then <strong style="color:var(--text);">2-week production pipeline</strong> — ready in <strong style="color:var(--text);">~3 weeks total</strong>
+        Production request enters <strong style="color:var(--text);">1-week delay</strong>, then <strong style="color:var(--text);">2-week production pipeline</strong> — ready in <strong style="color:var(--text);">3 weeks total</strong>
       {% else %}
         Order placed travels <strong style="color:var(--text);">2 weeks</strong> upstream, shipment back in <strong style="color:var(--text);">2 more weeks</strong>
       {% endif %}
@@ -1113,7 +1113,7 @@ function showDonePanel(orderQty, msg) {
   const ql = document.getElementById('submitted-qty-label');
   if (MY_ROLE === 'factory') {
     // Factory: production request → 1w order delay → then 2w production delay
-    if (ql) ql.textContent = `Production request: ${orderQty} units → 1w delay → production starts next week (ready in ~3 weeks)`;
+    if (ql) ql.textContent = `Production request: ${orderQty} units → 1w delay → production starts next week (ready in 3 weeks)`;
     log('order', `Production request: ${orderQty} units placed`);
     toast(`✓ Production request: ${orderQty} units`, 'success');
   } else {
