@@ -1517,7 +1517,7 @@ function animateNum(el, newVal, prefix='', duration=380) {
   const to = parseFloat(newVal);
   if (isNaN(to)) { el.textContent = prefix + (newVal ?? '—'); return; }
   // Use stored value as starting point; fall back to 0 (avoids parsing formatted text).
-  const from = el.dataset.numVal !== undefined ? parseFloat(el.dataset.numVal) : 0;
+  const from = 'numVal' in el.dataset ? parseFloat(el.dataset.numVal) : 0;
   el.dataset.numVal = to;
   if (from === to) { el.textContent = prefix + to; return; }
   const startTime = performance.now();
