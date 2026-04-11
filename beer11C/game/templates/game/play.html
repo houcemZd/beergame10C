@@ -10,11 +10,21 @@
 .hud-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
 
 /* ── Lobby overlay ────────────────────────────────────────────────────────── */
-#lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.92); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
+#lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.94); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(8px); }
 #lobby-overlay.hidden { display:none; }
-.lobby-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:2rem; max-width:480px; width:90%; text-align:center; }
-.lobby-player-row { display:flex; align-items:center; justify-content:space-between; padding:.5rem .75rem; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:.5rem; font-size:.85rem; }
-.lobby-player-row.ready-state { border-color:var(--success); }
+.lobby-box {
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid rgba(245,200,66,.25);
+  border-radius: 16px; padding: 2rem; max-width: 480px; width: 90%; text-align: center;
+  box-shadow: 0 0 60px rgba(245,200,66,.12), 0 24px 60px rgba(0,0,0,.6);
+  animation: lobby-float 4s ease-in-out infinite;
+}
+@keyframes lobby-float {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-6px); }
+}
+.lobby-player-row { display:flex; align-items:center; justify-content:space-between; padding:.5rem .75rem; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:.5rem; font-size:.85rem; transition: border-color .3s; }
+.lobby-player-row.ready-state { border-color:var(--success); box-shadow:0 0 8px rgba(34,197,94,.2); }
 
 /* ── Ready pills ──────────────────────────────────────────────────────────── */
 .ready-row { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.75rem; }
@@ -339,12 +349,166 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 #snd-btn { cursor:pointer; font-size:.65rem; padding:.2rem .5rem; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:var(--font-mono); transition:all .2s; user-select:none; }
 #snd-btn:hover { color:var(--text); border-color:var(--text); }
 #snd-btn.on { border-color:var(--accent); color:var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   🏆  VIDEO-GAME UPGRADES — EXTRA LAYER
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Floating damage / gain numbers ─────────────────────────────────── */
+.float-num {
+  position: fixed; pointer-events: none; z-index: 9997;
+  font-family: var(--font-mono); font-weight: 900; font-size: 1.5rem;
+  letter-spacing: .04em;
+  text-shadow: 0 0 12px currentColor, 0 2px 4px rgba(0,0,0,.6);
+  animation: float-up-num 1.25s cubic-bezier(.22,1,.36,1) forwards;
+  white-space: nowrap;
+}
+@keyframes float-up-num {
+  0%   { transform: translateY(0)    scale(1.2);  opacity: 1;   }
+  25%  { transform: translateY(-22px) scale(1);   opacity: 1;   }
+  80%  { transform: translateY(-60px) scale(.9);  opacity: .8;  }
+  100% { transform: translateY(-80px) scale(.75); opacity: 0;   }
+}
+
+/* ── Grade / rank badge ──────────────────────────────────────────────── */
+#grade-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.grade-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 9px;
+  font-family: var(--font-mono); font-size: 1.45rem; font-weight: 900;
+  border: 2px solid; transition: all .45s cubic-bezier(.22,1,.36,1);
+  flex-shrink: 0;
+}
+.grade-S { background:rgba(168,85,247,.18); border-color:#a855f7; color:#d8a4ff; box-shadow:0 0 22px rgba(168,85,247,.55); }
+.grade-A { background:rgba(34,197,94,.15);  border-color:var(--success); color:var(--success); box-shadow:0 0 16px rgba(34,197,94,.4); }
+.grade-B { background:rgba(245,200,66,.12); border-color:var(--accent);  color:var(--accent);  box-shadow:0 0 10px rgba(245,200,66,.3); }
+.grade-C { background:rgba(59,130,246,.1);  border-color:#3b82f6; color:#8ecbff; }
+.grade-D { background:rgba(239,68,68,.1);   border-color:var(--danger); color:var(--danger); }
+.grade-F { background:rgba(239,68,68,.18);  border-color:var(--danger); color:var(--danger); animation:hud-bad-pulse 1.1s ease infinite; }
+.grade-lbl { font-size:.58rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
+
+/* ── Combo streak counter ────────────────────────────────────────────── */
+#combo-strip {
+  position: fixed; top: 64px; right: 1.1rem; z-index: 510;
+  background: var(--surface2); border-radius: 10px; padding: .4rem .85rem;
+  font-family: var(--font-mono); font-size: .72rem;
+  display: none; flex-direction: column; align-items: center; gap: 1px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+#combo-strip.visible { display: flex; animation: combo-in .3s cubic-bezier(.22,1,.36,1); }
+@keyframes combo-in { from{transform:translateX(60px) scale(.8);opacity:0} to{transform:none;opacity:1} }
+#combo-count { font-size: 1.5rem; font-weight: 900; color: var(--accent); line-height: 1; }
+#combo-strip.x3  { border-color:var(--accent); box-shadow:0 0 14px rgba(245,200,66,.4); }
+#combo-strip.x5  { border-color:var(--success); box-shadow:0 0 18px rgba(34,197,94,.45); }
+#combo-strip.x8  { border-color:#a855f7; box-shadow:0 0 22px rgba(168,85,247,.5); }
+#combo-strip.x8 #combo-count { color:#d8a4ff; animation:combo-glow 1s ease infinite; }
+@keyframes combo-glow { 0%,100%{text-shadow:0 0 6px currentColor} 50%{text-shadow:0 0 18px currentColor} }
+
+/* ── Board card scanner line ─────────────────────────────────────────── */
+#bgb-board-card { overflow: hidden; }
+.board-scanner {
+  position: absolute; left: 0; right: 0; height: 3px; top: 0; z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 5%, rgba(245,200,66,.55) 45%, rgba(245,200,66,.55) 55%, transparent 95%);
+  animation: scanner-run 6s ease-in-out infinite;
+  filter: blur(1px);
+}
+@keyframes scanner-run {
+  0%,100% { top: 0%; opacity:.7; }
+  48%     { top: 100%; opacity:.4; }
+  50%     { top: 100%; opacity:0; }
+  52%     { top: 0%; opacity:0; }
+}
+
+/* ── Role-specific "you" column neon glow (per role) ────────────────── */
+#col-retailer.you    { box-shadow: 0 0 0 2px rgba(245,200,66,.55),  0 0 32px rgba(245,200,66,.15) !important; }
+#col-wholesaler.you  { box-shadow: 0 0 0 2px rgba(59,130,246,.55),  0 0 32px rgba(59,130,246,.15) !important; }
+#col-distributor.you { box-shadow: 0 0 0 2px rgba(168,85,247,.55),  0 0 32px rgba(168,85,247,.15) !important; }
+#col-factory.you     { box-shadow: 0 0 0 2px rgba(34,197,94,.55),   0 0 32px rgba(34,197,94,.15)  !important; }
+
+/* ── Achievement / XP bar ───────────────────────────────────────────── */
+#xp-bar-wrap {
+  height: 4px; background: var(--surface2); border-radius: 999px;
+  overflow: hidden; margin-bottom: 1.4rem; position: relative;
+}
+#xp-bar-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #f5c842, #a855f7);
+  background-size: 200%;
+  animation: xp-shimmer 3s linear infinite;
+  transition: width .65s cubic-bezier(.22,1,.36,1);
+}
+@keyframes xp-shimmer { from{background-position:0%} to{background-position:200%} }
+
+/* ── Particle burst (week flash) ─────────────────────────────────────── */
+.particle {
+  position: fixed; pointer-events: none; z-index: 9988;
+  width: 6px; height: 6px; border-radius: 50%;
+  animation: particle-burst var(--dur, .9s) ease-out forwards;
+}
+@keyframes particle-burst {
+  0%   { transform: translate(0,0) scale(1);   opacity: 1; }
+  80%  { opacity: .6; }
+  100% { transform: translate(var(--dx),var(--dy)) scale(.3); opacity: 0; }
+}
+
+/* ── Efficiency mini-chart bar (hud) ─────────────────────────────────── */
+.eff-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 3px; overflow:hidden; }
+.eff-fill { height: 100%; border-radius: 2px; transition: width .5s ease, background .4s; }
+
+/* ── Board slot tooltip ──────────────────────────────────────────────── */
+.bgb-slot[data-tip] { position: relative; cursor: default; }
+.bgb-slot[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: .25rem .55rem; font-size: .62rem; color: var(--text); white-space: nowrap;
+  z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  font-family: var(--font-body); font-weight: 500; letter-spacing: 0;
+}
+
+/* ── Enhanced toast — achievement style ──────────────────────────────── */
+.toast {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: .55rem 1rem; font-size: .8rem; color: var(--text);
+  animation: slideIn .2s ease, fadeOut .3s ease 3.5s forwards; max-width: 300px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  display: flex; align-items: center; gap: .5rem;
+}
+.toast.success { border-color: var(--success); box-shadow: 0 0 18px rgba(34,197,94,.25); }
+.toast.error   { border-color: var(--danger);  color: var(--danger); box-shadow: 0 0 18px rgba(239,68,68,.25); }
+.toast.achieve { border-color: #a855f7; box-shadow: 0 0 22px rgba(168,85,247,.35); }
+
+/* ── Week flash upgrade: dramatic backdrop ───────────────────────────── */
+#week-flash {
+  background: transparent;
+  transition: background .2s;
+}
+#week-flash.flashing { background: rgba(0,0,0,.35); }
+#week-flash-inner {
+  font-family: var(--font-mono); font-size: 4.5rem; font-weight: 700;
+  color: #fff; opacity: 0; letter-spacing: .18em; text-transform: uppercase;
+  text-shadow: 0 0 40px var(--accent), 0 0 100px rgba(245,200,66,.4), 0 2px 0 rgba(0,0,0,.8);
+  transform: scale(.6);
+}
+#week-flash-inner .wk-sub {
+  display: block; font-size: 1rem; letter-spacing: .25em;
+  color: var(--muted); margin-top: .25rem; text-shadow: none;
+}
+
+/* ── HUD rank glow on grade S ─────────────────────────────────────────── */
+.hud-card.hud-s { box-shadow: 0 0 24px rgba(168,85,247,.4); border-color: rgba(168,85,247,.5); }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="toast-container"></div>
 <div id="week-flash"><div id="week-flash-inner"></div></div>
+<div id="combo-strip"><span style="font-size:.52rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">STREAK</span><span id="combo-count">×0</span><span style="font-size:.52rem;color:var(--muted);" id="combo-label">good weeks</span></div>
 
 <!-- ═══════════════ LOBBY OVERLAY ════════════════════════════════════════ -->
 <div id="lobby-overlay">
@@ -395,12 +559,13 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
   </div>
 </div>
 
-<div class="progress-bar" style="margin-bottom:1.4rem;">
-  <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+<div id="xp-bar-wrap">
+  <div id="xp-bar-fill" style="width:0%"></div>
 </div>
 
 <!-- ═══════ BEER GAME BOARD ════════════════════════════════════════════ -->
 <div class="card" id="bgb-board-card" style="margin-bottom:1.5rem; padding:.85rem 1rem 1.1rem;">
+  <div class="board-scanner"></div>
   <div style="display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-bottom:.6rem;">
     <div class="card-title" style="margin-bottom:0; font-size:.75rem; letter-spacing:.12em;">BEER GAME BOARD</div>
     <span style="font-size:.62rem; color:var(--muted);">
@@ -578,10 +743,14 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 
 <!-- HUD -->
 <div class="hud">
-  <div class="hud-card" id="hud-card-inv"><div class="hud-label">Inventory</div><div class="hud-value" id="hud-inv" style="color:var(--success)">—</div><div style="font-size:.68rem;color:var(--muted);">on hand</div></div>
-  <div class="hud-card" id="hud-card-blg"><div class="hud-label">Backlog</div><div class="hud-value" id="hud-blg" style="color:var(--danger)">—</div><div style="font-size:.68rem;color:var(--muted);">unfilled</div></div>
+  <div class="hud-card" id="hud-card-inv"><div class="hud-label">Inventory</div><div class="hud-value" id="hud-inv" style="color:var(--success)">—</div><div class="eff-bar"><div class="eff-fill" id="eff-inv" style="width:0%;background:var(--success)"></div></div><div style="font-size:.68rem;color:var(--muted);">on hand</div></div>
+  <div class="hud-card" id="hud-card-blg"><div class="hud-label">Backlog</div><div class="hud-value" id="hud-blg" style="color:var(--danger)">—</div><div class="eff-bar"><div class="eff-fill" id="eff-blg" style="width:0%;background:var(--danger)"></div></div><div style="font-size:.68rem;color:var(--muted);">unfilled</div></div>
   <div class="hud-card"><div class="hud-label">Total Cost</div><div class="hud-value" id="hud-cost" style="color:var(--accent);font-size:1.4rem;">$—</div><div style="font-size:.68rem;color:var(--muted);">accumulated</div></div>
   {% if role == 'retailer' %}<div class="hud-card"><div class="hud-label">Customer Demand</div><div class="hud-value" id="hud-demand" style="color:var(--wholesaler-color)">—</div><div style="font-size:.68rem;color:var(--muted);">this week</div></div>{% endif %}
+  <div class="hud-card" id="hud-card-grade" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;padding:.85rem .6rem;">
+    <div class="hud-label" style="margin:0;">Grade</div>
+    <div id="grade-wrap"><div class="grade-badge grade-B" id="grade-badge">B</div><div class="grade-lbl" id="grade-lbl">GOOD</div></div>
+  </div>
 </div>
 
 <!-- Players status -->
@@ -997,6 +1166,13 @@ function handle(msg) {
       if (msg.week) flashWeek(msg.week);   // 🎮 dramatic week banner
       if (msg.is_finished) { showGameOver(msg); }
       if (MY_ROLE === 'customer') resetCustomerPanel();
+      // Week summary hint
+      if (msg.own) {
+        const wblg = msg.own.backlog ?? 0;
+        const winv = msg.own.inventory ?? 0;
+        if (wblg === 0 && winv > 0) toast('✅ Perfect week — no backlog!', 'success');
+        else if (wblg > 15) toast(`⚠️ High backlog: ${wblg} units`, 'error');
+      }
       // Reset week-ready button for next week
       {
         const btn = getWeekReadyEl();
@@ -1450,11 +1626,12 @@ function _beep(freq, dur, type='sine', vol=0.10) {
     o.start(); o.stop(ctx.currentTime + dur);
   } catch(e) {}
 }
-function sndReceive() { _beep(523,.1); setTimeout(()=>_beep(659,.1),110); }
-function sndShip()    { _beep(392,.07,'square',.06); setTimeout(()=>_beep(330,.07,'square',.04),90); }
-function sndOrder()   { _beep(880,.06); setTimeout(()=>_beep(1046,.09),75); }
-function sndWeek()    { _beep(523,.1); setTimeout(()=>_beep(659,.1),100); setTimeout(()=>_beep(784,.18),200); setTimeout(()=>_beep(1046,.22),340); }
-function sndCritical(){ _beep(220,.3,'sawtooth',.07); }
+function sndReceive() { _beep(523,.1); setTimeout(()=>_beep(659,.1),110); setTimeout(()=>_beep(784,.12),220); }
+function sndShip()    { _beep(392,.07,'square',.06); setTimeout(()=>_beep(330,.07,'square',.04),90); setTimeout(()=>_beep(262,.1,'square',.03),180); }
+function sndOrder()   { _beep(880,.06); setTimeout(()=>_beep(1046,.09),75); setTimeout(()=>_beep(1318,.08),160); }
+function sndWeek()    { _beep(523,.08); setTimeout(()=>_beep(659,.08),90); setTimeout(()=>_beep(784,.1),180); setTimeout(()=>_beep(1046,.15),300); setTimeout(()=>_beep(1318,.18),430); setTimeout(()=>_beep(1568,.22),560); }
+function sndCritical(){ _beep(220,.3,'sawtooth',.07); setTimeout(()=>_beep(185,.3,'sawtooth',.06),350); }
+function sndGradeUp() { _beep(659,.08); setTimeout(()=>_beep(784,.08),100); setTimeout(()=>_beep(1046,.1),200); setTimeout(()=>_beep(1318,.18),330); }
 function toggleSound() {
   // Resume AudioContext on first click (browser autoplay policy)
   const ctx = _getAudioCtx(); if (ctx && ctx.state === 'suspended') ctx.resume();
@@ -1463,16 +1640,22 @@ function toggleSound() {
   if (btn) { btn.textContent = soundEnabled ? '🔊 SFX' : '🔇 SFX'; btn.classList.toggle('on', soundEnabled); }
 }
 
-// ── 🎮 Week flash banner ───────────────────────────────────────────────────
+// ── 🎮 Week flash banner (enhanced) ──────────────────────────────────────
 function flashWeek(w) {
   const inner = document.getElementById('week-flash-inner');
+  const wrap  = document.getElementById('week-flash');
   if (!inner) return;
-  inner.textContent = `WEEK  ${w}`;
+  inner.innerHTML = `WEEK&nbsp;${w}<span class="wk-sub">★ ROUND COMPLETE ★</span>`;
   inner.classList.remove('active');
-  void inner.offsetWidth;  // force reflow so animation restarts
+  void inner.offsetWidth;
   inner.classList.add('active');
-  inner.addEventListener('animationend', () => inner.classList.remove('active'), {once:true});
+  if (wrap) wrap.classList.add('flashing');
+  inner.addEventListener('animationend', () => {
+    inner.classList.remove('active');
+    if (wrap) wrap.classList.remove('flashing');
+  }, {once:true});
   sndWeek();
+  spawnParticles();
 }
 
 // ── 🎮 Critical backlog vignette ──────────────────────────────────────────
@@ -1550,7 +1733,7 @@ function sweepBoard() {
 function updateHUD(msg) {
   const w = msg.week || 0;
   document.getElementById('current-week').textContent = w;
-  const pf = document.getElementById('progress-fill');
+  const pf = document.getElementById('xp-bar-fill');
   if (pf) pf.style.width = Math.round(w / MAX_WEEKS * 100) + '%';
 
   const inv  = msg.own?.inventory ?? 0;
@@ -1561,9 +1744,25 @@ function updateHUD(msg) {
   animateNum(hInv, inv);
   hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
 
+  // Inventory efficiency mini-bar
+  const effInv = document.getElementById('eff-inv');
+  if (effInv) {
+    const pct = Math.max(0, Math.min(100, (inv / 40) * 100));
+    effInv.style.width = pct + '%';
+    effInv.style.background = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+  }
+
   const hBlg = document.getElementById('hud-blg');
   animateNum(hBlg, blg);
   hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
+
+  // Backlog severity mini-bar
+  const effBlg = document.getElementById('eff-blg');
+  if (effBlg) {
+    const pct = Math.max(0, Math.min(100, (blg / 20) * 100));
+    effBlg.style.width = pct + '%';
+    effBlg.style.background = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
+  }
 
   const hCost = document.getElementById('hud-cost');
   animateNum(hCost, cost, '$', 500);
@@ -1571,15 +1770,25 @@ function updateHUD(msg) {
   const dem = document.getElementById('hud-demand');
   if (dem) dem.textContent = msg.map?.demand_customer_to_retailer?.this_week ?? '—';
 
-  // 🎮 Game-mode: HUD glow + critical alert
+  // 🎮 Game-mode: HUD glow + critical alert + grade
   updateHUDCards(inv, blg);
   checkCritical(blg);
+  updateGrade(inv, blg, cost);
 }
 
 function updateMiniHUD(inv, blg) {
   const hInv = document.getElementById('hud-inv');
+  const prevInv = hInv ? (parseFloat(hInv.dataset.numVal) || 0) : 0;
   animateNum(hInv, inv ?? 0);
   hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+
+  // Spawn floating +/- number near the HUD card
+  const delta = (inv ?? 0) - prevInv;
+  if (delta !== 0 && hInv) {
+    const rect = hInv.getBoundingClientRect();
+    spawnFloatNum(delta, rect.left + rect.width / 2, rect.top + window.scrollY, delta > 0 ? 'var(--success)' : 'var(--danger)');
+  }
+
   const hBlg = document.getElementById('hud-blg');
   animateNum(hBlg, blg ?? 0);
   hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
@@ -1599,6 +1808,18 @@ function setInv(prefix, inv, blg) {
   const xEl = document.getElementById(prefix + '-inv-box');
   if (!vEl) return;
   if (xEl) { xEl.style.opacity = ''; xEl.style.filter = ''; }
+
+  // Spawn float number on the board if this is MY column and value changed
+  const myPre = MY_ROLE === 'factory' ? 'fa' : MY_ROLE === 'customer' ? null : MY_ROLE.slice(0,2);
+  if (prefix === myPre && xEl) {
+    const prevVal = parseFloat(vEl.dataset.numVal) || 0;
+    const delta   = (inv ?? 0) - prevVal;
+    if (delta !== 0 && xEl) {
+      const rect = xEl.getBoundingClientRect();
+      spawnFloatNum(delta, rect.left + rect.width / 2, rect.top, delta > 0 ? 'var(--success)' : 'var(--danger)');
+    }
+  }
+
   animateNum(vEl, inv ?? 0);
   vEl.className   = 'bgb-inv-val ' + (inv > 8 ? 'good' : inv > 0 ? 'warn' : 'bad');
   if (xEl) xEl.style.borderColor = inv > 8 ? 'rgba(34,197,94,.4)' : inv > 0 ? 'rgba(245,200,66,.4)' : 'rgba(239,68,68,.4)';
@@ -1994,10 +2215,107 @@ function doWeekReady() {
 // ── Misc ───────────────────────────────────────────────────────────────────
 function setConn(on) { document.getElementById('conn-dot').className=on?'online':'offline'; document.getElementById('conn-label').textContent=on?'Connected':'Reconnecting…'; }
 function log(type, msg) { const el=document.getElementById('event-log'); if(!el)return; const ic=type==='week'?'📅':type==='order'?'📤':'🔌'; el.innerHTML=`<div class="log-entry">${ic} <span style="font-size:.65rem;color:var(--muted)">${new Date().toLocaleTimeString()}</span> ${msg}</div>`+el.innerHTML; }
-function toast(msg, type='') { const c=document.getElementById('toast-container'); if(!c)return; const d=document.createElement('div'); d.className='toast '+type; d.textContent=msg; c.appendChild(d); setTimeout(()=>d.remove(),3600); }
+function toast(msg, type='') { const c=document.getElementById('toast-container'); if(!c)return; const d=document.createElement('div'); d.className='toast '+type; d.innerHTML=`<span>${msg}</span>`; c.appendChild(d); setTimeout(()=>d.remove(),3600); }
+
+// ── 🏆 Grade / rank system ────────────────────────────────────────────────
+const GRADE_CFG = [
+  { grade:'S', label:'LEGENDARY', cls:'grade-S', maxCostPerWk:3,   maxBlg:0  },
+  { grade:'A', label:'EXCELLENT', cls:'grade-A', maxCostPerWk:8,   maxBlg:2  },
+  { grade:'B', label:'GOOD',      cls:'grade-B', maxCostPerWk:16,  maxBlg:6  },
+  { grade:'C', label:'AVERAGE',   cls:'grade-C', maxCostPerWk:30,  maxBlg:14 },
+  { grade:'D', label:'POOR',      cls:'grade-D', maxCostPerWk:60,  maxBlg:30 },
+  { grade:'F', label:'FAIL',      cls:'grade-F', maxCostPerWk:Infinity, maxBlg:Infinity },
+];
+
+let _lastGrade = null;
+let _comboCount = 0;
+
+function updateGrade(inv, blg, cost) {
+  const week = Math.max(1, parseInt(document.getElementById('current-week')?.textContent || '1', 10));
+  const perWk = cost / week;
+  let cfg = GRADE_CFG[GRADE_CFG.length - 1];
+  for (const c of GRADE_CFG) {
+    if (blg <= c.maxBlg && perWk <= c.maxCostPerWk) { cfg = c; break; }
+  }
+  const badge = document.getElementById('grade-badge');
+  const lbl   = document.getElementById('grade-lbl');
+  const hudCard = document.getElementById('hud-card-grade');
+  if (badge) { badge.className = 'grade-badge ' + cfg.cls; badge.textContent = cfg.grade; }
+  if (lbl)   lbl.textContent = cfg.label;
+  if (hudCard) { hudCard.classList.remove('hud-s'); if (cfg.grade === 'S') hudCard.classList.add('hud-s'); }
+
+  // Combo: track consecutive A/S weeks
+  if (cfg.grade === 'S' || cfg.grade === 'A') { _comboCount++; } else { _comboCount = Math.max(0, _comboCount - 1); }
+  updateCombo(_comboCount);
+
+  // Achievement toast on grade improvement
+  if (_lastGrade && _lastGrade !== cfg.grade) {
+    const prevIdx = GRADE_CFG.findIndex(c => c.grade === _lastGrade);
+    const curIdx  = GRADE_CFG.findIndex(c => c.grade === cfg.grade);
+    if (curIdx < prevIdx) achieveToast(`🏆 Grade up: ${_lastGrade} → ${cfg.grade}! ${cfg.label}`);
+  }
+  _lastGrade = cfg.grade;
+}
+
+// ── 🔥 Combo streak display ───────────────────────────────────────────────
+function updateCombo(count) {
+  const strip = document.getElementById('combo-strip');
+  const cnt   = document.getElementById('combo-count');
+  if (!strip || !cnt) return;
+  cnt.textContent = '×' + count;
+  if (count < 2) { strip.classList.remove('visible','x3','x5','x8'); return; }
+  strip.classList.add('visible');
+  strip.classList.remove('x3','x5','x8');
+  if (count >= 8)      strip.classList.add('x8');
+  else if (count >= 5) strip.classList.add('x5');
+  else if (count >= 3) strip.classList.add('x3');
+}
+
+// ── 💥 Floating +/- delta numbers ────────────────────────────────────────
+function spawnFloatNum(delta, x, y, color) {
+  if (delta === 0) return;
+  const el = document.createElement('div');
+  el.className = 'float-num';
+  el.textContent = (delta > 0 ? '+' : '') + delta;
+  el.style.color = color;
+  el.style.left  = (x - 30) + 'px';
+  el.style.top   = (y - 20 + window.scrollY) + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove(), {once:true});
+}
+
+// ── 🎆 Particle burst on week flash ──────────────────────────────────────
+function spawnParticles() {
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const colors = ['#f5c842','#3b82f6','#a855f7','#22c55e','#ef4444','#ffffff'];
+  for (let i = 0; i < 32; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 80 + Math.random() * 220;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    el.style.setProperty('--dur', (.45 + Math.random() * .75) + 's');
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.left = (cx + Math.random() * 40 - 20) + 'px';
+    el.style.top  = (cy + Math.random() * 40 - 20) + 'px';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), {once:true});
+  }
+}
+
+// ── 🎖️ Achievement-style toast ────────────────────────────────────────────
+function achieveToast(msg) {
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const d = document.createElement('div');
+  d.className = 'toast achieve';
+  d.innerHTML = `<span style="font-size:1rem;">🏅</span><span>${msg}</span>`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 4200);
+}
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-{% if session.status == 'playing' %}
 gameStarted = true;
 document.getElementById('lobby-overlay').classList.add('hidden');
 {% endif %}
