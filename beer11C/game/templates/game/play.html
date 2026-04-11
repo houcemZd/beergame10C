@@ -2316,6 +2316,7 @@ function achieveToast(msg) {
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
+{% if session.status == 'playing' %}
 gameStarted = true;
 document.getElementById('lobby-overlay').classList.add('hidden');
 {% endif %}
