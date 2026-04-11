@@ -297,9 +297,10 @@ document.querySelectorAll('[id^="pill-"]').forEach(el => {
 });
 
 const EMOJIS = { customer:'👤', retailer:'🛒', wholesaler:'🏪', distributor:'🚚', factory:'🏭' };
+const POLL_INTERVAL_MS = 3000;
 
 let isGameLive = false;
-let poll = setInterval(fetchStatus, 3000);
+let poll = setInterval(fetchStatus, POLL_INTERVAL_MS);
 fetchStatus();
 
 async function fetchStatus() {
@@ -354,7 +355,7 @@ function updateUI(d) {
       document.getElementById('hdr-sub').textContent   = d.is_finished ? 'The game has ended' : 'Watching the game live';
       // Increase poll frequency while game is live
       clearInterval(poll);
-      poll = setInterval(fetchStatus, 3000);
+      poll = setInterval(fetchStatus, POLL_INTERVAL_MS);
     }
 
     // Progress bar
