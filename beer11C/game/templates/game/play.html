@@ -72,160 +72,320 @@
 .ph-line { flex:1; height:2px; background:var(--border); min-width:14px; max-width:30px; }
 .ph-line.done { background:var(--success); }
 
-/* ── Board map ────────────────────────────────────────────────────────────── */
-.bgb-wrap { overflow-x:auto; padding:.4rem 0 .6rem; }
-.bgb {
-  display:flex; align-items:stretch; gap:0; min-width:860px;
-  font-family:var(--font-mono);
+/* ═══════════════ ROAD BOARD ═══════════════════════════════════════════════ */
+
+/* Scroll wrapper */
+.road-board-wrap { overflow-x:auto; padding:.5rem 0 .8rem; }
+
+/* Flex row containing alternating nodes + road segments */
+.road-board {
+  display:flex; align-items:stretch; min-width:960px;
+  font-family:var(--font-mono); position:relative; gap:0;
 }
 
-/* Actor column */
-.bgb-actor {
-  display:flex; flex-direction:column; flex:1; min-width:0;
-  border:1.5px solid transparent; border-radius:8px;
-  transition:border-color .2s, background .2s;
+/* ── Warehouse node (actor column) ─────────────────────────────────────── */
+.road-node {
+  display:flex; flex-direction:column; flex:0 0 106px; width:106px;
+  border:1.5px solid transparent; border-radius:10px; overflow:hidden;
+  transition:border-color .25s, box-shadow .25s;
 }
-.bgb-actor.you {
-  border-color:rgba(255,255,255,.2) !important;
-  background:rgba(255,255,255,.025);
-}
-.bgb-actor-hdr {
-  font-size:.62rem; font-weight:700; text-transform:uppercase;
-  letter-spacing:.1em; color:var(--muted); text-align:center;
-  padding:.3rem .2rem .2rem; display:flex; align-items:center;
+.road-node.you { border-color:rgba(255,255,255,.22) !important; }
+
+/* Warehouse header */
+.road-node-hdr {
+  font-size:.58rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; text-align:center; padding:.42rem .2rem .32rem;
+  border-radius:8px 8px 0 0; display:flex; align-items:center;
   justify-content:center; gap:.3rem; white-space:nowrap;
 }
+/* YOU badge */
 .bgb-you-badge {
-  font-size:.54rem; padding:.08rem .35rem; border-radius:999px;
+  font-size:.52rem; padding:.07rem .32rem; border-radius:999px;
   background:rgba(33,150,243,.2); color:#8ecbff;
   border:1px solid rgba(33,150,243,.3); font-weight:900;
 }
-.bgb-actor-body {
-  display:flex; flex-direction:row; align-items:stretch;
-  flex:1; gap:2px; padding:0 3px 4px;
-}
 
-/* Slot column (orders-placed, ship-delay) */
-.bgb-slot-col {
-  display:flex; flex-direction:column; gap:2px;
-  align-items:center; flex-shrink:0; width:38px;
-}
-.bgb-slot-lbl {
-  font-size:.43rem; font-weight:700; text-transform:uppercase;
-  letter-spacing:.03em; text-align:center; color:var(--muted);
-  line-height:1.15; height:22px; display:flex; align-items:center;
-  justify-content:center;
-}
-.amber-col .bgb-slot-lbl { color:rgba(245,200,66,.75); }
-.blue-col  .bgb-slot-lbl { color:rgba(59,130,246,.75); }
-
-/* Individual slot box */
-.bgb-slot {
-  width:100%; min-height:34px; border:1px solid var(--border);
-  border-radius:5px; background:var(--surface2);
-  display:flex; align-items:center; justify-content:center;
-  transition:border-color .2s, background .2s;
-}
-.bgb-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
-.bgb-slot.blue  { border-color:rgba(59,130,246,.35);  background:rgba(59,130,246,.07); }
-.bgb-slot.arriving { border-color:var(--success) !important; background:rgba(34,197,94,.12) !important; animation:pulse-arr 1.2s infinite; }
-.bgb-slot.arriving .bgb-v { color:var(--success) !important; }
-.bgb-v {
-  font-family:var(--font-mono); font-size:.9rem; font-weight:800;
-  color:var(--muted); line-height:1;
-}
-.bgb-slot.amber .bgb-v { color:#ffd36a; }
-.bgb-slot.blue  .bgb-v { color:#8ecbff; }
-
-/* Inventory column */
-.bgb-inv-col {
+/* Warehouse body */
+.road-node-body {
   display:flex; flex-direction:column; align-items:center;
-  flex:1; min-width:0; gap:2px;
+  flex:1; background:var(--surface); padding:.5rem .35rem .4rem; gap:5px;
 }
+
+/* ── Inventory box (shared base, same IDs used by JS) ─────────────────── */
 .bgb-inv-box {
   width:100%; flex:1; background:var(--surface2);
-  border:2px solid var(--border); border-radius:7px;
-  padding:4px 5px; text-align:center;
+  border:2px solid var(--border); border-radius:8px;
+  padding:6px 5px; text-align:center;
   display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:2px; transition:border-color .2s;
+  justify-content:center; gap:3px;
+  transition:border-color .35s; position:relative; overflow:hidden;
+  min-height:62px;
 }
-.bgb-inv-val { font-family:var(--font-mono); font-size:1.35rem; font-weight:800; line-height:1.1; }
+/* Warehouse roof top-accent line */
+.bgb-inv-box::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:inherit; opacity:.5;
+}
+.bgb-inv-val { font-family:var(--font-mono); font-size:1.4rem; font-weight:800; line-height:1.1; }
 .bgb-inv-val.good { color:var(--success); }
 .bgb-inv-val.warn { color:var(--accent); }
 .bgb-inv-val.bad  { color:var(--danger); }
-.bgb-backlog { font-size:.56rem; padding:.1rem .4rem; border-radius:999px; font-weight:700; }
+.bgb-backlog { font-size:.54rem; padding:.1rem .4rem; border-radius:999px; font-weight:700; }
 .bgb-backlog.zero    { color:var(--muted); }
 .bgb-backlog.nonzero { color:var(--danger); background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.22); }
-
-/* Separator arrow between actors */
-.bgb-sep {
-  display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:5px; flex-shrink:0; width:18px;
-  padding-top:24px;
+.bgb-inv-healthbar {
+  position:absolute; bottom:0; left:0; height:3px;
+  border-radius:0 0 6px 6px;
+  transition:width .65s cubic-bezier(.22,1,.36,1), background .4s;
 }
-.bgb-arr-row { display:flex; align-items:center; gap:2px; }
-.bgb-arr-lbl { font-size:.41rem; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
-.bgb-arr { font-size:.7rem; font-weight:700; }
-.amber-arr { color:rgba(245,200,66,.7); }
-.blue-arr  { color:rgba(59,130,246,.7); }
 
-@keyframes pulse-arr   { 0%,100%{opacity:1} 50%{opacity:.55} }
+/* Role-colored header neon glow */
+#col-customer   .road-node-hdr { background:rgba(107,114,128,.12); border-bottom:2px solid rgba(107,114,128,.3);  color:var(--muted); }
+#col-retailer   .road-node-hdr { background:rgba(245,200,66,.1);   border-bottom:2px solid rgba(245,200,66,.65);  color:#ffd36a;  text-shadow:0 0 10px rgba(245,200,66,.8); }
+#col-wholesaler .road-node-hdr { background:rgba(59,130,246,.1);   border-bottom:2px solid rgba(59,130,246,.65);  color:#8ecbff;  text-shadow:0 0 10px rgba(59,130,246,.8); }
+#col-distributor .road-node-hdr { background:rgba(168,85,247,.1);  border-bottom:2px solid rgba(168,85,247,.65);  color:#d8a4ff;  text-shadow:0 0 10px rgba(168,85,247,.8); }
+#col-factory    .road-node-hdr { background:rgba(34,197,94,.1);    border-bottom:2px solid rgba(34,197,94,.65);   color:#4ade80;  text-shadow:0 0 10px rgba(34,197,94,.8);  }
+
+/* Role-specific YOU glow */
+#col-retailer.you    { box-shadow:0 0 0 2px rgba(245,200,66,.6), 0 0 30px rgba(245,200,66,.18) !important; }
+#col-wholesaler.you  { box-shadow:0 0 0 2px rgba(59,130,246,.6), 0 0 30px rgba(59,130,246,.18) !important; }
+#col-distributor.you { box-shadow:0 0 0 2px rgba(168,85,247,.6), 0 0 30px rgba(168,85,247,.18) !important; }
+#col-factory.you     { box-shadow:0 0 0 2px rgba(34,197,94,.6),  0 0 30px rgba(34,197,94,.18)  !important; }
+
+/* Sweep animation on new week */
+@keyframes col-sweep {
+  0%   { background:var(--surface); }
+  30%  { background:rgba(245,200,66,.06); box-shadow:inset 0 0 0 1px rgba(245,200,66,.15); }
+  100% { background:var(--surface); box-shadow:none; }
+}
+.road-node.sweeping { animation:col-sweep .55s ease forwards; }
+
+/* ── Factory internal pipeline slots ────────────────────────────────────── */
+.factory-pipeline {
+  display:flex; gap:3px; width:100%; margin-top:2px;
+}
+.fac-pipe-col {
+  flex:1; display:flex; flex-direction:column; gap:3px; align-items:center;
+}
+.fac-pipe-lbl {
+  font-size:.4rem; text-transform:uppercase; letter-spacing:.04em;
+  text-align:center; line-height:1.2; font-weight:700;
+}
+.fac-pipe-lbl.amber { color:rgba(245,200,66,.7); }
+.fac-pipe-lbl.blue  { color:rgba(59,130,246,.7); }
+
+/* Factory pipeline slot (compact, column layout) */
+.fac-slot {
+  width:100%; min-height:28px; border-radius:5px;
+  border:1px solid var(--border); background:var(--surface2);
+  display:flex; align-items:center; justify-content:center;
+}
+.fac-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
+.fac-slot.blue  { border-color:rgba(59,130,246,.35);  background:rgba(59,130,246,.07); }
+.fac-slot .bgb-v {
+  font-family:var(--font-mono); font-size:.8rem; font-weight:800; line-height:1;
+}
+.fac-slot.amber .bgb-v { color:#ffd36a; }
+.fac-slot.blue  .bgb-v { color:#8ecbff; }
+.fac-slot.arriving { border-color:var(--success)!important; background:rgba(34,197,94,.12)!important; animation:pulse-arr 1.2s infinite; }
+.fac-slot.arriving .bgb-v { color:var(--success)!important; }
+
+/* ── Road segment (between nodes) ──────────────────────────────────────── */
+.road-seg {
+  flex:1; min-width:96px; display:flex; flex-direction:column; position:relative;
+}
+
+/* Top row: order/demand envelopes (flow →) */
+.road-orders-row {
+  display:flex; justify-content:space-around; align-items:center;
+  padding:4px 18px 0; min-height:30px; gap:4px;
+}
+
+/* Road surface */
+.road-surface {
+  flex:1; min-height:54px;
+  background:linear-gradient(180deg, #0e1017 0%, #13161f 40%, #0e1017 100%);
+  border-top:3px solid #252a38; border-bottom:3px solid #252a38;
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:space-around;
+  padding:0 22px;
+}
+/* Road edge markings */
+.road-surface::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04) 0%, transparent 4px, transparent calc(100% - 4px), rgba(255,255,255,.04) 100%);
+}
+/* Animated centre dashes */
+.road-surface::after {
+  content:''; position:absolute; top:50%; left:-200%;
+  width:400%; height:2px;
+  background:repeating-linear-gradient(90deg,
+    transparent 0, transparent 7px,
+    rgba(245,200,66,.3) 7px, rgba(245,200,66,.3) 15px);
+  animation:road-flow .75s linear infinite; pointer-events:none;
+}
+@keyframes road-flow {
+  from { transform:translateY(-50%) translateX(0); }
+  to   { transform:translateY(-50%) translateX(22px); }
+}
+
+/* ── bgb-slot on the road → truck badge ──────────────────────────────── */
+.road-surface .bgb-slot {
+  flex-shrink:0; position:relative; border-radius:3px 7px 7px 3px;
+  height:30px; min-width:40px; width:auto;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color .2s, background .2s;
+}
+.road-surface .bgb-slot.blue {
+  background:rgba(10,26,60,.85);
+  border:2px solid rgba(59,130,246,.6);
+  border-left:4px solid rgba(59,130,246,.8);
+}
+/* Truck cab (left side protrusion via ::before) */
+.road-surface .bgb-slot.blue::before {
+  content:'🚛'; position:absolute; left:-20px; top:50%;
+  transform:translateY(-50%); font-size:.95rem; line-height:1;
+  filter:drop-shadow(0 0 5px rgba(59,130,246,.7));
+}
+/* Cargo quantity */
+.road-surface .bgb-slot.blue .bgb-v {
+  color:#8ecbff; font-size:.78rem; font-weight:900;
+  text-shadow:0 0 6px rgba(59,130,246,.6);
+  padding-left:2px;
+}
+/* Arriving truck glows green */
+.road-surface .bgb-slot.arriving {
+  border-color:var(--success)!important;
+  background:rgba(10,40,20,.85)!important;
+  animation:truck-pulse 1.1s ease infinite;
+}
+.road-surface .bgb-slot.arriving .bgb-v { color:#4ade80!important; }
+@keyframes truck-pulse {
+  0%,100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); }
+  50%    { box-shadow:0 0 10px 3px rgba(34,197,94,.4); }
+}
+/* Empty/blank truck */
+.road-surface .bgb-slot:not(.blue):not(.amber):not(.arriving) {
+  opacity:.13; border:1px dashed rgba(255,255,255,.08);
+  background:transparent; border-radius:5px;
+}
+.road-surface .bgb-slot:not(.blue):not(.amber):not(.arriving) .bgb-v { color:transparent; }
+
+/* ── bgb-slot in order row → envelope/document badge ────────────────── */
+.road-orders-row .bgb-slot {
+  flex-shrink:0; position:relative; border-radius:4px;
+  height:22px; min-width:36px; width:auto;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color .2s, background .2s;
+}
+.road-orders-row .bgb-slot.amber {
+  background:rgba(60,42,0,.75);
+  border:1.5px solid rgba(245,200,66,.55);
+  border-top:3px solid rgba(245,200,66,.7);
+}
+/* Document icon */
+.road-orders-row .bgb-slot.amber::before {
+  content:'📄'; position:absolute; left:-18px; top:50%;
+  transform:translateY(-50%); font-size:.78rem; line-height:1;
+}
+.road-orders-row .bgb-slot.amber .bgb-v {
+  color:#ffd36a; font-size:.72rem; font-weight:900;
+  text-shadow:0 0 5px rgba(245,200,66,.5);
+}
+/* Empty order slot */
+.road-orders-row .bgb-slot:not(.amber):not(.arriving) {
+  opacity:.12; border:1px dashed rgba(245,200,66,.15); background:transparent;
+}
+.road-orders-row .bgb-slot:not(.amber):not(.arriving) .bgb-v { color:transparent; }
+
+/* Bottom label row */
+.road-seg-labels {
+  display:flex; justify-content:space-around; align-items:center;
+  padding:2px 4px; min-height:20px; gap:4px;
+}
+.road-seg-lbl {
+  font-size:.39rem; text-transform:uppercase; letter-spacing:.05em;
+  padding:.1rem .32rem; border-radius:999px; font-weight:700; white-space:nowrap;
+}
+.road-seg-lbl.blue  { color:#8ecbff; background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.25); }
+.road-seg-lbl.amber { color:#ffd36a; background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.22); }
+
+/* Road direction arrows (decorative, inside road) */
+.road-flow-dir {
+  position:absolute; top:50%; right:6px;
+  transform:translateY(-50%); display:flex; flex-direction:column; gap:1px;
+  pointer-events:none; opacity:.45;
+}
+.rfd { font-size:.52rem; font-weight:700; }
+.rfd.blue  { color:#3b82f6; }
+.rfd.amber { color:#f5c842; }
+
+/* ── Shared animation keyframes ──────────────────────────────────────────── */
+@keyframes pulse-arr   { 0%,100%{opacity:1} 50%{opacity:.5} }
 @keyframes pulse-ready { 0%,100%{box-shadow:0 0 0 rgba(245,200,66,.4)} 50%{box-shadow:0 0 18px rgba(245,200,66,.7)} }
 
-/* ── Board map animations ─────────────────────────────────────────────────── */
-
-/* Slot flash: item sliding out (departed) */
 @keyframes slot-depart {
-  0%   { transform: translateX(0);    opacity: 1; }
-  40%  { transform: translateX(-12px); opacity: 0; }
-  41%  { transform: translateX(12px);  opacity: 0; content: '·'; }
-  100% { transform: translateX(0);    opacity: 1; }
+  0%   { transform:translateX(0);     opacity:1; }
+  40%  { transform:translateX(-12px); opacity:0; }
+  41%  { transform:translateX(12px);  opacity:0; }
+  100% { transform:translateX(0);     opacity:1; }
 }
-/* Slot flash: item arriving (green pulse into box) */
 @keyframes slot-arrive {
-  0%   { transform: scale(1);    background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.35); }
-  30%  { transform: scale(1.12); background: rgba(34,197,94,.35);  border-color: var(--success); }
-  60%  { transform: scale(1.06); background: rgba(34,197,94,.2);   border-color: var(--success); }
-  100% { transform: scale(1);    background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.35); }
+  0%   { transform:scale(1);    background:rgba(34,197,94,.08); border-color:rgba(34,197,94,.35); }
+  30%  { transform:scale(1.12); background:rgba(34,197,94,.35); border-color:var(--success); }
+  60%  { transform:scale(1.06); background:rgba(34,197,94,.2);  border-color:var(--success); }
+  100% { transform:scale(1);    background:rgba(34,197,94,.08); border-color:rgba(34,197,94,.35); }
 }
-/* Inventory box: receive flash (green grow) */
 @keyframes inv-receive {
-  0%   { transform: scale(1);    border-color: rgba(34,197,94,.4); box-shadow: none; }
-  25%  { transform: scale(1.04); border-color: var(--success);     box-shadow: 0 0 18px rgba(34,197,94,.4); }
-  60%  { transform: scale(1.02); border-color: var(--success);     box-shadow: 0 0 8px rgba(34,197,94,.2); }
-  100% { transform: scale(1);    border-color: rgba(34,197,94,.4); box-shadow: none; }
+  0%   { transform:scale(1);    border-color:rgba(34,197,94,.4); box-shadow:none; }
+  25%  { transform:scale(1.04); border-color:var(--success);     box-shadow:0 0 18px rgba(34,197,94,.4); }
+  60%  { transform:scale(1.02); border-color:var(--success);     box-shadow:0 0 8px rgba(34,197,94,.2); }
+  100% { transform:scale(1);    border-color:rgba(34,197,94,.4); box-shadow:none; }
 }
-/* Inventory box: ship flash (blue shrink) */
 @keyframes inv-ship {
-  0%   { transform: scale(1);    border-color: rgba(59,130,246,.4); box-shadow: none; }
-  25%  { transform: scale(.97);  border-color: var(--wholesaler-color); box-shadow: 0 0 14px rgba(59,130,246,.35); }
-  60%  { transform: scale(.99);  border-color: var(--wholesaler-color); box-shadow: 0 0 6px rgba(59,130,246,.2); }
-  100% { transform: scale(1);    border-color: rgba(59,130,246,.4); box-shadow: none; }
+  0%   { transform:scale(1);   border-color:rgba(59,130,246,.4); box-shadow:none; }
+  25%  { transform:scale(.97); border-color:var(--wholesaler-color); box-shadow:0 0 14px rgba(59,130,246,.35); }
+  60%  { transform:scale(.99); border-color:var(--wholesaler-color); box-shadow:0 0 6px rgba(59,130,246,.2); }
+  100% { transform:scale(1);   border-color:rgba(59,130,246,.4); box-shadow:none; }
 }
-/* Order slot: amber pulse upstream */
 @keyframes order-placed {
-  0%   { transform: scale(1);    background: rgba(245,200,66,.07); border-color: rgba(245,200,66,.35); }
-  30%  { transform: scale(1.08); background: rgba(245,200,66,.3);  border-color: var(--accent); box-shadow: 0 0 12px rgba(245,200,66,.4); }
-  100% { transform: scale(1);    background: rgba(245,200,66,.07); border-color: rgba(245,200,66,.35); }
+  0%   { transform:scale(1);    background:rgba(60,42,0,.75); border-color:rgba(245,200,66,.55); }
+  30%  { transform:scale(1.1);  background:rgba(245,200,66,.3); border-color:var(--accent); box-shadow:0 0 12px rgba(245,200,66,.5); }
+  100% { transform:scale(1);    background:rgba(60,42,0,.75); border-color:rgba(245,200,66,.55); }
 }
-/* Ship slot: blue appear */
 @keyframes ship-appear {
-  0%   { transform: scale(.8) translateY(6px); opacity: 0; }
-  60%  { transform: scale(1.05) translateY(-2px); opacity: 1; }
-  100% { transform: scale(1) translateY(0);    opacity: 1; }
+  0%   { transform:scale(.75) translateX(10px); opacity:0; }
+  60%  { transform:scale(1.06) translateX(-3px); opacity:1; }
+  100% { transform:scale(1) translateX(0); opacity:1; }
 }
 
-.anim-arrive  { animation: slot-arrive  .7s ease forwards; }
-.anim-depart  { animation: slot-depart  .5s ease forwards; }
-.anim-inv-rcv { animation: inv-receive  .8s ease forwards; }
-.anim-inv-shp { animation: inv-ship     .7s ease forwards; }
-.anim-order   { animation: order-placed .6s ease forwards; }
-.anim-ship    { animation: ship-appear  .5s ease forwards; }
+.anim-arrive  { animation:slot-arrive  .7s ease forwards; }
+.anim-depart  { animation:slot-depart  .5s ease forwards; }
+.anim-inv-rcv { animation:inv-receive  .8s ease forwards; }
+.anim-inv-shp { animation:inv-ship     .7s ease forwards; }
+.anim-order   { animation:order-placed .6s ease forwards; }
+.anim-ship    { animation:ship-appear  .5s ease forwards; }
+
+/* Pipeline detail items */
 .pl-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border-radius:6px; padding:.4rem .7rem; font-size:.78rem; margin-bottom:.3rem; border-left:3px solid transparent; }
 .pl-item.ship  { border-color:var(--wholesaler-color); }
 .pl-item.order { border-color:var(--accent); }
 .pl-bar { flex:1; height:4px; background:var(--border); border-radius:2px; margin:0 .6rem; overflow:hidden; }
 .pl-fill { height:100%; border-radius:2px; }
+
+/* bgb-v base (shared) */
+.bgb-v { font-family:var(--font-mono); font-size:.9rem; font-weight:800; color:var(--muted); line-height:1; transition:color .3s; }
+.bgb-inv-val { transition:color .35s; }
+.bgb-inv-box { transition:border-color .35s; }
+
+/* val-pop (slot value changed) */
+@keyframes val-pop {
+  0%   { transform:scale(1.55); color:var(--accent); opacity:.9; }
+  55%  { transform:scale(.92); }
+  100% { transform:scale(1); color:inherit; opacity:1; }
+}
+.anim-val-pop { animation:val-pop .38s cubic-bezier(.22,1,.36,1) forwards; }
 
 /* ── Chart ────────────────────────────────────────────────────────────────── */
 .chart-wrap { position:relative; height:190px; }
@@ -246,93 +406,7 @@
 #conn-dot.online  { background:var(--success); box-shadow:0 0 5px var(--success); }
 #conn-dot.offline { background:var(--danger); }
 
-/* ── Reactivity: smooth color transitions ─────────────────────────────────── */
-.bgb-v        { transition: color .3s; }
-.bgb-inv-val  { transition: color .35s; }
-.bgb-inv-box  { transition: border-color .35s; }
-.hud-value    { transition: color .3s; }
-
-/* ── Reactivity: slot value-change pop animation ──────────────────────────── */
-@keyframes val-pop {
-  0%   { transform: scale(1.55); color: var(--accent); opacity: .9; }
-  55%  { transform: scale(0.92); }
-  100% { transform: scale(1);    color: inherit; opacity: 1; }
-}
-.anim-val-pop { animation: val-pop .38s cubic-bezier(.22,1,.36,1) forwards; }
-
-/* ── Reactivity: board column sweep on new week ───────────────────────────── */
-@keyframes col-sweep {
-  0%   { background: transparent; }
-  30%  { background: rgba(245,200,66,.05); box-shadow: inset 0 0 0 1px rgba(245,200,66,.12); }
-  100% { background: transparent; box-shadow: none; }
-}
-.bgb-actor.sweeping { animation: col-sweep .55s ease forwards; border-radius: 8px; }
-
-/* ══════════════════════════════════════════════════════════════════════
-   🎮  GAME-MODE VISUAL UPGRADES
-   ══════════════════════════════════════════════════════════════════════ */
-
-/* ── Role-coloured neon headers ─────────────────────────────────────── */
-#col-customer   .bgb-actor-hdr { background:rgba(107,114,128,.12); border-bottom:2px solid rgba(107,114,128,.3); }
-#col-retailer   .bgb-actor-hdr { background:rgba(245,200,66,.1);   border-bottom:2px solid rgba(245,200,66,.6);  color:#ffd36a; text-shadow:0 0 10px rgba(245,200,66,.8); }
-#col-wholesaler .bgb-actor-hdr { background:rgba(59,130,246,.1);   border-bottom:2px solid rgba(59,130,246,.6);  color:#8ecbff; text-shadow:0 0 10px rgba(59,130,246,.8); }
-#col-distributor .bgb-actor-hdr{ background:rgba(168,85,247,.1);   border-bottom:2px solid rgba(168,85,247,.6);  color:#d8a4ff; text-shadow:0 0 10px rgba(168,85,247,.8); }
-#col-factory    .bgb-actor-hdr { background:rgba(34,197,94,.1);    border-bottom:2px solid rgba(34,197,94,.6);   color:#4ade80; text-shadow:0 0 10px rgba(34,197,94,.8); }
-.bgb-actor-hdr { border-radius:6px 6px 0 0; font-size:.65rem; padding:.45rem .2rem .35rem; }
-
-/* ── Board card neon border + scanline ──────────────────────────────── */
-#bgb-board-card {
-  position:relative;
-  border-color:rgba(245,200,66,.22) !important;
-  box-shadow:0 0 0 1px rgba(245,200,66,.08), 0 0 40px rgba(245,200,66,.07) !important;
-}
-#bgb-board-card::after {
-  content:''; position:absolute; inset:0; pointer-events:none; border-radius:var(--radius);
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.045) 3px,rgba(0,0,0,.045) 4px);
-}
-
-/* ── Enhanced "you" column glow ─────────────────────────────────────── */
-.bgb-actor.you {
-  box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 0 24px rgba(255,255,255,.06) !important;
-}
-
-/* ── Pulsing flow arrows ─────────────────────────────────────────────── */
-@keyframes arr-pulse-amber { 0%,100%{color:rgba(245,200,66,.45);text-shadow:none} 50%{color:#ffd36a;text-shadow:0 0 8px rgba(245,200,66,.9)} }
-@keyframes arr-pulse-blue  { 0%,100%{color:rgba(59,130,246,.45);text-shadow:none} 50%{color:#8ecbff;text-shadow:0 0 8px rgba(59,130,246,.9)} }
-.amber-arr { animation:arr-pulse-amber 2s ease infinite; }
-.blue-arr  { animation:arr-pulse-blue  2s ease infinite 1s; }
-
-/* ── WEEK N flash banner ─────────────────────────────────────────────── */
-#week-flash {
-  position:fixed; inset:0; z-index:9990; pointer-events:none;
-  display:flex; align-items:center; justify-content:center;
-}
-#week-flash-inner {
-  font-family:var(--font-mono); font-size:4rem; font-weight:700;
-  color:#fff; opacity:0; letter-spacing:.15em; text-transform:uppercase;
-  text-shadow:0 0 40px var(--accent), 0 0 80px rgba(245,200,66,.5);
-  transform:scale(.65);
-}
-#week-flash-inner.active { animation:wkflash 1.1s cubic-bezier(.22,1,.36,1) forwards; }
-@keyframes wkflash {
-  0%   { opacity:0; transform:scale(.65); }
-  14%  { opacity:1; transform:scale(1.08); }
-  42%  { opacity:1; transform:scale(1); }
-  80%  { opacity:.85; }
-  100% { opacity:0; transform:scale(1.25); }
-}
-
-/* ── Critical backlog body vignette ─────────────────────────────────── */
-@keyframes crit-flash { 0%,100%{box-shadow:inset 0 0 0 rgba(239,68,68,0)} 50%{box-shadow:inset 0 0 90px rgba(239,68,68,.18)} }
-body.crit-alert { animation:crit-flash 1.4s ease infinite; }
-
-/* ── Inventory health bar ───────────────────────────────────────────── */
-.bgb-inv-box { position:relative; overflow:hidden; }
-.bgb-inv-healthbar {
-  position:absolute; bottom:0; left:0; height:3px;
-  border-radius:0 0 5px 5px;
-  transition:width .65s cubic-bezier(.22,1,.36,1), background .4s;
-}
+.hud-value { transition:color .3s; }
 
 /* ── HUD card state glow ────────────────────────────────────────────── */
 .hud-card { transition:box-shadow .45s, border-color .45s; }
@@ -407,8 +481,12 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 #combo-strip.x8 #combo-count { color:#d8a4ff; animation:combo-glow 1s ease infinite; }
 @keyframes combo-glow { 0%,100%{text-shadow:0 0 6px currentColor} 50%{text-shadow:0 0 18px currentColor} }
 
-/* ── Board card scanner line ─────────────────────────────────────────── */
-#bgb-board-card { overflow: hidden; }
+/* ── Board card neon border + scanner line ───────────────────────────── */
+#bgb-board-card {
+  position:relative; overflow:hidden;
+  border-color:rgba(245,200,66,.22) !important;
+  box-shadow:0 0 0 1px rgba(245,200,66,.08), 0 0 40px rgba(245,200,66,.07) !important;
+}
 .board-scanner {
   position: absolute; left: 0; right: 0; height: 3px; top: 0; z-index: 20;
   pointer-events: none;
@@ -422,12 +500,6 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
   50%     { top: 100%; opacity:0; }
   52%     { top: 0%; opacity:0; }
 }
-
-/* ── Role-specific "you" column neon glow (per role) ────────────────── */
-#col-retailer.you    { box-shadow: 0 0 0 2px rgba(245,200,66,.55),  0 0 32px rgba(245,200,66,.15) !important; }
-#col-wholesaler.you  { box-shadow: 0 0 0 2px rgba(59,130,246,.55),  0 0 32px rgba(59,130,246,.15) !important; }
-#col-distributor.you { box-shadow: 0 0 0 2px rgba(168,85,247,.55),  0 0 32px rgba(168,85,247,.15) !important; }
-#col-factory.you     { box-shadow: 0 0 0 2px rgba(34,197,94,.55),   0 0 32px rgba(34,197,94,.15)  !important; }
 
 /* ── Achievement / XP bar ───────────────────────────────────────────── */
 #xp-bar-wrap {
@@ -458,6 +530,26 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 /* ── Efficiency mini-chart bar (hud) ─────────────────────────────────── */
 .eff-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 3px; overflow:hidden; }
 .eff-fill { height: 100%; border-radius: 2px; transition: width .5s ease, background .4s; }
+
+/* ── Base bgb-slot (customer demand + factory pipeline) ─────────────── */
+.bgb-slot {
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); border-radius:5px;
+  background:var(--surface2); min-height:34px; width:100%;
+  transition:border-color .2s, background .2s;
+}
+.bgb-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
+.bgb-slot.amber .bgb-v { color:#ffd36a; font-size:.82rem; font-weight:800; }
+.bgb-slot.blue  { border-color:rgba(59,130,246,.35); background:rgba(59,130,246,.07); }
+.bgb-slot.blue  .bgb-v { color:#8ecbff; font-size:.82rem; font-weight:800; }
+.bgb-slot.arriving { border-color:var(--success)!important; background:rgba(34,197,94,.12)!important; animation:pulse-arr 1.2s infinite; }
+.bgb-slot.arriving .bgb-v { color:var(--success)!important; }
+/* Factory pipeline: context-based overrides */
+.factory-pipeline .bgb-slot { min-height:28px; border-radius:4px; }
+.factory-pipeline .bgb-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
+.factory-pipeline .bgb-slot.amber .bgb-v { color:#ffd36a; }
+.factory-pipeline .bgb-slot.blue  { border-color:rgba(59,130,246,.35); background:rgba(59,130,246,.07); }
+.factory-pipeline .bgb-slot.blue  .bgb-v { color:#8ecbff; }
 
 /* ── Board slot tooltip ──────────────────────────────────────────────── */
 .bgb-slot[data-tip] { position: relative; cursor: default; }
@@ -848,160 +940,163 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 </div>
 {% endif %}
 
-<!-- ═══════════════ SUPPLY CHAIN BOARD ═════════════════════════════════════ -->
+<!-- ═══════════════ SUPPLY CHAIN ROAD BOARD ══════════════════════════════ -->
 <div class="card" id="bgb-board-card" style="margin-bottom:1.5rem; padding:1.1rem 1.25rem;">
   <div class="board-scanner"></div>
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
-    <div class="card-title" style="margin:0;">Supply Chain Board</div>
-    <div style="font-size:.62rem; color:var(--muted); font-family:var(--font-mono);">
-      <span style="color:rgba(245,200,66,.8);">■</span> orders &nbsp;
-      <span style="color:rgba(59,130,246,.8);">■</span> shipments
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem;">
+    <div class="card-title" style="margin:0;">🛣 Supply Chain Highway</div>
+    <div style="font-size:.6rem; color:var(--muted); font-family:var(--font-mono);">
+      <span style="color:rgba(59,130,246,.85);">🚛</span> shipments &nbsp;
+      <span style="color:rgba(245,200,66,.85);">📄</span> orders
     </div>
   </div>
-  <div class="bgb-wrap">
-    <div class="bgb">
+  <div class="road-board-wrap">
+    <div class="road-board">
 
-      <!-- ── CUSTOMER ──────────────────────────────── -->
-      <div class="bgb-actor" id="col-customer">
-        <div class="bgb-actor-hdr">👤 Customer</div>
-        <div class="bgb-actor-body" style="justify-content:center; padding-top:4px;">
-          <div class="bgb-slot-col amber-col" style="width:46px;">
-            <div class="bgb-slot-lbl">demand</div>
-            <div class="bgb-slot amber" id="cust-ord-1" data-tip="Customer demand this week"><span class="bgb-v">·</span></div>
+      <!-- ── CUSTOMER ──────────────────────────────────────────────────── -->
+      <div class="road-node" id="col-customer">
+        <div class="road-node-hdr bgb-actor-hdr">👤 Customer</div>
+        <div class="road-node-body" style="justify-content:center;">
+          <div style="font-size:.45rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;">demand</div>
+          <div class="bgb-slot amber" id="cust-ord-1" data-tip="Customer demand this week"
+               style="width:54px; min-height:40px;">
+            <span class="bgb-v">·</span>
           </div>
         </div>
       </div>
 
-      <!-- ── SEP C→R ──────────── -->
-      <div class="bgb-sep">
-        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
-        <div class="bgb-arr-lbl">demand</div>
-        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
-        <div class="bgb-arr-lbl">goods</div>
+      <!-- ── NARROW CONNECTOR C→R (no pipeline delay) ─────────────────── -->
+      <div class="road-seg" style="flex:0.3; min-width:24px;">
+        <div class="road-orders-row"></div>
+        <div class="road-surface" style="padding:0; justify-content:center;">
+          <div class="road-flow-dir"><span class="rfd amber">←</span></div>
+        </div>
+        <div class="road-seg-labels"></div>
       </div>
 
-      <!-- ── RETAILER ──────────────────────────────── -->
-      <div class="bgb-actor" id="col-retailer">
-        <div class="bgb-actor-hdr">🛒 Retailer</div>
-        <div class="bgb-actor-body">
-          <div class="bgb-slot-col amber-col">
-            <div class="bgb-slot-lbl">orders out</div>
-            <div class="bgb-slot" id="rt-ord-1" data-tip="Order placed upstream (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="rt-ord-2" data-tip="Order placed upstream (arriving later)"><span class="bgb-v">·</span></div>
+      <!-- ── RETAILER ──────────────────────────────────────────────────── -->
+      <div class="road-node" id="col-retailer">
+        <div class="road-node-hdr bgb-actor-hdr">🛒 Retailer</div>
+        <div class="road-node-body">
+          <div class="bgb-inv-box" id="rt-inv-box">
+            <div class="bgb-inv-healthbar" id="rt-health" style="width:50%;background:#22c55e;"></div>
+            <div class="bgb-inv-val good" id="rt-inv">—</div>
+            <div class="bgb-backlog zero" id="rt-blg">blg:0</div>
           </div>
-          <div class="bgb-inv-col">
-            <div class="bgb-inv-box" id="rt-inv-box">
-              <div class="bgb-inv-healthbar" id="rt-health" style="width:50%;background:#22c55e;"></div>
-              <div class="bgb-inv-val good" id="rt-inv">—</div>
-              <div class="bgb-backlog zero" id="rt-blg">blg:0</div>
+        </div>
+      </div>
+
+      <!-- ── ROAD R↔W ───────────────────────────────────────────────────── -->
+      <div class="road-seg">
+        <div class="road-orders-row">
+          <div class="bgb-slot" id="rt-ord-1" data-tip="Order to wholesaler — arrives in 1 wk"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="rt-ord-2" data-tip="Order to wholesaler — arrives in 2 wks"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="road-surface">
+          <div class="bgb-slot" id="rt-ship-1" data-tip="Shipment from wholesaler — 1 wk away"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="rt-ship-2" data-tip="Shipment from wholesaler — 2 wks away"><span class="bgb-v">·</span></div>
+          <div class="road-flow-dir">
+            <span class="rfd amber">→</span>
+            <span class="rfd blue">←</span>
+          </div>
+        </div>
+        <div class="road-seg-labels">
+          <span class="road-seg-lbl amber">📄 orders</span>
+          <span class="road-seg-lbl blue">🚛 ships</span>
+        </div>
+      </div>
+
+      <!-- ── WHOLESALER ─────────────────────────────────────────────────── -->
+      <div class="road-node" id="col-wholesaler">
+        <div class="road-node-hdr bgb-actor-hdr">🏪 Wholesaler</div>
+        <div class="road-node-body">
+          <div class="bgb-inv-box" id="wh-inv-box">
+            <div class="bgb-inv-healthbar" id="wh-health" style="width:50%;background:#22c55e;"></div>
+            <div class="bgb-inv-val good" id="wh-inv">—</div>
+            <div class="bgb-backlog zero" id="wh-blg">blg:0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROAD W↔D ───────────────────────────────────────────────────── -->
+      <div class="road-seg">
+        <div class="road-orders-row">
+          <div class="bgb-slot" id="wh-ord-1" data-tip="Order to distributor — 1 wk"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="wh-ord-2" data-tip="Order to distributor — 2 wks"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="road-surface">
+          <div class="bgb-slot" id="wh-ship-1" data-tip="Shipment from distributor — 1 wk"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="wh-ship-2" data-tip="Shipment from distributor — 2 wks"><span class="bgb-v">·</span></div>
+          <div class="road-flow-dir">
+            <span class="rfd amber">→</span>
+            <span class="rfd blue">←</span>
+          </div>
+        </div>
+        <div class="road-seg-labels">
+          <span class="road-seg-lbl amber">📄 orders</span>
+          <span class="road-seg-lbl blue">🚛 ships</span>
+        </div>
+      </div>
+
+      <!-- ── DISTRIBUTOR ────────────────────────────────────────────────── -->
+      <div class="road-node" id="col-distributor">
+        <div class="road-node-hdr bgb-actor-hdr">🚚 Distributor</div>
+        <div class="road-node-body">
+          <div class="bgb-inv-box" id="di-inv-box">
+            <div class="bgb-inv-healthbar" id="di-health" style="width:50%;background:#22c55e;"></div>
+            <div class="bgb-inv-val good" id="di-inv">—</div>
+            <div class="bgb-backlog zero" id="di-blg">blg:0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROAD D↔F ───────────────────────────────────────────────────── -->
+      <div class="road-seg">
+        <div class="road-orders-row">
+          <div class="bgb-slot" id="di-ord-1" data-tip="Order to factory — 1 wk"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="di-ord-2" data-tip="Order to factory — 2 wks"><span class="bgb-v">·</span></div>
+        </div>
+        <div class="road-surface">
+          <div class="bgb-slot" id="di-ship-1" data-tip="Shipment from factory — 1 wk"><span class="bgb-v">·</span></div>
+          <div class="bgb-slot" id="di-ship-2" data-tip="Shipment from factory — 2 wks"><span class="bgb-v">·</span></div>
+          <div class="road-flow-dir">
+            <span class="rfd amber">→</span>
+            <span class="rfd blue">←</span>
+          </div>
+        </div>
+        <div class="road-seg-labels">
+          <span class="road-seg-lbl amber">📄 orders</span>
+          <span class="road-seg-lbl blue">🚛 ships</span>
+        </div>
+      </div>
+
+      <!-- ── FACTORY ────────────────────────────────────────────────────── -->
+      <div class="road-node" id="col-factory">
+        <div class="road-node-hdr bgb-actor-hdr">🏭 Factory</div>
+        <div class="road-node-body">
+          <div class="bgb-inv-box" id="fa-inv-box">
+            <div class="bgb-inv-healthbar" id="fa-health" style="width:50%;background:#22c55e;"></div>
+            <div class="bgb-inv-val good" id="fa-inv">—</div>
+            <div class="bgb-backlog zero" id="fa-blg">blg:0</div>
+          </div>
+          <!-- Internal production pipeline -->
+          <div class="factory-pipeline">
+            <div class="fac-pipe-col">
+              <div class="fac-pipe-lbl amber">req</div>
+              <div class="bgb-slot" id="fa-req-1" data-tip="Production request — 1 wk delay"><span class="bgb-v">·</span></div>
+              <div class="bgb-slot" id="fa-req-2" data-tip="Production request — slot 2"><span class="bgb-v">·</span></div>
+            </div>
+            <div class="fac-pipe-col">
+              <div class="fac-pipe-lbl blue">prod</div>
+              <div class="bgb-slot" id="fa-prod-1" data-tip="In production — 2 wk delay"><span class="bgb-v">·</span></div>
+              <div class="bgb-slot" id="fa-prod-2" data-tip="In production — slot 2"><span class="bgb-v">·</span></div>
             </div>
           </div>
-          <div class="bgb-slot-col blue-col">
-            <div class="bgb-slot-lbl">incoming</div>
-            <div class="bgb-slot" id="rt-ship-1" data-tip="Shipment in transit (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="rt-ship-2" data-tip="Shipment in transit (arriving later)"><span class="bgb-v">·</span></div>
-          </div>
         </div>
       </div>
 
-      <!-- ── SEP R→W ──────────── -->
-      <div class="bgb-sep">
-        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
-        <div class="bgb-arr-lbl">order</div>
-        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
-        <div class="bgb-arr-lbl">ship</div>
-      </div>
-
-      <!-- ── WHOLESALER ─────────────────────────────── -->
-      <div class="bgb-actor" id="col-wholesaler">
-        <div class="bgb-actor-hdr">🏪 Wholesaler</div>
-        <div class="bgb-actor-body">
-          <div class="bgb-slot-col amber-col">
-            <div class="bgb-slot-lbl">orders out</div>
-            <div class="bgb-slot" id="wh-ord-1" data-tip="Order placed upstream (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="wh-ord-2" data-tip="Order placed upstream (arriving later)"><span class="bgb-v">·</span></div>
-          </div>
-          <div class="bgb-inv-col">
-            <div class="bgb-inv-box" id="wh-inv-box">
-              <div class="bgb-inv-healthbar" id="wh-health" style="width:50%;background:#22c55e;"></div>
-              <div class="bgb-inv-val good" id="wh-inv">—</div>
-              <div class="bgb-backlog zero" id="wh-blg">blg:0</div>
-            </div>
-          </div>
-          <div class="bgb-slot-col blue-col">
-            <div class="bgb-slot-lbl">incoming</div>
-            <div class="bgb-slot" id="wh-ship-1" data-tip="Shipment in transit (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="wh-ship-2" data-tip="Shipment in transit (arriving later)"><span class="bgb-v">·</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SEP W→D ──────────── -->
-      <div class="bgb-sep">
-        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
-        <div class="bgb-arr-lbl">order</div>
-        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
-        <div class="bgb-arr-lbl">ship</div>
-      </div>
-
-      <!-- ── DISTRIBUTOR ────────────────────────────── -->
-      <div class="bgb-actor" id="col-distributor">
-        <div class="bgb-actor-hdr">🚚 Distributor</div>
-        <div class="bgb-actor-body">
-          <div class="bgb-slot-col amber-col">
-            <div class="bgb-slot-lbl">orders out</div>
-            <div class="bgb-slot" id="di-ord-1" data-tip="Order to factory (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="di-ord-2" data-tip="Order to factory (arriving later)"><span class="bgb-v">·</span></div>
-          </div>
-          <div class="bgb-inv-col">
-            <div class="bgb-inv-box" id="di-inv-box">
-              <div class="bgb-inv-healthbar" id="di-health" style="width:50%;background:#22c55e;"></div>
-              <div class="bgb-inv-val good" id="di-inv">—</div>
-              <div class="bgb-backlog zero" id="di-blg">blg:0</div>
-            </div>
-          </div>
-          <div class="bgb-slot-col blue-col">
-            <div class="bgb-slot-lbl">incoming</div>
-            <div class="bgb-slot" id="di-ship-1" data-tip="Shipment from factory (arriving soon)"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="di-ship-2" data-tip="Shipment from factory (arriving later)"><span class="bgb-v">·</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SEP D→F ──────────── -->
-      <div class="bgb-sep">
-        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
-        <div class="bgb-arr-lbl">order</div>
-        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
-        <div class="bgb-arr-lbl">ship</div>
-      </div>
-
-      <!-- ── FACTORY ────────────────────────────────── -->
-      <div class="bgb-actor" id="col-factory">
-        <div class="bgb-actor-hdr">🏭 Factory</div>
-        <div class="bgb-actor-body">
-          <div class="bgb-slot-col amber-col">
-            <div class="bgb-slot-lbl">req. out</div>
-            <div class="bgb-slot" id="fa-req-1" data-tip="Production request — 1-week delay"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="fa-req-2" data-tip="Production request (slot 2)"><span class="bgb-v">·</span></div>
-          </div>
-          <div class="bgb-inv-col">
-            <div class="bgb-inv-box" id="fa-inv-box">
-              <div class="bgb-inv-healthbar" id="fa-health" style="width:50%;background:#22c55e;"></div>
-              <div class="bgb-inv-val good" id="fa-inv">—</div>
-              <div class="bgb-backlog zero" id="fa-blg">blg:0</div>
-            </div>
-          </div>
-          <div class="bgb-slot-col blue-col">
-            <div class="bgb-slot-lbl">in prod.</div>
-            <div class="bgb-slot" id="fa-prod-1" data-tip="In production — 2-week delay"><span class="bgb-v">·</span></div>
-            <div class="bgb-slot" id="fa-prod-2" data-tip="In production (slot 2)"><span class="bgb-v">·</span></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /.bgb -->
-  </div><!-- /.bgb-wrap -->
+    </div><!-- /.road-board -->
+  </div><!-- /.road-board-wrap -->
 </div><!-- /#bgb-board-card -->
 
 <!-- Pipeline detail -->
