@@ -848,6 +848,162 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
 </div>
 {% endif %}
 
+<!-- ═══════════════ SUPPLY CHAIN BOARD ═════════════════════════════════════ -->
+<div class="card" id="bgb-board-card" style="margin-bottom:1.5rem; padding:1.1rem 1.25rem;">
+  <div class="board-scanner"></div>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
+    <div class="card-title" style="margin:0;">Supply Chain Board</div>
+    <div style="font-size:.62rem; color:var(--muted); font-family:var(--font-mono);">
+      <span style="color:rgba(245,200,66,.8);">■</span> orders &nbsp;
+      <span style="color:rgba(59,130,246,.8);">■</span> shipments
+    </div>
+  </div>
+  <div class="bgb-wrap">
+    <div class="bgb">
+
+      <!-- ── CUSTOMER ──────────────────────────────── -->
+      <div class="bgb-actor" id="col-customer">
+        <div class="bgb-actor-hdr">👤 Customer</div>
+        <div class="bgb-actor-body" style="justify-content:center; padding-top:4px;">
+          <div class="bgb-slot-col amber-col" style="width:46px;">
+            <div class="bgb-slot-lbl">demand</div>
+            <div class="bgb-slot amber" id="cust-ord-1" data-tip="Customer demand this week"><span class="bgb-v">·</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SEP C→R ──────────── -->
+      <div class="bgb-sep">
+        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
+        <div class="bgb-arr-lbl">demand</div>
+        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
+        <div class="bgb-arr-lbl">goods</div>
+      </div>
+
+      <!-- ── RETAILER ──────────────────────────────── -->
+      <div class="bgb-actor" id="col-retailer">
+        <div class="bgb-actor-hdr">🛒 Retailer</div>
+        <div class="bgb-actor-body">
+          <div class="bgb-slot-col amber-col">
+            <div class="bgb-slot-lbl">orders out</div>
+            <div class="bgb-slot" id="rt-ord-1" data-tip="Order placed upstream (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="rt-ord-2" data-tip="Order placed upstream (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+          <div class="bgb-inv-col">
+            <div class="bgb-inv-box" id="rt-inv-box">
+              <div class="bgb-inv-healthbar" id="rt-health" style="width:50%;background:#22c55e;"></div>
+              <div class="bgb-inv-val good" id="rt-inv">—</div>
+              <div class="bgb-backlog zero" id="rt-blg">blg:0</div>
+            </div>
+          </div>
+          <div class="bgb-slot-col blue-col">
+            <div class="bgb-slot-lbl">incoming</div>
+            <div class="bgb-slot" id="rt-ship-1" data-tip="Shipment in transit (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="rt-ship-2" data-tip="Shipment in transit (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SEP R→W ──────────── -->
+      <div class="bgb-sep">
+        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
+        <div class="bgb-arr-lbl">order</div>
+        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
+        <div class="bgb-arr-lbl">ship</div>
+      </div>
+
+      <!-- ── WHOLESALER ─────────────────────────────── -->
+      <div class="bgb-actor" id="col-wholesaler">
+        <div class="bgb-actor-hdr">🏪 Wholesaler</div>
+        <div class="bgb-actor-body">
+          <div class="bgb-slot-col amber-col">
+            <div class="bgb-slot-lbl">orders out</div>
+            <div class="bgb-slot" id="wh-ord-1" data-tip="Order placed upstream (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="wh-ord-2" data-tip="Order placed upstream (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+          <div class="bgb-inv-col">
+            <div class="bgb-inv-box" id="wh-inv-box">
+              <div class="bgb-inv-healthbar" id="wh-health" style="width:50%;background:#22c55e;"></div>
+              <div class="bgb-inv-val good" id="wh-inv">—</div>
+              <div class="bgb-backlog zero" id="wh-blg">blg:0</div>
+            </div>
+          </div>
+          <div class="bgb-slot-col blue-col">
+            <div class="bgb-slot-lbl">incoming</div>
+            <div class="bgb-slot" id="wh-ship-1" data-tip="Shipment in transit (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="wh-ship-2" data-tip="Shipment in transit (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SEP W→D ──────────── -->
+      <div class="bgb-sep">
+        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
+        <div class="bgb-arr-lbl">order</div>
+        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
+        <div class="bgb-arr-lbl">ship</div>
+      </div>
+
+      <!-- ── DISTRIBUTOR ────────────────────────────── -->
+      <div class="bgb-actor" id="col-distributor">
+        <div class="bgb-actor-hdr">🚚 Distributor</div>
+        <div class="bgb-actor-body">
+          <div class="bgb-slot-col amber-col">
+            <div class="bgb-slot-lbl">orders out</div>
+            <div class="bgb-slot" id="di-ord-1" data-tip="Order to factory (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="di-ord-2" data-tip="Order to factory (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+          <div class="bgb-inv-col">
+            <div class="bgb-inv-box" id="di-inv-box">
+              <div class="bgb-inv-healthbar" id="di-health" style="width:50%;background:#22c55e;"></div>
+              <div class="bgb-inv-val good" id="di-inv">—</div>
+              <div class="bgb-backlog zero" id="di-blg">blg:0</div>
+            </div>
+          </div>
+          <div class="bgb-slot-col blue-col">
+            <div class="bgb-slot-lbl">incoming</div>
+            <div class="bgb-slot" id="di-ship-1" data-tip="Shipment from factory (arriving soon)"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="di-ship-2" data-tip="Shipment from factory (arriving later)"><span class="bgb-v">·</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SEP D→F ──────────── -->
+      <div class="bgb-sep">
+        <div class="bgb-arr-row"><span class="bgb-arr amber-arr">→</span></div>
+        <div class="bgb-arr-lbl">order</div>
+        <div class="bgb-arr-row"><span class="bgb-arr blue-arr">←</span></div>
+        <div class="bgb-arr-lbl">ship</div>
+      </div>
+
+      <!-- ── FACTORY ────────────────────────────────── -->
+      <div class="bgb-actor" id="col-factory">
+        <div class="bgb-actor-hdr">🏭 Factory</div>
+        <div class="bgb-actor-body">
+          <div class="bgb-slot-col amber-col">
+            <div class="bgb-slot-lbl">req. out</div>
+            <div class="bgb-slot" id="fa-req-1" data-tip="Production request — 1-week delay"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="fa-req-2" data-tip="Production request (slot 2)"><span class="bgb-v">·</span></div>
+          </div>
+          <div class="bgb-inv-col">
+            <div class="bgb-inv-box" id="fa-inv-box">
+              <div class="bgb-inv-healthbar" id="fa-health" style="width:50%;background:#22c55e;"></div>
+              <div class="bgb-inv-val good" id="fa-inv">—</div>
+              <div class="bgb-backlog zero" id="fa-blg">blg:0</div>
+            </div>
+          </div>
+          <div class="bgb-slot-col blue-col">
+            <div class="bgb-slot-lbl">in prod.</div>
+            <div class="bgb-slot" id="fa-prod-1" data-tip="In production — 2-week delay"><span class="bgb-v">·</span></div>
+            <div class="bgb-slot" id="fa-prod-2" data-tip="In production (slot 2)"><span class="bgb-v">·</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.bgb -->
+  </div><!-- /.bgb-wrap -->
+</div><!-- /#bgb-board-card -->
+
 <!-- Pipeline detail -->
 <div class="card" style="margin-bottom:1.5rem;">
   <div class="card-title">Pipeline Detail</div>
