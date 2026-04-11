@@ -4,10 +4,10 @@
 {% block extra_head %}
 <style>
 /* ── Core layout ──────────────────────────────────────────────────────────── */
-.hud { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.9rem; margin-bottom:1.5rem; }
-.hud-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; text-align:center; }
-.hud-value { font-family:var(--font-mono); font-size:2rem; font-weight:700; line-height:1; margin:.25rem 0; }
-.hud-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+.hud { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:.5rem; }
+.hud-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.65rem .75rem; text-align:center; }
+.hud-value { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; line-height:1; margin:.15rem 0; }
+.hud-label { font-size:.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
 
 /* ── Lobby overlay ────────────────────────────────────────────────────────── */
 #lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.94); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(8px); }
@@ -37,7 +37,7 @@
 .ready-pill.offline { opacity:.3; }
 
 /* ── Phase panels ─────────────────────────────────────────────────────────── */
-.phase-panel { border-radius:var(--radius); padding:1.25rem 1.4rem; margin-bottom:1.5rem; display:none; }
+.phase-panel { border-radius:var(--radius); padding:.9rem 1rem; display:none; }
 .phase-panel.active { display:block; }
 
 #panel-receive { border:2px solid rgba(168,85,247,.5); background:rgba(168,85,247,.05); }
@@ -45,7 +45,7 @@
 #panel-order   { border:2px solid var(--border);        background:var(--surface); }
 #panel-order.submitted-state { border-color:var(--success); }
 
-.panel-title { font-family:var(--font-mono); font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.65rem; }
+.panel-title { font-family:var(--font-mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.5rem; }
 #panel-receive .panel-title { color:var(--distributor-color); }
 #panel-ship    .panel-title { color:var(--wholesaler-color); }
 #panel-order   .panel-title { color:var(--accent); }
@@ -53,23 +53,23 @@
 /* Big number highlight rows */
 .confirm-row {
   display:flex; align-items:center; justify-content:space-between;
-  background:var(--surface2); border-radius:8px; padding:.75rem 1rem; margin-bottom:.6rem;
+  background:var(--surface2); border-radius:8px; padding:.55rem .85rem; margin-bottom:.45rem;
 }
-.confirm-qty { font-family:var(--font-mono); font-size:2rem; font-weight:800; line-height:1; }
-.confirm-label { font-size:.82rem; }
-.confirm-sub   { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
+.confirm-qty { font-family:var(--font-mono); font-size:1.6rem; font-weight:800; line-height:1; }
+.confirm-label { font-size:.78rem; }
+.confirm-sub   { font-size:.68rem; color:var(--muted); margin-top:.1rem; }
 
 /* Order input */
-.order-input-big { font-family:var(--font-mono); font-size:2rem; text-align:center; padding:.75rem; width:100%; border-radius:10px; background:var(--surface2); border:1px solid var(--border); color:var(--text); margin:.75rem 0; outline:none; }
+.order-input-big { font-family:var(--font-mono); font-size:1.6rem; text-align:center; padding:.55rem; width:100%; border-radius:10px; background:var(--surface2); border:1px solid var(--border); color:var(--text); margin:.55rem 0; outline:none; }
 .order-input-big:focus { border-color:var(--accent); }
 
 /* Phase step indicator */
-.phase-steps { display:flex; align-items:center; gap:.35rem; margin-bottom:1.25rem; flex-wrap:wrap; }
-.phase-step  { display:flex; align-items:center; gap:.3rem; font-size:.72rem; color:var(--muted); }
-.ph-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; background:var(--surface2); border:1px solid var(--border); flex-shrink:0; }
+.phase-steps { display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; }
+.phase-step  { display:flex; align-items:center; gap:.3rem; font-size:.68rem; color:var(--muted); }
+.ph-dot { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.6rem; font-weight:800; background:var(--surface2); border:1px solid var(--border); flex-shrink:0; }
 .ph-dot.active { background:var(--accent);  color:#0d0f14; border-color:var(--accent); }
 .ph-dot.done   { background:var(--success); color:#0d0f14; border-color:var(--success); }
-.ph-line { flex:1; height:2px; background:var(--border); min-width:14px; max-width:30px; }
+.ph-line { flex:1; height:2px; background:var(--border); min-width:12px; max-width:28px; }
 .ph-line.done { background:var(--success); }
 
 /* ═══════════════ ROAD BOARD ═══════════════════════════════════════════════ */
@@ -400,10 +400,42 @@
 .anim-val-pop { animation:val-pop .38s cubic-bezier(.22,1,.36,1) forwards; }
 
 /* ── Chart ────────────────────────────────────────────────────────────────── */
-.chart-wrap { position:relative; height:190px; }
+.chart-wrap { position:relative; height:130px; }
 
 /* ── Log ──────────────────────────────────────────────────────────────────── */
 .log-entry { font-size:.72rem; color:var(--muted); padding:.22rem 0; border-bottom:1px solid rgba(255,255,255,.04); font-family:var(--font-mono); }
+
+/* ── No-scroll 2-column game layout ────────────────────────────────────────── */
+.container { padding:.5rem 1rem !important; }
+
+#game-screen {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: .75rem;
+  height: calc(100vh - 56px - 1rem);
+  overflow: hidden;
+}
+#game-action-col {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  gap: .55rem;
+  padding-right: .25rem;
+  padding-bottom: .5rem;
+}
+#game-board-col {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  padding-bottom: .5rem;
+}
+@media (max-width: 820px) {
+  #game-screen { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  #game-action-col, #game-board-col { overflow-y: visible; }
+}
 
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.4rem; z-index:9999; pointer-events:none; }
@@ -647,23 +679,26 @@
 <!-- ═══════════════ GAME SCREEN ══════════════════════════════════════════ -->
 <div id="game-screen">
 
+<!-- ── LEFT COLUMN: action area ─────────────────────────────────────────── -->
+<div id="game-action-col">
+
 <!-- Header -->
-<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.1rem;">
-  <div style="display:flex; align-items:center; gap:.7rem;">
-    <span style="font-size:1.7rem;">{{ emoji }}</span>
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
+  <div style="display:flex; align-items:center; gap:.5rem;">
+    <span style="font-size:1.4rem;">{{ emoji }}</span>
     <div>
-      <h2 style="font-family:var(--font-mono); font-size:1.15rem; line-height:1.2;">{{ player_session.name|default:role|title }} <span class="role-badge role-{{ role }}" style="margin-left:.3rem;">{{ role }}</span></h2>
-      <div style="font-size:.78rem; color:var(--muted);">{{ session.name }}</div>
+      <h2 style="font-family:var(--font-mono); font-size:1rem; line-height:1.2;">{{ player_session.name|default:role|title }} <span class="role-badge role-{{ role }}" style="margin-left:.3rem;">{{ role }}</span></h2>
+      <div style="font-size:.72rem; color:var(--muted);">{{ session.name }}</div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:1rem;">
-    <div style="font-size:.78rem; color:var(--muted);"><span id="conn-dot"></span><span id="conn-label">Connecting…</span></div>
+  <div style="display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;">
+    <div style="font-size:.72rem; color:var(--muted);"><span id="conn-dot"></span><span id="conn-label">Connecting…</span></div>
     <button id="snd-btn" onclick="toggleSound()" title="Toggle sound effects">🔇 SFX</button>
     <div class="week-badge">Week <strong id="current-week">{{ session.current_week }}</strong> / {{ session.max_weeks }}</div>
   </div>
 </div>
 
-<div id="xp-bar-wrap">
+<div id="xp-bar-wrap" style="margin-bottom:0;">
   <div id="xp-bar-fill" style="width:0%"></div>
 </div>
 
@@ -681,8 +716,8 @@
 </div>
 
 <!-- Players status -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-title">Players — Week Status</div>
+<div class="card" style="padding:.75rem 1rem;">
+  <div class="card-title" style="margin-bottom:.4rem;">Players — Week Status</div>
   <div class="ready-row" id="ready-row">
     {% for r in roles %}<div class="ready-pill offline" id="pill-{{ r }}">○ {{ r|title }}</div>{% endfor %}
   </div>
@@ -952,10 +987,15 @@
 </div>
 {% endif %}
 
+</div><!-- /#game-action-col -->
+
+<!-- ── RIGHT COLUMN: board + info ───────────────────────────────────────── -->
+<div id="game-board-col">
+
 <!-- ═══════════════ SUPPLY CHAIN ROAD BOARD ══════════════════════════════ -->
-<div class="card" id="bgb-board-card" style="margin-bottom:1.5rem; padding:1.1rem 1.25rem;">
+<div class="card" id="bgb-board-card" style="padding:1rem 1.1rem;">
   <div class="board-scanner"></div>
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.7rem;">
     <div class="card-title" style="margin:0;">🛣 Supply Chain Highway</div>
     <div style="font-size:.6rem; color:var(--muted); font-family:var(--font-mono);">
       <span style="color:rgba(59,130,246,.85);">🚛</span> shipments &nbsp;
@@ -1115,33 +1155,35 @@
 </div><!-- /#bgb-board-card -->
 
 <!-- Pipeline detail -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-title">Pipeline Detail</div>
-  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--wholesaler-color); margin-bottom:.4rem;">
+<div class="card" style="padding:.85rem 1rem;">
+  <div class="card-title" style="margin-bottom:.4rem;">Pipeline Detail</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--wholesaler-color); margin-bottom:.35rem;">
     {% if role == 'factory' %}🏭 In Production — Production Delay (2 weeks){% else %}📦 Shipping Delay — Incoming{% endif %}
   </div>
   <div id="pipeline-in"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
-  <div style="border-top:1px solid var(--border); margin:.65rem 0;"></div>
+  <div style="border-top:1px solid var(--border); margin:.5rem 0;"></div>
   {% if role == 'factory' %}
-  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.4rem;">📋 Production Requests — Order Delay (1 week)</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;">📋 Production Requests — Order Delay (1 week)</div>
   <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None pending.</div></div>
   {% else %}
-  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.4rem;">📋 Orders Placed — Outgoing</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;">📋 Orders Placed — Outgoing</div>
   <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
   {% endif %}
 </div>
 
 <!-- Chart -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-title">Inventory History</div>
+<div class="card" style="padding:.85rem 1rem;">
+  <div class="card-title" style="margin-bottom:.4rem;">Inventory History</div>
   <div class="chart-wrap"><canvas id="myChart"></canvas></div>
 </div>
 
 <!-- Log -->
-<div class="card" style="margin-bottom:2rem;">
-  <div class="card-title">Event Log</div>
-  <div id="event-log" style="max-height:150px; overflow-y:auto;"></div>
+<div class="card" style="padding:.85rem 1rem;">
+  <div class="card-title" style="margin-bottom:.4rem;">Event Log</div>
+  <div id="event-log" style="max-height:100px; overflow-y:auto;"></div>
 </div>
+
+</div><!-- /#game-board-col -->
 
 </div><!-- /#game-screen -->
 
