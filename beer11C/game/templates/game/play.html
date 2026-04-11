@@ -79,13 +79,13 @@
 
 /* Flex row containing alternating nodes + road segments */
 .road-board {
-  display:flex; align-items:stretch; min-width:960px;
+  display:flex; align-items:stretch; min-width:1160px;
   font-family:var(--font-mono); position:relative; gap:0;
 }
 
 /* ── Warehouse node (actor column) ─────────────────────────────────────── */
 .road-node {
-  display:flex; flex-direction:column; flex:0 0 106px; width:106px;
+  display:flex; flex-direction:column; flex:0 0 148px; width:148px;
   border:1.5px solid transparent; border-radius:10px; overflow:hidden;
   transition:border-color .25s, box-shadow .25s;
 }
@@ -93,8 +93,8 @@
 
 /* Warehouse header */
 .road-node-hdr {
-  font-size:.58rem; font-weight:700; text-transform:uppercase;
-  letter-spacing:.1em; text-align:center; padding:.42rem .2rem .32rem;
+  font-size:.68rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; text-align:center; padding:.5rem .2rem .4rem;
   border-radius:8px 8px 0 0; display:flex; align-items:center;
   justify-content:center; gap:.3rem; white-space:nowrap;
 }
@@ -115,22 +115,22 @@
 .bgb-inv-box {
   width:100%; flex:1; background:var(--surface2);
   border:2px solid var(--border); border-radius:8px;
-  padding:6px 5px; text-align:center;
+  padding:8px 6px; text-align:center;
   display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:3px;
+  justify-content:center; gap:4px;
   transition:border-color .35s; position:relative; overflow:hidden;
-  min-height:62px;
+  min-height:90px;
 }
 /* Warehouse roof top-accent line */
 .bgb-inv-box::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
   background:inherit; opacity:.5;
 }
-.bgb-inv-val { font-family:var(--font-mono); font-size:1.4rem; font-weight:800; line-height:1.1; }
+.bgb-inv-val { font-family:var(--font-mono); font-size:1.75rem; font-weight:800; line-height:1.1; }
 .bgb-inv-val.good { color:var(--success); }
 .bgb-inv-val.warn { color:var(--accent); }
 .bgb-inv-val.bad  { color:var(--danger); }
-.bgb-backlog { font-size:.54rem; padding:.1rem .4rem; border-radius:999px; font-weight:700; }
+.bgb-backlog { font-size:.62rem; padding:.12rem .45rem; border-radius:999px; font-weight:700; }
 .bgb-backlog.zero    { color:var(--muted); }
 .bgb-backlog.nonzero { color:var(--danger); background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.22); }
 .bgb-inv-healthbar {
@@ -176,7 +176,7 @@
   flex:1; display:flex; flex-direction:column; gap:3px; align-items:center;
 }
 .fac-pipe-lbl {
-  font-size:.48rem; text-transform:uppercase; letter-spacing:.04em;
+  font-size:.54rem; text-transform:uppercase; letter-spacing:.04em;
   text-align:center; line-height:1.2; font-weight:700;
 }
 .fac-pipe-lbl.amber { color:rgba(245,200,66,.85); }
@@ -188,14 +188,14 @@
 
 /* Factory pipeline slot (compact, column layout) */
 .fac-slot {
-  width:100%; min-height:28px; border-radius:5px;
+  width:100%; min-height:36px; border-radius:5px;
   border:1px solid var(--border); background:var(--surface2);
   display:flex; align-items:center; justify-content:center;
 }
 .fac-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
 .fac-slot.blue  { border-color:rgba(59,130,246,.35);  background:rgba(59,130,246,.07); }
 .fac-slot .bgb-v {
-  font-family:var(--font-mono); font-size:.8rem; font-weight:800; line-height:1;
+  font-family:var(--font-mono); font-size:.92rem; font-weight:800; line-height:1;
 }
 .fac-slot.amber .bgb-v { color:#ffd36a; }
 .fac-slot.blue  .bgb-v { color:#8ecbff; }
@@ -204,18 +204,18 @@
 
 /* ── Road segment (between nodes) ──────────────────────────────────────── */
 .road-seg {
-  flex:1; min-width:96px; display:flex; flex-direction:column; position:relative;
+  flex:1; min-width:116px; display:flex; flex-direction:column; position:relative;
 }
 
 /* Top row: order/demand envelopes (flow →) */
 .road-orders-row {
   display:flex; justify-content:space-around; align-items:center;
-  padding:4px 18px 0; min-height:30px; gap:4px;
+  padding:5px 18px 0; min-height:40px; gap:4px;
 }
 
 /* Road surface */
 .road-surface {
-  flex:1; min-height:54px;
+  flex:1; min-height:70px;
   background:linear-gradient(180deg, #0e1017 0%, #13161f 40%, #0e1017 100%);
   border-top:3px solid #252a38; border-bottom:3px solid #252a38;
   position:relative; overflow:hidden;
@@ -245,7 +245,7 @@
 /* ── bgb-slot on the road → truck badge ──────────────────────────────── */
 .road-surface .bgb-slot {
   flex-shrink:0; position:relative; border-radius:3px 7px 7px 3px;
-  height:30px; min-width:40px; width:auto;
+  height:38px; min-width:50px; width:auto;
   display:flex; align-items:center; justify-content:center;
   transition:border-color .2s, background .2s;
 }
@@ -262,7 +262,7 @@
 }
 /* Cargo quantity */
 .road-surface .bgb-slot.blue .bgb-v {
-  color:#8ecbff; font-size:.78rem; font-weight:900;
+  color:#8ecbff; font-size:.9rem; font-weight:900;
   text-shadow:0 0 6px rgba(59,130,246,.6);
   padding-left:2px;
 }
@@ -287,7 +287,7 @@
 /* ── bgb-slot in order row → envelope/document badge ────────────────── */
 .road-orders-row .bgb-slot {
   flex-shrink:0; position:relative; border-radius:4px;
-  height:22px; min-width:36px; width:auto;
+  height:28px; min-width:44px; width:auto;
   display:flex; align-items:center; justify-content:center;
   transition:border-color .2s, background .2s;
 }
@@ -302,7 +302,7 @@
   transform:translateY(-50%); font-size:.78rem; line-height:1;
 }
 .road-orders-row .bgb-slot.amber .bgb-v {
-  color:#ffd36a; font-size:.72rem; font-weight:900;
+  color:#ffd36a; font-size:.82rem; font-weight:900;
   text-shadow:0 0 5px rgba(245,200,66,.5);
 }
 /* Empty order slot */
@@ -314,11 +314,11 @@
 /* Bottom label row */
 .road-seg-labels {
   display:flex; justify-content:space-around; align-items:center;
-  padding:2px 4px; min-height:20px; gap:4px;
+  padding:3px 4px; min-height:24px; gap:4px;
 }
 .road-seg-lbl {
-  font-size:.39rem; text-transform:uppercase; letter-spacing:.05em;
-  padding:.1rem .32rem; border-radius:999px; font-weight:700; white-space:nowrap;
+  font-size:.45rem; text-transform:uppercase; letter-spacing:.05em;
+  padding:.12rem .36rem; border-radius:999px; font-weight:700; white-space:nowrap;
 }
 .road-seg-lbl.blue  { color:#8ecbff; background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.25); }
 .road-seg-lbl.amber { color:#ffd36a; background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.22); }
@@ -410,7 +410,7 @@
 
 #game-screen {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 360px 1fr;
   gap: .75rem;
   height: calc(100vh - 56px - 1rem);
   overflow: hidden;
@@ -589,7 +589,7 @@
 .bgb-slot.arriving { border-color:var(--success)!important; background:rgba(34,197,94,.12)!important; animation:pulse-arr 1.2s infinite; }
 .bgb-slot.arriving .bgb-v { color:var(--success)!important; }
 /* Factory pipeline: context-based overrides */
-.factory-pipeline .bgb-slot { min-height:28px; border-radius:4px; }
+.factory-pipeline .bgb-slot { min-height:36px; border-radius:4px; }
 .factory-pipeline .bgb-slot.amber { border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.07); }
 .factory-pipeline .bgb-slot.amber .bgb-v { color:#ffd36a; }
 .factory-pipeline .bgb-slot.blue  { border-color:rgba(59,130,246,.35); background:rgba(59,130,246,.07); }
@@ -1011,7 +1011,7 @@
         <div class="road-node-body" style="justify-content:center;">
           <div style="font-size:.45rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;">demand</div>
           <div class="bgb-slot amber" id="cust-ord-1" data-tip="Customer demand this week"
-               style="width:54px; min-height:40px;">
+               style="width:68px; min-height:52px;">
             <span class="bgb-v">·</span>
           </div>
         </div>
