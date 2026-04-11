@@ -41,6 +41,27 @@
       line-height: 1.6;
       min-height: 100vh;
     }
+    /* ── Animated grid background ───────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(245,200,66,.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,200,66,.028) 1px, transparent 1px);
+      background-size: 44px 44px;
+      animation: grid-pan 28s linear infinite;
+    }
+    @keyframes grid-pan {
+      from { background-position: 0 0; }
+      to   { background-position: 44px 44px; }
+    }
+    /* Subtle radial vignette at edges */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 60%, rgba(13,15,20,.85) 100%);
+    }
+    nav, .container { position: relative; z-index: 1; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
@@ -51,9 +72,11 @@
       justify-content: space-between;
       padding: 0 2rem;
       height: 56px;
-      background: var(--surface);
+      background: rgba(22,25,32,.92);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(245,200,66,.08), 0 4px 20px rgba(0,0,0,.4);
       position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(12px);
     }
     .nav-logo {
       font-family: var(--font-mono);
@@ -61,6 +84,7 @@
       font-size: 1rem;
       letter-spacing: 0.08em;
       color: var(--accent);
+      text-shadow: 0 0 14px rgba(245,200,66,.6);
     }
     .nav-logo span { color: var(--muted); }
     .nav-links { display: flex; gap: 1.2rem; }

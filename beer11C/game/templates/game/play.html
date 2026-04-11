@@ -10,11 +10,21 @@
 .hud-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
 
 /* ── Lobby overlay ────────────────────────────────────────────────────────── */
-#lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.92); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
+#lobby-overlay { position:fixed; inset:0; background:rgba(13,15,20,.94); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(8px); }
 #lobby-overlay.hidden { display:none; }
-.lobby-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:2rem; max-width:480px; width:90%; text-align:center; }
-.lobby-player-row { display:flex; align-items:center; justify-content:space-between; padding:.5rem .75rem; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:.5rem; font-size:.85rem; }
-.lobby-player-row.ready-state { border-color:var(--success); }
+.lobby-box {
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid rgba(245,200,66,.25);
+  border-radius: 16px; padding: 2rem; max-width: 480px; width: 90%; text-align: center;
+  box-shadow: 0 0 60px rgba(245,200,66,.12), 0 24px 60px rgba(0,0,0,.6);
+  animation: lobby-float 4s ease-in-out infinite;
+}
+@keyframes lobby-float {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-6px); }
+}
+.lobby-player-row { display:flex; align-items:center; justify-content:space-between; padding:.5rem .75rem; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:.5rem; font-size:.85rem; transition: border-color .3s; }
+.lobby-player-row.ready-state { border-color:var(--success); box-shadow:0 0 8px rgba(34,197,94,.2); }
 
 /* ── Ready pills ──────────────────────────────────────────────────────────── */
 .ready-row { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.75rem; }
@@ -235,11 +245,270 @@
 #conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--muted); margin-right:.3rem; transition:background .3s; }
 #conn-dot.online  { background:var(--success); box-shadow:0 0 5px var(--success); }
 #conn-dot.offline { background:var(--danger); }
+
+/* ── Reactivity: smooth color transitions ─────────────────────────────────── */
+.bgb-v        { transition: color .3s; }
+.bgb-inv-val  { transition: color .35s; }
+.bgb-inv-box  { transition: border-color .35s; }
+.hud-value    { transition: color .3s; }
+
+/* ── Reactivity: slot value-change pop animation ──────────────────────────── */
+@keyframes val-pop {
+  0%   { transform: scale(1.55); color: var(--accent); opacity: .9; }
+  55%  { transform: scale(0.92); }
+  100% { transform: scale(1);    color: inherit; opacity: 1; }
+}
+.anim-val-pop { animation: val-pop .38s cubic-bezier(.22,1,.36,1) forwards; }
+
+/* ── Reactivity: board column sweep on new week ───────────────────────────── */
+@keyframes col-sweep {
+  0%   { background: transparent; }
+  30%  { background: rgba(245,200,66,.05); box-shadow: inset 0 0 0 1px rgba(245,200,66,.12); }
+  100% { background: transparent; box-shadow: none; }
+}
+.bgb-actor.sweeping { animation: col-sweep .55s ease forwards; border-radius: 8px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   🎮  GAME-MODE VISUAL UPGRADES
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Role-coloured neon headers ─────────────────────────────────────── */
+#col-customer   .bgb-actor-hdr { background:rgba(107,114,128,.12); border-bottom:2px solid rgba(107,114,128,.3); }
+#col-retailer   .bgb-actor-hdr { background:rgba(245,200,66,.1);   border-bottom:2px solid rgba(245,200,66,.6);  color:#ffd36a; text-shadow:0 0 10px rgba(245,200,66,.8); }
+#col-wholesaler .bgb-actor-hdr { background:rgba(59,130,246,.1);   border-bottom:2px solid rgba(59,130,246,.6);  color:#8ecbff; text-shadow:0 0 10px rgba(59,130,246,.8); }
+#col-distributor .bgb-actor-hdr{ background:rgba(168,85,247,.1);   border-bottom:2px solid rgba(168,85,247,.6);  color:#d8a4ff; text-shadow:0 0 10px rgba(168,85,247,.8); }
+#col-factory    .bgb-actor-hdr { background:rgba(34,197,94,.1);    border-bottom:2px solid rgba(34,197,94,.6);   color:#4ade80; text-shadow:0 0 10px rgba(34,197,94,.8); }
+.bgb-actor-hdr { border-radius:6px 6px 0 0; font-size:.65rem; padding:.45rem .2rem .35rem; }
+
+/* ── Board card neon border + scanline ──────────────────────────────── */
+#bgb-board-card {
+  position:relative;
+  border-color:rgba(245,200,66,.22) !important;
+  box-shadow:0 0 0 1px rgba(245,200,66,.08), 0 0 40px rgba(245,200,66,.07) !important;
+}
+#bgb-board-card::after {
+  content:''; position:absolute; inset:0; pointer-events:none; border-radius:var(--radius);
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.045) 3px,rgba(0,0,0,.045) 4px);
+}
+
+/* ── Enhanced "you" column glow ─────────────────────────────────────── */
+.bgb-actor.you {
+  box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 0 24px rgba(255,255,255,.06) !important;
+}
+
+/* ── Pulsing flow arrows ─────────────────────────────────────────────── */
+@keyframes arr-pulse-amber { 0%,100%{color:rgba(245,200,66,.45);text-shadow:none} 50%{color:#ffd36a;text-shadow:0 0 8px rgba(245,200,66,.9)} }
+@keyframes arr-pulse-blue  { 0%,100%{color:rgba(59,130,246,.45);text-shadow:none} 50%{color:#8ecbff;text-shadow:0 0 8px rgba(59,130,246,.9)} }
+.amber-arr { animation:arr-pulse-amber 2s ease infinite; }
+.blue-arr  { animation:arr-pulse-blue  2s ease infinite 1s; }
+
+/* ── WEEK N flash banner ─────────────────────────────────────────────── */
+#week-flash {
+  position:fixed; inset:0; z-index:9990; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+}
+#week-flash-inner {
+  font-family:var(--font-mono); font-size:4rem; font-weight:700;
+  color:#fff; opacity:0; letter-spacing:.15em; text-transform:uppercase;
+  text-shadow:0 0 40px var(--accent), 0 0 80px rgba(245,200,66,.5);
+  transform:scale(.65);
+}
+#week-flash-inner.active { animation:wkflash 1.1s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes wkflash {
+  0%   { opacity:0; transform:scale(.65); }
+  14%  { opacity:1; transform:scale(1.08); }
+  42%  { opacity:1; transform:scale(1); }
+  80%  { opacity:.85; }
+  100% { opacity:0; transform:scale(1.25); }
+}
+
+/* ── Critical backlog body vignette ─────────────────────────────────── */
+@keyframes crit-flash { 0%,100%{box-shadow:inset 0 0 0 rgba(239,68,68,0)} 50%{box-shadow:inset 0 0 90px rgba(239,68,68,.18)} }
+body.crit-alert { animation:crit-flash 1.4s ease infinite; }
+
+/* ── Inventory health bar ───────────────────────────────────────────── */
+.bgb-inv-box { position:relative; overflow:hidden; }
+.bgb-inv-healthbar {
+  position:absolute; bottom:0; left:0; height:3px;
+  border-radius:0 0 5px 5px;
+  transition:width .65s cubic-bezier(.22,1,.36,1), background .4s;
+}
+
+/* ── HUD card state glow ────────────────────────────────────────────── */
+.hud-card { transition:box-shadow .45s, border-color .45s; }
+.hud-card.hud-good { box-shadow:0 0 18px rgba(34,197,94,.22);  border-color:rgba(34,197,94,.4); }
+.hud-card.hud-warn { box-shadow:0 0 18px rgba(245,200,66,.22); border-color:rgba(245,200,66,.4); }
+.hud-card.hud-bad  { box-shadow:0 0 24px rgba(239,68,68,.35);  border-color:rgba(239,68,68,.45); animation:hud-bad-pulse 1.1s ease infinite; }
+@keyframes hud-bad-pulse { 0%,100%{box-shadow:0 0 20px rgba(239,68,68,.3)} 50%{box-shadow:0 0 34px rgba(239,68,68,.55)} }
+
+/* ── Phase-panel slide-in ───────────────────────────────────────────── */
+@keyframes panel-in { from{opacity:0;transform:translateY(10px) scale(.985)} to{opacity:1;transform:none} }
+.phase-panel.active { animation:panel-in .32s cubic-bezier(.22,1,.36,1); }
+
+/* ── Sound toggle ───────────────────────────────────────────────────── */
+#snd-btn { cursor:pointer; font-size:.65rem; padding:.2rem .5rem; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:var(--font-mono); transition:all .2s; user-select:none; }
+#snd-btn:hover { color:var(--text); border-color:var(--text); }
+#snd-btn.on { border-color:var(--accent); color:var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   🏆  VIDEO-GAME UPGRADES — EXTRA LAYER
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Floating damage / gain numbers ─────────────────────────────────── */
+.float-num {
+  position: fixed; pointer-events: none; z-index: 9997;
+  font-family: var(--font-mono); font-weight: 900; font-size: 1.5rem;
+  letter-spacing: .04em;
+  text-shadow: 0 0 12px currentColor, 0 2px 4px rgba(0,0,0,.6);
+  animation: float-up-num 1.25s cubic-bezier(.22,1,.36,1) forwards;
+  white-space: nowrap;
+}
+@keyframes float-up-num {
+  0%   { transform: translateY(0)    scale(1.2);  opacity: 1;   }
+  25%  { transform: translateY(-22px) scale(1);   opacity: 1;   }
+  80%  { transform: translateY(-60px) scale(.9);  opacity: .8;  }
+  100% { transform: translateY(-80px) scale(.75); opacity: 0;   }
+}
+
+/* ── Grade / rank badge ──────────────────────────────────────────────── */
+#grade-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.grade-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 9px;
+  font-family: var(--font-mono); font-size: 1.45rem; font-weight: 900;
+  border: 2px solid; transition: all .45s cubic-bezier(.22,1,.36,1);
+  flex-shrink: 0;
+}
+.grade-S { background:rgba(168,85,247,.18); border-color:#a855f7; color:#d8a4ff; box-shadow:0 0 22px rgba(168,85,247,.55); }
+.grade-A { background:rgba(34,197,94,.15);  border-color:var(--success); color:var(--success); box-shadow:0 0 16px rgba(34,197,94,.4); }
+.grade-B { background:rgba(245,200,66,.12); border-color:var(--accent);  color:var(--accent);  box-shadow:0 0 10px rgba(245,200,66,.3); }
+.grade-C { background:rgba(59,130,246,.1);  border-color:#3b82f6; color:#8ecbff; }
+.grade-D { background:rgba(239,68,68,.1);   border-color:var(--danger); color:var(--danger); }
+.grade-F { background:rgba(239,68,68,.18);  border-color:var(--danger); color:var(--danger); animation:hud-bad-pulse 1.1s ease infinite; }
+.grade-lbl { font-size:.58rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
+
+/* ── Combo streak counter ────────────────────────────────────────────── */
+#combo-strip {
+  position: fixed; top: 64px; right: 1.1rem; z-index: 510;
+  background: var(--surface2); border-radius: 10px; padding: .4rem .85rem;
+  font-family: var(--font-mono); font-size: .72rem;
+  display: none; flex-direction: column; align-items: center; gap: 1px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+#combo-strip.visible { display: flex; animation: combo-in .3s cubic-bezier(.22,1,.36,1); }
+@keyframes combo-in { from{transform:translateX(60px) scale(.8);opacity:0} to{transform:none;opacity:1} }
+#combo-count { font-size: 1.5rem; font-weight: 900; color: var(--accent); line-height: 1; }
+#combo-strip.x3  { border-color:var(--accent); box-shadow:0 0 14px rgba(245,200,66,.4); }
+#combo-strip.x5  { border-color:var(--success); box-shadow:0 0 18px rgba(34,197,94,.45); }
+#combo-strip.x8  { border-color:#a855f7; box-shadow:0 0 22px rgba(168,85,247,.5); }
+#combo-strip.x8 #combo-count { color:#d8a4ff; animation:combo-glow 1s ease infinite; }
+@keyframes combo-glow { 0%,100%{text-shadow:0 0 6px currentColor} 50%{text-shadow:0 0 18px currentColor} }
+
+/* ── Board card scanner line ─────────────────────────────────────────── */
+#bgb-board-card { overflow: hidden; }
+.board-scanner {
+  position: absolute; left: 0; right: 0; height: 3px; top: 0; z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 5%, rgba(245,200,66,.55) 45%, rgba(245,200,66,.55) 55%, transparent 95%);
+  animation: scanner-run 6s ease-in-out infinite;
+  filter: blur(1px);
+}
+@keyframes scanner-run {
+  0%,100% { top: 0%; opacity:.7; }
+  48%     { top: 100%; opacity:.4; }
+  50%     { top: 100%; opacity:0; }
+  52%     { top: 0%; opacity:0; }
+}
+
+/* ── Role-specific "you" column neon glow (per role) ────────────────── */
+#col-retailer.you    { box-shadow: 0 0 0 2px rgba(245,200,66,.55),  0 0 32px rgba(245,200,66,.15) !important; }
+#col-wholesaler.you  { box-shadow: 0 0 0 2px rgba(59,130,246,.55),  0 0 32px rgba(59,130,246,.15) !important; }
+#col-distributor.you { box-shadow: 0 0 0 2px rgba(168,85,247,.55),  0 0 32px rgba(168,85,247,.15) !important; }
+#col-factory.you     { box-shadow: 0 0 0 2px rgba(34,197,94,.55),   0 0 32px rgba(34,197,94,.15)  !important; }
+
+/* ── Achievement / XP bar ───────────────────────────────────────────── */
+#xp-bar-wrap {
+  height: 4px; background: var(--surface2); border-radius: 999px;
+  overflow: hidden; margin-bottom: 1.4rem; position: relative;
+}
+#xp-bar-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #f5c842, #a855f7);
+  background-size: 200%;
+  animation: xp-shimmer 3s linear infinite;
+  transition: width .65s cubic-bezier(.22,1,.36,1);
+}
+@keyframes xp-shimmer { from{background-position:0%} to{background-position:200%} }
+
+/* ── Particle burst (week flash) ─────────────────────────────────────── */
+.particle {
+  position: fixed; pointer-events: none; z-index: 9988;
+  width: 6px; height: 6px; border-radius: 50%;
+  animation: particle-burst var(--dur, .9s) ease-out forwards;
+}
+@keyframes particle-burst {
+  0%   { transform: translate(0,0) scale(1);   opacity: 1; }
+  80%  { opacity: .6; }
+  100% { transform: translate(var(--dx),var(--dy)) scale(.3); opacity: 0; }
+}
+
+/* ── Efficiency mini-chart bar (hud) ─────────────────────────────────── */
+.eff-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 3px; overflow:hidden; }
+.eff-fill { height: 100%; border-radius: 2px; transition: width .5s ease, background .4s; }
+
+/* ── Board slot tooltip ──────────────────────────────────────────────── */
+.bgb-slot[data-tip] { position: relative; cursor: default; }
+.bgb-slot[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: .25rem .55rem; font-size: .62rem; color: var(--text); white-space: nowrap;
+  z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  font-family: var(--font-body); font-weight: 500; letter-spacing: 0;
+}
+
+/* ── Enhanced toast — achievement style ──────────────────────────────── */
+.toast {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: .55rem 1rem; font-size: .8rem; color: var(--text);
+  animation: slideIn .2s ease, fadeOut .3s ease 3.5s forwards; max-width: 300px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  display: flex; align-items: center; gap: .5rem;
+}
+.toast.success { border-color: var(--success); box-shadow: 0 0 18px rgba(34,197,94,.25); }
+.toast.error   { border-color: var(--danger);  color: var(--danger); box-shadow: 0 0 18px rgba(239,68,68,.25); }
+.toast.achieve { border-color: #a855f7; box-shadow: 0 0 22px rgba(168,85,247,.35); }
+
+/* ── Week flash upgrade: dramatic backdrop ───────────────────────────── */
+#week-flash {
+  background: transparent;
+  transition: background .2s;
+}
+#week-flash.flashing { background: rgba(0,0,0,.35); }
+#week-flash-inner {
+  font-family: var(--font-mono); font-size: 4.5rem; font-weight: 700;
+  color: #fff; opacity: 0; letter-spacing: .18em; text-transform: uppercase;
+  text-shadow: 0 0 40px var(--accent), 0 0 100px rgba(245,200,66,.4), 0 2px 0 rgba(0,0,0,.8);
+  transform: scale(.6);
+}
+#week-flash-inner .wk-sub {
+  display: block; font-size: 1rem; letter-spacing: .25em;
+  color: var(--muted); margin-top: .25rem; text-shadow: none;
+}
+
+/* ── HUD rank glow on grade S ─────────────────────────────────────────── */
+.hud-card.hud-s { box-shadow: 0 0 24px rgba(168,85,247,.4); border-color: rgba(168,85,247,.5); }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="toast-container"></div>
+<div id="week-flash"><div id="week-flash-inner"></div></div>
+<div id="combo-strip"><span style="font-size:.52rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">STREAK</span><span id="combo-count">×0</span><span style="font-size:.52rem;color:var(--muted);" id="combo-label">good weeks</span></div>
 
 <!-- ═══════════════ LOBBY OVERLAY ════════════════════════════════════════ -->
 <div id="lobby-overlay">
@@ -254,7 +523,7 @@
       {% if role == 'retailer' %}🛒 You serve customers. Demand is <strong style="color:var(--text)">visible only to you</strong>. Each turn: receive goods → confirm shipment → place order.
       {% elif role == 'wholesaler' %}🏪 You supply the Retailer, order from the Distributor. You see only the Retailer's orders — not real demand.
       {% elif role == 'distributor' %}🚚 You supply the Wholesaler, order from the Factory. Two steps removed from real demand.
-      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output completes in <strong style="color:var(--text)">2 weeks</strong>.
+      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output is ready in <strong style="color:var(--text)">3 weeks</strong> (1w request + 2w production).
       {% elif role == 'customer' %}👤 You set customer demand each week. Your submission triggers the supply chain.{% endif %}
     </div>
     <div style="margin-bottom:1.25rem;">
@@ -285,16 +554,18 @@
   </div>
   <div style="display:flex; align-items:center; gap:1rem;">
     <div style="font-size:.78rem; color:var(--muted);"><span id="conn-dot"></span><span id="conn-label">Connecting…</span></div>
+    <button id="snd-btn" onclick="toggleSound()" title="Toggle sound effects">🔇 SFX</button>
     <div class="week-badge">Week <strong id="current-week">{{ session.current_week }}</strong> / {{ session.max_weeks }}</div>
   </div>
 </div>
 
-<div class="progress-bar" style="margin-bottom:1.4rem;">
-  <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+<div id="xp-bar-wrap">
+  <div id="xp-bar-fill" style="width:0%"></div>
 </div>
 
 <!-- ═══════ BEER GAME BOARD ════════════════════════════════════════════ -->
-<div class="card" style="margin-bottom:1.5rem; padding:.85rem 1rem 1.1rem;">
+<div class="card" id="bgb-board-card" style="margin-bottom:1.5rem; padding:.85rem 1rem 1.1rem;">
+  <div class="board-scanner"></div>
   <div style="display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-bottom:.6rem;">
     <div class="card-title" style="margin-bottom:0; font-size:.75rem; letter-spacing:.12em;">BEER GAME BOARD</div>
     <span style="font-size:.62rem; color:var(--muted);">
@@ -345,6 +616,7 @@
           <div class="bgb-inv-box" id="rt-inv-box">
             <div class="bgb-inv-val warn" id="rt-inv">—</div>
             <div class="bgb-backlog zero" id="rt-blg">blg:0</div>
+            <div class="bgb-inv-healthbar" id="rt-health"></div>
           </div>
         </div>
         <!-- Shipping delay ← from wholesaler -->
@@ -380,6 +652,7 @@
           <div class="bgb-inv-box" id="wh-inv-box">
             <div class="bgb-inv-val warn" id="wh-inv">—</div>
             <div class="bgb-backlog zero" id="wh-blg">blg:0</div>
+            <div class="bgb-inv-healthbar" id="wh-health"></div>
           </div>
         </div>
         <div class="bgb-slot-col blue-col">
@@ -414,6 +687,7 @@
           <div class="bgb-inv-box" id="di-inv-box">
             <div class="bgb-inv-val warn" id="di-inv">—</div>
             <div class="bgb-backlog zero" id="di-blg">blg:0</div>
+            <div class="bgb-inv-healthbar" id="di-health"></div>
           </div>
         </div>
         <div class="bgb-slot-col blue-col">
@@ -452,6 +726,7 @@
           <div class="bgb-inv-box" id="fa-inv-box">
             <div class="bgb-inv-val warn" id="fa-inv">—</div>
             <div class="bgb-backlog zero" id="fa-blg">blg:0</div>
+            <div class="bgb-inv-healthbar" id="fa-health"></div>
           </div>
         </div>
         <!-- Production delay (units in production, 2w) -->
@@ -468,10 +743,14 @@
 
 <!-- HUD -->
 <div class="hud">
-  <div class="hud-card"><div class="hud-label">Inventory</div><div class="hud-value" id="hud-inv" style="color:var(--success)">—</div><div style="font-size:.68rem;color:var(--muted);">on hand</div></div>
-  <div class="hud-card"><div class="hud-label">Backlog</div><div class="hud-value" id="hud-blg" style="color:var(--danger)">—</div><div style="font-size:.68rem;color:var(--muted);">unfilled</div></div>
+  <div class="hud-card" id="hud-card-inv"><div class="hud-label">Inventory</div><div class="hud-value" id="hud-inv" style="color:var(--success)">—</div><div class="eff-bar"><div class="eff-fill" id="eff-inv" style="width:0%;background:var(--success)"></div></div><div style="font-size:.68rem;color:var(--muted);">on hand</div></div>
+  <div class="hud-card" id="hud-card-blg"><div class="hud-label">Backlog</div><div class="hud-value" id="hud-blg" style="color:var(--danger)">—</div><div class="eff-bar"><div class="eff-fill" id="eff-blg" style="width:0%;background:var(--danger)"></div></div><div style="font-size:.68rem;color:var(--muted);">unfilled</div></div>
   <div class="hud-card"><div class="hud-label">Total Cost</div><div class="hud-value" id="hud-cost" style="color:var(--accent);font-size:1.4rem;">$—</div><div style="font-size:.68rem;color:var(--muted);">accumulated</div></div>
   {% if role == 'retailer' %}<div class="hud-card"><div class="hud-label">Customer Demand</div><div class="hud-value" id="hud-demand" style="color:var(--wholesaler-color)">—</div><div style="font-size:.68rem;color:var(--muted);">this week</div></div>{% endif %}
+  <div class="hud-card" id="hud-card-grade" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;padding:.85rem .6rem;">
+    <div class="hud-label" style="margin:0;">Grade</div>
+    <div id="grade-wrap"><div class="grade-badge grade-B" id="grade-badge">B</div><div class="grade-lbl" id="grade-lbl">GOOD</div></div>
+  </div>
 </div>
 
 <!-- Players status -->
@@ -506,6 +785,7 @@
 
   <div style="background:rgba(59,130,246,.06); border:1px solid rgba(59,130,246,.2); border-radius:8px; padding:.65rem .9rem; margin-bottom:.85rem; font-size:.78rem; color:var(--muted);">
     Production you started <strong style="color:var(--text);">2 weeks ago</strong> has completed and is ready to enter your inventory.
+    Your <strong style="color:var(--text);">production request from last week</strong> now enters the 2-week production pipeline.
     You will also see the <strong style="color:var(--text);">Incoming Order from the Distributor</strong> — placed 2 weeks ago, now arriving at your desk.
     You will fill that order in Step 2, then decide how much new production to start in Step 3.
   </div>
@@ -521,6 +801,15 @@
 
   <div id="recv-none" style="display:none; background:var(--surface2); border-radius:8px; padding:.6rem .9rem; font-size:.82rem; color:var(--muted); margin-bottom:.6rem;">
     No production completing this week.
+  </div>
+
+  <!-- Production request starting (green — enters production pipeline now) -->
+  <div class="confirm-row" id="recv-prod-start-row" style="margin-top:.5rem; border-left:3px solid rgba(34,197,94,.5); padding-left:1rem;">
+    <div>
+      <div class="confirm-label" style="font-weight:700; color:var(--success);">⚙️ Production request starting now</div>
+      <div class="confirm-sub">Last week's request enters the 2-week production pipeline → ready in 2 weeks</div>
+    </div>
+    <div class="confirm-qty" id="recv-prod-start-qty" style="color:var(--success);">—</div>
   </div>
 
   <!-- Incoming order from Distributor (amber — order delay pipeline) -->
@@ -644,7 +933,8 @@
     <div style="background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.2); border-radius:8px; padding:.7rem .9rem; margin-bottom:.75rem; font-size:.78rem; color:var(--muted);">
       🏭 <strong style="color:var(--text);">Your own decision</strong> — how many units do you want to start producing right now?
       This is your <strong style="color:var(--text);">production request to yourself</strong>.
-      Units will enter the <strong style="color:var(--text);">Production Delay</strong> pipeline and be ready in <strong style="color:var(--text);">2 weeks</strong>.
+      Units will enter the <strong style="color:var(--text);">Production Delay</strong> pipeline and be ready in <strong style="color:var(--text);">3 weeks total</strong>
+      (1-week request delay + 2-week production delay).
       There is no production limit.
     </div>
     {% endif %}
@@ -653,7 +943,7 @@
 
     <div style="font-size:.76rem; color:var(--muted); margin-bottom:.85rem; text-align:center;">
       {% if role == 'factory' %}
-        Production enters <strong style="color:var(--text);">Production Delay</strong> — completes in <strong style="color:var(--text);">2 weeks</strong>
+        Production request enters <strong style="color:var(--text);">1-week delay</strong>, then <strong style="color:var(--text);">2-week production pipeline</strong> — ready in <strong style="color:var(--text);">3 weeks total</strong>
       {% else %}
         Order placed travels <strong style="color:var(--text);">2 weeks</strong> upstream, shipment back in <strong style="color:var(--text);">2 more weeks</strong>
       {% endif %}
@@ -722,12 +1012,12 @@
       <div style="font-size:.76rem; color:var(--muted); margin-bottom:.65rem;">
         En attente des autres acteurs · confirmez quand vous êtes prêt
       </div>
-      <button id="btn-week-ready" onclick="doWeekReady()"
+      <button id="cust-btn-week-ready" onclick="doWeekReady()"
         style="width:100%; justify-content:center; font-size:.95rem; padding:.7rem;"
         class="btn btn-primary">
         ✓ Prêt pour la semaine suivante
       </button>
-      <div style="color:var(--muted); font-size:.76rem; margin-top:.6rem;" id="waiting-count-label">
+      <div style="color:var(--muted); font-size:.76rem; margin-top:.6rem;" id="cust-waiting-count-label">
         En attente des autres joueurs…
       </div>
     </div>
@@ -777,6 +1067,7 @@ const SESSION_ID = {{ session.id }};
 const ROLES  = ['customer','retailer','wholesaler','distributor','factory'];
 const COLORS = {retailer:'#f5c842',wholesaler:'#3b82f6',distributor:'#a855f7',factory:'#22c55e'};
 const EMOJIS = {customer:'👤',retailer:'🛒',wholesaler:'🏪',distributor:'🚚',factory:'🏭'};
+const EMPTY_SLOT = '·';   // sentinel displayed in empty board slots
 
 let ws, chart;
 let gameStarted = false;
@@ -803,11 +1094,13 @@ function handle(msg) {
       renderBoard(msg);
       updatePipeline(msg.pipeline || [], msg.outgoing_orders || []);
       updateChart(msg.history || []);
-      // For factory: demand_incoming = production request; pending_received = production completing
-      showReceivePanel(msg.pending_received ?? 0, msg.demand_incoming ?? 0);
+      // pending_received  = production/shipment completing (entering inventory)
+      // demand_incoming   = distributor's order arriving (factory) / downstream order (others)
+      // production_request = factory's own self-order converting to production (factory only)
+      showReceivePanel(msg.pending_received ?? 0, msg.demand_incoming ?? 0, msg.production_request ?? null);
       updateReadyPills(msg);
       if (MY_ROLE === 'factory') {
-        log('sys', `📋 Production request received: ${msg.demand_incoming ?? 0} units. Production completing: ${msg.pending_received ?? 0}`);
+        log('sys', `📦 Production completing: +${msg.pending_received ?? 0} units. Request starting: ${msg.production_request ?? 0}. Distributor order: ${msg.demand_incoming ?? 0}`);
       } else {
         log('sys', `📦 Incoming shipment this week: ${msg.pending_received ?? 0} units`);
       }
@@ -821,7 +1114,7 @@ function handle(msg) {
       // Animate: incoming ship slots depart → inventory box pulses green
       animateBoardReceive(MY_ROLE, msg.received, msg.new_inventory, msg.backlog);
       if (MY_ROLE === 'factory') {
-        log('sys', `📦 Production received: +${msg.received} units → inventory. Incoming order from Distributor: ${msg.demand_incoming}. Now fill the order.`);
+        log('sys', `📦 Production completing: +${msg.received} → inventory. Production starting: ${msg.production_started}. Distributor order: ${msg.demand_incoming}. Now fill the order.`);
       } else {
         log('sys', `📦 Received +${msg.received} units. Stock now: ${msg.new_inventory}`);
       }
@@ -863,6 +1156,35 @@ function handle(msg) {
 
     // Week complete + state update from server
     case 'week_complete':
+      hideLobby(msg.status);
+      updateHUD(msg);
+      renderBoard(msg);
+      updatePipeline(msg.pipeline || [], msg.outgoing_orders || []);
+      updateChart(msg.history || []);
+      updateReadyPills(msg);
+      sweepBoard();
+      if (msg.week) flashWeek(msg.week);   // 🎮 dramatic week banner
+      if (msg.is_finished) { showGameOver(msg); }
+      if (MY_ROLE === 'customer') resetCustomerPanel();
+      // Week summary hint
+      if (msg.own) {
+        const wblg = msg.own.backlog ?? 0;
+        const winv = msg.own.inventory ?? 0;
+        if (wblg === 0 && winv > 0) toast('✅ Perfect week — no backlog!', 'success');
+        else if (wblg > 15) toast(`⚠️ High backlog: ${wblg} units`, 'error');
+      }
+      // Reset week-ready button for next week
+      {
+        const btn = getWeekReadyEl();
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '✓ Prêt pour la semaine suivante';
+          btn.style.boxShadow = '';
+          btn.style.animation = '';
+        }
+      }
+      break;
+
     case 'state_update':
     case 'game_started':
       hideLobby(msg.status);
@@ -871,11 +1193,12 @@ function handle(msg) {
       updatePipeline(msg.pipeline || [], msg.outgoing_orders || []);
       updateChart(msg.history || []);
       updateReadyPills(msg);
+      sweepBoard();
       if (msg.is_finished) { showGameOver(msg); }
       if (MY_ROLE === 'customer') resetCustomerPanel();
       // Reset week-ready button for next week
       {
-        const btn = document.getElementById('btn-week-ready');
+        const btn = getWeekReadyEl();
         if (btn) {
           btn.disabled = false;
           btn.textContent = '✓ Prêt pour la semaine suivante';
@@ -898,12 +1221,12 @@ function handle(msg) {
       updateLobbyRows(msg);
       // If game has started, hide lobby overlay
       if (msg.status === 'playing') hideLobby(msg.status);
-      // Update waiting count if order panel is shown
-      if (document.getElementById('waiting-count-label')) {
+      // Update waiting count while in order/submitted phase
+      {
         const done = (msg.submitted || []).length;
         const total = msg.total || 5;
         const rem = total - done;
-        const wl = document.getElementById('waiting-count-label');
+        const wl = getWaitingLabelEl();
         if (wl && rem > 0) wl.textContent = `En attente de ${rem} joueur(s)…`;
       }
       break;
@@ -912,7 +1235,7 @@ function handle(msg) {
       {
         const readyCount = (msg.ready_for_next || []).length;
         const total      = msg.total || 5;
-        const wl = document.getElementById('waiting-count-label');
+        const wl = getWaitingLabelEl();
         if (wl) wl.textContent = readyCount >= total
           ? '⏳ Semaine suivante en cours…'
           : `${readyCount} / ${total} prêts pour la semaine suivante`;
@@ -932,7 +1255,7 @@ function handle(msg) {
     case 'all_phases_done':
       // All players finished their 3 phases — show week-ready button if not yet clicked
       {
-        const btn = document.getElementById('btn-week-ready');
+        const btn = getWeekReadyEl();
         if (btn && !btn.disabled) {
           btn.style.boxShadow = '0 0 16px rgba(245,200,66,.5)';
           btn.style.animation = 'none';
@@ -957,7 +1280,7 @@ function hideAllPanels() {
   });
 }
 
-function showReceivePanel(receivedQty, demandIncoming) {
+function showReceivePanel(receivedQty, demandIncoming, productionRequest) {
   hideAllPanels();
   setPhaseIndicator(1);
 
@@ -966,18 +1289,25 @@ function showReceivePanel(receivedQty, demandIncoming) {
   panel.classList.add('active');
 
   if (MY_ROLE === 'factory') {
-    // Factory phase 1:
-    //   recv-prod-qty = production completing this week (blue, top row)
-    //   recv-qty      = incoming order from Distributor (amber, bottom row)
-    const prodEl  = document.getElementById('recv-prod-qty');  // production completing
-    const prodRow = document.getElementById('recv-prod-row');
-    const orderEl = document.getElementById('recv-qty');        // incoming order from Distributor
-    const noneEl  = document.getElementById('recv-none');
+    // Factory phase 1 has three rows:
+    //   recv-prod-qty       = production completing this week (from 2-week production pipeline, blue)
+    //   recv-prod-start-qty = production request starting now (from last week's self-order, green)
+    //   recv-qty            = incoming order from Distributor (amber)
+    const prodEl      = document.getElementById('recv-prod-qty');       // production completing
+    const prodRow     = document.getElementById('recv-prod-row');
+    const startEl     = document.getElementById('recv-prod-start-qty'); // production request starting
+    const startRow    = document.getElementById('recv-prod-start-row');
+    const orderEl     = document.getElementById('recv-qty');             // incoming order from Distributor
+    const noneEl      = document.getElementById('recv-none');
 
     // Production completing (receivedQty = units arriving from production delay)
-    if (prodEl) prodEl.textContent = receivedQty > 0 ? '+' + receivedQty : '0';
+    if (prodEl)  prodEl.textContent = receivedQty > 0 ? '+' + receivedQty : '0';
     if (prodRow) prodRow.style.display = 'flex';
     if (noneEl)  noneEl.style.display  = receivedQty > 0 ? 'none' : 'block';
+
+    // Production request starting now (productionRequest = last week's self-order quantity)
+    if (startEl)  startEl.textContent = (productionRequest != null) ? productionRequest : '0';
+    if (startRow) startRow.style.display = (productionRequest != null && productionRequest > 0) ? 'flex' : 'none';
 
     // Incoming order from Distributor (demandIncoming)
     if (orderEl) orderEl.textContent = demandIncoming ?? '—';
@@ -1002,7 +1332,7 @@ function showReceivePanel(receivedQty, demandIncoming) {
   if (btn) {
     btn.disabled = false;
     btn.textContent = MY_ROLE === 'factory'
-      ? '✓ Confirm Receipt — Add to Inventory'
+      ? '✓ Goods Received — Proceed to Fill Order'
       : '✓ Confirm Receipt — Add to Inventory';
   }
 }
@@ -1069,7 +1399,7 @@ function showDonePanel(orderQty, msg) {
   const ql = document.getElementById('submitted-qty-label');
   if (MY_ROLE === 'factory') {
     // Factory: production request → 1w order delay → then 2w production delay
-    if (ql) ql.textContent = `Production request: ${orderQty} units → 1w delay → production starts next week (ready in ~3 weeks)`;
+    if (ql) ql.textContent = `Production request: ${orderQty} units → 1w delay → production starts next week (ready in 3 weeks)`;
     log('order', `Production request: ${orderQty} units placed`);
     toast(`✓ Production request: ${orderQty} units`, 'success');
   } else {
@@ -1101,7 +1431,7 @@ function resetCustomerPanel() {
   const qEl = document.getElementById('cust-qty');
   if (qEl) { qEl.disabled = false; qEl.value = 4; }
   // Reset week-ready button
-  const btn = document.getElementById('btn-week-ready');
+  const btn = document.getElementById('cust-btn-week-ready');
   if (btn) { btn.disabled = false; btn.textContent = '✓ Prêt pour la semaine suivante'; btn.style.boxShadow = ''; }
   // Update week number display
   const wn = document.getElementById('cust-week-num');
@@ -1131,6 +1461,7 @@ function setPhaseIndicator(activeStep, done3) {
 function doConfirmReceive() {
   const btn = document.getElementById('btn-receive');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Confirming…'; }
+  sndReceive();  // 🎮
   send({type: 'confirm_receive'});
   log('sys', '📦 Confirmed receipt of goods');
 }
@@ -1138,6 +1469,7 @@ function doConfirmReceive() {
 function doConfirmShip() {
   const btn = document.getElementById('btn-ship');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending shipment…'; }
+  sndShip();  // 🎮
   send({type: 'confirm_ship'});
   log('sys', '🚚 Confirmed shipment to downstream');
 }
@@ -1146,6 +1478,7 @@ function doSubmitOrder() {
   const raw = (document.getElementById('order-qty')?.value || '').trim();
   const qty = parseInt(raw, 10);
   if (raw === '' || isNaN(qty) || qty < 0) { toast('Enter a valid non-negative number', 'error'); return; }
+  sndOrder();  // 🎮
   send({type: 'submit_order', quantity: qty});
 }
 
@@ -1153,6 +1486,7 @@ function doCustomerSubmit() {
   const raw = (document.getElementById('cust-qty')?.value || '').trim();
   const qty = parseInt(raw, 10);
   if (raw === '' || isNaN(qty) || qty < 0) { toast('Entrez une quantité valide', 'error'); return; }
+  sndOrder();  // 🎮
   send({type: 'submit_order', quantity: qty});
   document.getElementById('cust-submit-section').style.display  = 'none';
   document.getElementById('cust-submitted-section').style.display = 'block';
@@ -1270,10 +1604,136 @@ function updateReadyPills(msg) {
 }
 
 // ── HUD & board ────────────────────────────────────────────────────────────
+
+// ── 🎮 Sound Engine (Web Audio API) ──────────────────────────────────────
+let soundEnabled = false;
+let _audioCtx = null;
+function _getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+function _beep(freq, dur, type='sine', vol=0.10) {
+  if (!soundEnabled) return;
+  const ctx = _getAudioCtx(); if (!ctx) return;
+  try {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime);
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+function sndReceive() { _beep(523,.1); setTimeout(()=>_beep(659,.1),110); setTimeout(()=>_beep(784,.12),220); }
+function sndShip()    { _beep(392,.07,'square',.06); setTimeout(()=>_beep(330,.07,'square',.04),90); setTimeout(()=>_beep(262,.1,'square',.03),180); }
+function sndOrder()   { _beep(880,.06); setTimeout(()=>_beep(1046,.09),75); setTimeout(()=>_beep(1318,.08),160); }
+function sndWeek()    { _beep(523,.08); setTimeout(()=>_beep(659,.08),90); setTimeout(()=>_beep(784,.1),180); setTimeout(()=>_beep(1046,.15),300); setTimeout(()=>_beep(1318,.18),430); setTimeout(()=>_beep(1568,.22),560); }
+function sndCritical(){ _beep(220,.3,'sawtooth',.07); setTimeout(()=>_beep(185,.3,'sawtooth',.06),350); }
+function sndGradeUp() { _beep(659,.08); setTimeout(()=>_beep(784,.08),100); setTimeout(()=>_beep(1046,.1),200); setTimeout(()=>_beep(1318,.18),330); }
+function toggleSound() {
+  // Resume AudioContext on first click (browser autoplay policy)
+  const ctx = _getAudioCtx(); if (ctx && ctx.state === 'suspended') ctx.resume();
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('snd-btn');
+  if (btn) { btn.textContent = soundEnabled ? '🔊 SFX' : '🔇 SFX'; btn.classList.toggle('on', soundEnabled); }
+}
+
+// ── 🎮 Week flash banner (enhanced) ──────────────────────────────────────
+function flashWeek(w) {
+  const inner = document.getElementById('week-flash-inner');
+  const wrap  = document.getElementById('week-flash');
+  if (!inner) return;
+  inner.innerHTML = `WEEK&nbsp;${w}<span class="wk-sub">★ ROUND COMPLETE ★</span>`;
+  inner.classList.remove('active');
+  void inner.offsetWidth;
+  inner.classList.add('active');
+  if (wrap) wrap.classList.add('flashing');
+  inner.addEventListener('animationend', () => {
+    inner.classList.remove('active');
+    if (wrap) wrap.classList.remove('flashing');
+  }, {once:true});
+  sndWeek();
+  spawnParticles();
+}
+
+// ── 🎮 Critical backlog vignette ──────────────────────────────────────────
+let _critActive = false;
+function checkCritical(blg) {
+  if (blg >= 10 && !_critActive) {
+    _critActive = true;
+    document.body.classList.add('crit-alert');
+    sndCritical();
+    toast('⚠️ CRITICAL BACKLOG — ' + blg + ' units unfilled!', 'error');
+  } else if (blg < 10 && _critActive) {
+    _critActive = false;
+    document.body.classList.remove('crit-alert');
+  }
+}
+
+// ── 🎮 Inventory health bar ────────────────────────────────────────────────
+const HEALTH_MAX = 40;   // units considered "full" (beer game typical max)
+function setHealthBar(prefix, inv) {
+  const bar = document.getElementById(prefix + '-health');
+  if (!bar) return;
+  const pct = Math.max(0, Math.min(100, (Math.max(0, inv) / HEALTH_MAX) * 100));
+  bar.style.width = pct + '%';
+  bar.style.background = pct > 40 ? '#22c55e' : pct > 15 ? '#f5c842' : '#ef4444';
+}
+
+// ── 🎮 HUD card glow ──────────────────────────────────────────────────────
+function updateHUDCards(inv, blg) {
+  const ci = document.getElementById('hud-card-inv');
+  const cb = document.getElementById('hud-card-blg');
+  if (ci) ci.className = 'hud-card ' + (inv > 8 ? 'hud-good' : inv > 0 ? 'hud-warn' : 'hud-bad');
+  if (cb) cb.className = 'hud-card ' + (blg === 0 ? 'hud-good' : blg < 5 ? 'hud-warn' : 'hud-bad');
+}
+
+/**
+ * Smoothly count an element's displayed integer from its current value to newVal.
+ * prefix: string prepended to every frame (e.g. '$').
+ * duration: ms.
+ */
+function animateNum(el, newVal, prefix='', duration=380) {
+  if (!el) return;
+  const to = parseFloat(newVal);
+  if (isNaN(to)) { el.textContent = prefix + (newVal ?? '—'); return; }
+  // Use stored value as starting point; fall back to 0 (avoids parsing formatted text).
+  const from = 'numVal' in el.dataset ? parseFloat(el.dataset.numVal) : 0;
+  el.dataset.numVal = to;
+  if (from === to) { el.textContent = prefix + to; return; }
+  const startTime = performance.now();
+  (function step(now) {
+    const t    = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);          // cubic ease-out
+    el.textContent = prefix + Math.round(from + (to - from) * ease);
+    if (t < 1) requestAnimationFrame(step);
+  })(startTime);
+}
+
+/**
+ * Sweep board columns left→right with a brief amber glow (called on new week).
+ */
+function sweepBoard() {
+  ['col-customer','col-retailer','col-wholesaler','col-distributor','col-factory']
+    .forEach((id, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('sweeping');
+        // Reading offsetWidth forces a style recalculation so the CSS animation
+        // restarts cleanly even if the class was just removed above.
+        void el.offsetWidth;
+        el.classList.add('sweeping');
+        el.addEventListener('animationend', () => el.classList.remove('sweeping'), {once: true});
+      }, i * 60);
+    });
+}
 function updateHUD(msg) {
   const w = msg.week || 0;
   document.getElementById('current-week').textContent = w;
-  const pf = document.getElementById('progress-fill');
+  const pf = document.getElementById('xp-bar-fill');
   if (pf) pf.style.width = Math.round(w / MAX_WEEKS * 100) + '%';
 
   const inv  = msg.own?.inventory ?? 0;
@@ -1281,25 +1741,56 @@ function updateHUD(msg) {
   const cost = msg.own?.total_cost ?? 0;
 
   const hInv = document.getElementById('hud-inv');
-  hInv.textContent = inv;
+  animateNum(hInv, inv);
   hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
 
+  // Inventory efficiency mini-bar
+  const effInv = document.getElementById('eff-inv');
+  if (effInv) {
+    const pct = Math.max(0, Math.min(100, (inv / 40) * 100));
+    effInv.style.width = pct + '%';
+    effInv.style.background = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+  }
+
   const hBlg = document.getElementById('hud-blg');
-  hBlg.textContent = blg;
+  animateNum(hBlg, blg);
   hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
 
-  document.getElementById('hud-cost').textContent = '$' + Number(cost).toFixed(1);
+  // Backlog severity mini-bar
+  const effBlg = document.getElementById('eff-blg');
+  if (effBlg) {
+    const pct = Math.max(0, Math.min(100, (blg / 20) * 100));
+    effBlg.style.width = pct + '%';
+    effBlg.style.background = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
+  }
+
+  const hCost = document.getElementById('hud-cost');
+  animateNum(hCost, cost, '$', 500);
 
   const dem = document.getElementById('hud-demand');
   if (dem) dem.textContent = msg.map?.demand_customer_to_retailer?.this_week ?? '—';
+
+  // 🎮 Game-mode: HUD glow + critical alert + grade
+  updateHUDCards(inv, blg);
+  checkCritical(blg);
+  updateGrade(inv, blg, cost);
 }
 
 function updateMiniHUD(inv, blg) {
   const hInv = document.getElementById('hud-inv');
-  hInv.textContent = inv ?? '—';
+  const prevInv = hInv ? (parseFloat(hInv.dataset.numVal) || 0) : 0;
+  animateNum(hInv, inv ?? 0);
   hInv.style.color = inv > 8 ? 'var(--success)' : inv > 0 ? 'var(--accent)' : 'var(--danger)';
+
+  // Spawn floating +/- number near the HUD card
+  const delta = (inv ?? 0) - prevInv;
+  if (delta !== 0 && hInv) {
+    const rect = hInv.getBoundingClientRect();
+    spawnFloatNum(delta, rect.left + rect.width / 2, rect.top + window.scrollY, delta > 0 ? 'var(--success)' : 'var(--danger)');
+  }
+
   const hBlg = document.getElementById('hud-blg');
-  hBlg.textContent = blg ?? '—';
+  animateNum(hBlg, blg ?? 0);
   hBlg.style.color = blg === 0 ? 'var(--success)' : blg < 5 ? 'var(--accent)' : 'var(--danger)';
 }
 
@@ -1308,7 +1799,7 @@ function setBoxVal(id, v) {
   const box = document.getElementById(id);
   if (!box) return;
   const val = box.querySelector('.bgb-v');
-  if (val) val.textContent = (v == null) ? '·' : v;
+  if (val) val.textContent = (v == null) ? EMPTY_SLOT : v;
 }
 
 function setInv(prefix, inv, blg) {
@@ -1317,27 +1808,53 @@ function setInv(prefix, inv, blg) {
   const xEl = document.getElementById(prefix + '-inv-box');
   if (!vEl) return;
   if (xEl) { xEl.style.opacity = ''; xEl.style.filter = ''; }
-  vEl.textContent = inv ?? '—';
+
+  // Spawn float number on the board if this is MY column and value changed
+  const myPre = MY_ROLE === 'factory' ? 'fa' : MY_ROLE === 'customer' ? null : MY_ROLE.slice(0,2);
+  if (prefix === myPre && xEl) {
+    const prevVal = parseFloat(vEl.dataset.numVal) || 0;
+    const delta   = (inv ?? 0) - prevVal;
+    if (delta !== 0 && xEl) {
+      const rect = xEl.getBoundingClientRect();
+      spawnFloatNum(delta, rect.left + rect.width / 2, rect.top, delta > 0 ? 'var(--success)' : 'var(--danger)');
+    }
+  }
+
+  animateNum(vEl, inv ?? 0);
   vEl.className   = 'bgb-inv-val ' + (inv > 8 ? 'good' : inv > 0 ? 'warn' : 'bad');
   if (xEl) xEl.style.borderColor = inv > 8 ? 'rgba(34,197,94,.4)' : inv > 0 ? 'rgba(245,200,66,.4)' : 'rgba(239,68,68,.4)';
   if (bEl) {
     if (blg > 0) { bEl.className = 'bgb-backlog nonzero'; bEl.textContent = `blg:${blg}`; }
     else         { bEl.className = 'bgb-backlog zero';    bEl.textContent = 'blg:0'; }
   }
+  setHealthBar(prefix, inv ?? 0);  // 🎮 update health bar
 }
 
 function setSlot(id, item, cls) {
   const box = document.getElementById(id);
   if (!box) return;
   const v = box.querySelector('.bgb-v');
+  const oldVal = v ? v.textContent : EMPTY_SLOT;
   box.className     = 'bgb-slot ' + (cls || '');
   box.style.opacity = '';
   box.style.filter  = '';
   if (item) {
-    if (v) v.textContent = item.quantity;
+    const newVal = String(item.quantity);
+    if (v) {
+      if (oldVal !== newVal && oldVal !== EMPTY_SLOT && newVal !== EMPTY_SLOT) {
+        // Value changed this week — pop it to draw attention
+        v.textContent = newVal;
+        v.classList.remove('anim-val-pop');
+        void v.offsetWidth;
+        v.classList.add('anim-val-pop');
+        v.addEventListener('animationend', () => v.classList.remove('anim-val-pop'), {once: true});
+      } else {
+        v.textContent = newVal;
+      }
+    }
     if (item.weeks_away === 0) box.classList.add('arriving');
   } else {
-    if (v) v.textContent = '·';
+    if (v) v.textContent = EMPTY_SLOT;
   }
 }
 
@@ -1354,7 +1871,7 @@ function blankSlot(id) {
   box.className     = 'bgb-slot';
   box.style.opacity = '0.18';
   box.style.filter  = '';
-  if (v) v.textContent = '·';
+  if (v) v.textContent = EMPTY_SLOT;
 }
 
 function blankInv(prefix) {
@@ -1457,9 +1974,9 @@ function renderBoard(msg) {
     setInv('fa', own.inventory, own.backlog);
     setSlots('fa-prod-1','fa-prod-2', m.factory_production_delay,   'blue');
     // Distributor slots visible to factory:
-    setSlots('di-ord-1','di-ord-2',   m.incoming_orders_to_me,      'amber'); // di orders = my incoming
+    setSlots('di-ord-1','di-ord-2',   m.incoming_orders_to_me,      'amber'); // di orders arriving at factory
     setSlots('di-ship-1','di-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to di
-    setSlots('di-inc-1','di-inc-2',   m.incoming_orders_to_me,      'amber'); // same, in di-inc slots
+    // di-inc (wholesaler→distributor orders) is NOT visible to factory; stays blanked
     // wh-*, rt-* → stay blanked
   }
 }
@@ -1571,7 +2088,7 @@ function animateBoardReceive(role, receivedQty, newInv, newBlg) {
       invBox.addEventListener('animationend', () => invBox.classList.remove('anim-inv-rcv'), {once:true});
     }
     if (invVal) {
-      invVal.textContent = newInv ?? '—';
+      animateNum(invVal, newInv ?? 0);
       invVal.className   = 'bgb-inv-val ' + (newInv > 8 ? 'good' : newInv > 0 ? 'warn' : 'bad');
     }
     const blgEl = document.getElementById(pre + '-blg');
@@ -1600,7 +2117,7 @@ function animateBoardShip(role, shippedQty, newInv, newBlg) {
   }
   if (invVal) {
     setTimeout(() => {
-      invVal.textContent = newInv ?? '—';
+      animateNum(invVal, newInv ?? 0);
       invVal.className   = 'bgb-inv-val ' + (newInv > 8 ? 'good' : newInv > 0 ? 'warn' : 'bad');
     }, 200);
   }
@@ -1675,8 +2192,21 @@ function getDownstreamShipSlot(role) {
   return map[role] || null;
 }
 
+// Return the currently relevant week-ready button and waiting label.
+// Supply chain roles use '#btn-week-ready'; customer uses '#cust-btn-week-ready'.
+function getWeekReadyEl() {
+  return MY_ROLE === 'customer'
+    ? document.getElementById('cust-btn-week-ready')
+    : document.getElementById('btn-week-ready');
+}
+function getWaitingLabelEl() {
+  return MY_ROLE === 'customer'
+    ? document.getElementById('cust-waiting-count-label')
+    : document.getElementById('waiting-count-label');
+}
+
 function doWeekReady() {
-  const btn = document.getElementById('btn-week-ready');
+  const btn = getWeekReadyEl();
   if (btn) { btn.disabled = true; btn.textContent = '⏳ En attente des autres…'; }
   send({type: 'week_ready'});
   log('sys', '✓ Prêt pour la semaine suivante');
@@ -1685,10 +2215,107 @@ function doWeekReady() {
 // ── Misc ───────────────────────────────────────────────────────────────────
 function setConn(on) { document.getElementById('conn-dot').className=on?'online':'offline'; document.getElementById('conn-label').textContent=on?'Connected':'Reconnecting…'; }
 function log(type, msg) { const el=document.getElementById('event-log'); if(!el)return; const ic=type==='week'?'📅':type==='order'?'📤':'🔌'; el.innerHTML=`<div class="log-entry">${ic} <span style="font-size:.65rem;color:var(--muted)">${new Date().toLocaleTimeString()}</span> ${msg}</div>`+el.innerHTML; }
-function toast(msg, type='') { const c=document.getElementById('toast-container'); if(!c)return; const d=document.createElement('div'); d.className='toast '+type; d.textContent=msg; c.appendChild(d); setTimeout(()=>d.remove(),3600); }
+function toast(msg, type='') { const c=document.getElementById('toast-container'); if(!c)return; const d=document.createElement('div'); d.className='toast '+type; d.innerHTML=`<span>${msg}</span>`; c.appendChild(d); setTimeout(()=>d.remove(),3600); }
+
+// ── 🏆 Grade / rank system ────────────────────────────────────────────────
+const GRADE_CFG = [
+  { grade:'S', label:'LEGENDARY', cls:'grade-S', maxCostPerWk:3,   maxBlg:0  },
+  { grade:'A', label:'EXCELLENT', cls:'grade-A', maxCostPerWk:8,   maxBlg:2  },
+  { grade:'B', label:'GOOD',      cls:'grade-B', maxCostPerWk:16,  maxBlg:6  },
+  { grade:'C', label:'AVERAGE',   cls:'grade-C', maxCostPerWk:30,  maxBlg:14 },
+  { grade:'D', label:'POOR',      cls:'grade-D', maxCostPerWk:60,  maxBlg:30 },
+  { grade:'F', label:'FAIL',      cls:'grade-F', maxCostPerWk:Infinity, maxBlg:Infinity },
+];
+
+let _lastGrade = null;
+let _comboCount = 0;
+
+function updateGrade(inv, blg, cost) {
+  const week = Math.max(1, parseInt(document.getElementById('current-week')?.textContent || '1', 10));
+  const perWk = cost / week;
+  let cfg = GRADE_CFG[GRADE_CFG.length - 1];
+  for (const c of GRADE_CFG) {
+    if (blg <= c.maxBlg && perWk <= c.maxCostPerWk) { cfg = c; break; }
+  }
+  const badge = document.getElementById('grade-badge');
+  const lbl   = document.getElementById('grade-lbl');
+  const hudCard = document.getElementById('hud-card-grade');
+  if (badge) { badge.className = 'grade-badge ' + cfg.cls; badge.textContent = cfg.grade; }
+  if (lbl)   lbl.textContent = cfg.label;
+  if (hudCard) { hudCard.classList.remove('hud-s'); if (cfg.grade === 'S') hudCard.classList.add('hud-s'); }
+
+  // Combo: track consecutive A/S weeks
+  if (cfg.grade === 'S' || cfg.grade === 'A') { _comboCount++; } else { _comboCount = Math.max(0, _comboCount - 1); }
+  updateCombo(_comboCount);
+
+  // Achievement toast on grade improvement
+  if (_lastGrade && _lastGrade !== cfg.grade) {
+    const prevIdx = GRADE_CFG.findIndex(c => c.grade === _lastGrade);
+    const curIdx  = GRADE_CFG.findIndex(c => c.grade === cfg.grade);
+    if (curIdx < prevIdx) achieveToast(`🏆 Grade up: ${_lastGrade} → ${cfg.grade}! ${cfg.label}`);
+  }
+  _lastGrade = cfg.grade;
+}
+
+// ── 🔥 Combo streak display ───────────────────────────────────────────────
+function updateCombo(count) {
+  const strip = document.getElementById('combo-strip');
+  const cnt   = document.getElementById('combo-count');
+  if (!strip || !cnt) return;
+  cnt.textContent = '×' + count;
+  if (count < 2) { strip.classList.remove('visible','x3','x5','x8'); return; }
+  strip.classList.add('visible');
+  strip.classList.remove('x3','x5','x8');
+  if (count >= 8)      strip.classList.add('x8');
+  else if (count >= 5) strip.classList.add('x5');
+  else if (count >= 3) strip.classList.add('x3');
+}
+
+// ── 💥 Floating +/- delta numbers ────────────────────────────────────────
+function spawnFloatNum(delta, x, y, color) {
+  if (delta === 0) return;
+  const el = document.createElement('div');
+  el.className = 'float-num';
+  el.textContent = (delta > 0 ? '+' : '') + delta;
+  el.style.color = color;
+  el.style.left  = (x - 30) + 'px';
+  el.style.top   = (y - 20 + window.scrollY) + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove(), {once:true});
+}
+
+// ── 🎆 Particle burst on week flash ──────────────────────────────────────
+function spawnParticles() {
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const colors = ['#f5c842','#3b82f6','#a855f7','#22c55e','#ef4444','#ffffff'];
+  for (let i = 0; i < 32; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 80 + Math.random() * 220;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    el.style.setProperty('--dur', (.45 + Math.random() * .75) + 's');
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.left = (cx + Math.random() * 40 - 20) + 'px';
+    el.style.top  = (cy + Math.random() * 40 - 20) + 'px';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), {once:true});
+  }
+}
+
+// ── 🎖️ Achievement-style toast ────────────────────────────────────────────
+function achieveToast(msg) {
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const d = document.createElement('div');
+  d.className = 'toast achieve';
+  d.innerHTML = `<span style="font-size:1rem;">🏅</span><span>${msg}</span>`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 4200);
+}
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-{% if session.status == 'playing' %}
 gameStarted = true;
 document.getElementById('lobby-overlay').classList.add('hidden');
 {% endif %}

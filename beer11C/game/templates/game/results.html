@@ -16,15 +16,42 @@
     border-radius: 10px;
     padding: 1.25rem;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-box.winner {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(245,200,66,.25), 0 4px 24px rgba(245,200,66,.12);
+    background: rgba(245,200,66,.04);
+  }
+  .kpi-winner-badge {
+    position: absolute;
+    top: 0; right: 0;
+    font-size: .6rem;
+    font-weight: 800;
+    background: var(--accent);
+    color: #0d0f14;
+    padding: .2rem .55rem;
+    border-radius: 0 10px 0 8px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
   }
   .kpi-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
   .kpi-value { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; margin: 0.4rem 0; }
   .kpi-sub { font-size: 0.75rem; color: var(--muted); }
   .chart-wrap { position: relative; height: 280px; }
+  .charts-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 700px) { .charts-grid-2 { grid-template-columns: 1fr; } }
   .bullwhip-bar-row { display: flex; align-items:center; gap: 1rem; margin-bottom: 0.75rem; }
   .bullwhip-bar-label { width: 90px; font-size: 0.8rem; text-align: right; color: var(--muted); }
-  .bullwhip-bar-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bullwhip-bar-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
   .bullwhip-bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .bullwhip-bar-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.2); }
   .bullwhip-bar-val   { width: 50px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
 </style>
 {% endblock %}
@@ -47,24 +74,23 @@
 <!-- KPI row -->
 <div class="kpi-grid mb-2">
   {% for player in players %}
-  <div class="kpi-box">
+  <div class="kpi-box {% if player.role == winner_role %}winner{% endif %}">
+    {% if player.role == winner_role %}<div class="kpi-winner-badge">🏆 Best</div>{% endif %}
     <div class="kpi-label"><span class="role-badge role-{{ player.role }}">{{ player.role }}</span></div>
-    <div class="kpi-value" style="color: var(--{% if player.role == 'retailer' %}retailer{% elif player.role == 'wholesaler' %}wholesaler{% elif player.role == 'distributor' %}distributor{% else %}factory{% endif %}-color)">
+    <div class="kpi-value" style="color: var(--{{ player.role }}-color);">
       ${{ player.total_cost|floatformat:0 }}
     </div>
-    <div class="kpi-sub">Total supply chain cost</div>
+    <div class="kpi-sub">Total cost</div>
   </div>
   {% endfor %}
 
-  {% with total=0 %}
   <div class="kpi-box" style="border-color: var(--accent);">
     <div class="kpi-label">Total Chain Cost</div>
     <div class="kpi-value" style="color: var(--accent);">
-      ${% for player in players %}{{ player.total_cost|floatformat:0 }}{% endfor %}
+      ${{ total_cost|floatformat:0 }}
     </div>
     <div class="kpi-sub">Sum across all roles</div>
   </div>
-  {% endwith %}
 </div>
 
 <!-- Bullwhip Effect -->
@@ -80,14 +106,21 @@
     <div class="bullwhip-bar-label">{{ role|title }}</div>
     <div class="bullwhip-bar-track">
       <div class="bullwhip-bar-fill"
-           style="width: {% widthratio ratio 10 100 %}%;
+           style="width: {% widthratio ratio bullwhip_max 100 %}%;
                   max-width: 100%;
                   background: {% if ratio < 1.5 %}var(--success){% elif ratio < 3 %}var(--accent){% else %}var(--danger){% endif %};">
       </div>
+      <!-- marker at ratio=1 to show the "perfect" baseline (only shown when bullwhip_max >= 1) -->
+      {% if bullwhip_max >= 1 %}
+      <div class="bullwhip-bar-marker" style="left:{% widthratio 1 bullwhip_max 100 %}%;"></div>
+      {% endif %}
     </div>
     <div class="bullwhip-bar-val">{{ ratio }}×</div>
   </div>
   {% endfor %}
+  <div style="font-size:.68rem; color:var(--muted); margin-top:.5rem;">
+    ▏= ratio 1.0 baseline (perfect match). Scale: 0 → {{ bullwhip_max }}×
+  </div>
 </div>
 {% endif %}
 
@@ -99,7 +132,7 @@
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+<div class="charts-grid-2">
   <div class="result-card">
     <div class="card-title">Orders Placed — Bullwhip Amplification</div>
     <div class="chart-wrap">
