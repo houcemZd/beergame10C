@@ -105,7 +105,7 @@
   flex:1; gap:2px; padding:0 3px 4px;
 }
 
-/* Slot column (orders-placed, incoming-orders, ship-delay) */
+/* Slot column (orders-placed, ship-delay) */
 .bgb-slot-col {
   display:flex; flex-direction:column; gap:2px;
   align-items:center; flex-shrink:0; width:38px;
@@ -604,12 +604,6 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
           <div class="bgb-slot amber" id="rt-ord-1"><span class="bgb-v">·</span></div>
           <div class="bgb-slot amber" id="rt-ord-2"><span class="bgb-v">·</span></div>
         </div>
-        <!-- Incoming orders ← from downstream (customer demand) -->
-        <div class="bgb-slot-col amber-col">
-          <div class="bgb-slot-lbl">Incoming<br>orders</div>
-          <div class="bgb-slot amber" id="rt-inc-1"><span class="bgb-v">·</span></div>
-          <div class="bgb-slot amber" id="rt-inc-2"><span class="bgb-v">·</span></div>
-        </div>
         <!-- Inventory -->
         <div class="bgb-inv-col">
           <div class="bgb-slot-lbl">Current<br>inventory</div>
@@ -642,11 +636,6 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
           <div class="bgb-slot amber" id="wh-ord-1"><span class="bgb-v">·</span></div>
           <div class="bgb-slot amber" id="wh-ord-2"><span class="bgb-v">·</span></div>
         </div>
-        <div class="bgb-slot-col amber-col">
-          <div class="bgb-slot-lbl">Incoming<br>orders</div>
-          <div class="bgb-slot amber" id="wh-inc-1"><span class="bgb-v">·</span></div>
-          <div class="bgb-slot amber" id="wh-inc-2"><span class="bgb-v">·</span></div>
-        </div>
         <div class="bgb-inv-col">
           <div class="bgb-slot-lbl">Current<br>inventory</div>
           <div class="bgb-inv-box" id="wh-inv-box">
@@ -677,11 +666,6 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
           <div class="bgb-slot amber" id="di-ord-1"><span class="bgb-v">·</span></div>
           <div class="bgb-slot amber" id="di-ord-2"><span class="bgb-v">·</span></div>
         </div>
-        <div class="bgb-slot-col amber-col">
-          <div class="bgb-slot-lbl">Incoming<br>orders</div>
-          <div class="bgb-slot amber" id="di-inc-1"><span class="bgb-v">·</span></div>
-          <div class="bgb-slot amber" id="di-inc-2"><span class="bgb-v">·</span></div>
-        </div>
         <div class="bgb-inv-col">
           <div class="bgb-slot-lbl">Current<br>inventory</div>
           <div class="bgb-inv-box" id="di-inv-box">
@@ -704,7 +688,7 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
     </div>
 
     <!-- ── FACTORY ───────────────────────────────────────────────────────── -->
-    <!-- MIT layout: Prod.Requests | Inc.Orders | Inventory | Prod.Delay -->
+    <!-- MIT layout: Prod.Requests | Inventory | Prod.Delay -->
     <div class="bgb-actor" id="col-factory">
       <div class="bgb-actor-hdr">🏭 Factory</div>
       <div class="bgb-actor-body">
@@ -713,12 +697,6 @@ body.crit-alert { animation:crit-flash 1.4s ease infinite; }
           <div class="bgb-slot-lbl" style="color:rgba(245,200,66,.6);">Prod.<br>requests</div>
           <div class="bgb-slot" id="fa-req-1" style="border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.05);"><span class="bgb-v" style="color:rgba(245,200,66,.7);">·</span></div>
           <div class="bgb-slot" id="fa-req-2" style="border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.05);"><span class="bgb-v" style="color:rgba(245,200,66,.7);">·</span></div>
-        </div>
-        <!-- Incoming orders from Distributor -->
-        <div class="bgb-slot-col amber-col">
-          <div class="bgb-slot-lbl">Incoming<br>orders</div>
-          <div class="bgb-slot amber" id="fa-inc-1"><span class="bgb-v">·</span></div>
-          <div class="bgb-slot amber" id="fa-inc-2"><span class="bgb-v">·</span></div>
         </div>
         <!-- Inventory -->
         <div class="bgb-inv-col">
@@ -1904,10 +1882,10 @@ function renderBoard(msg) {
   }
 
   // Blank ALL slots and inventories first
-  ['rt-ord-1','rt-ord-2','rt-inc-1','rt-inc-2','rt-ship-1','rt-ship-2',
-   'wh-ord-1','wh-ord-2','wh-inc-1','wh-inc-2','wh-ship-1','wh-ship-2',
-   'di-ord-1','di-ord-2','di-inc-1','di-inc-2','di-ship-1','di-ship-2',
-   'fa-req-1','fa-req-2','fa-inc-1','fa-inc-2','fa-prod-1','fa-prod-2',
+  ['rt-ord-1','rt-ord-2','rt-ship-1','rt-ship-2',
+   'wh-ord-1','wh-ord-2','wh-ship-1','wh-ship-2',
+   'di-ord-1','di-ord-2','di-ship-1','di-ship-2',
+   'fa-req-1','fa-req-2','fa-prod-1','fa-prod-2',
   ].forEach(blankSlot);
   ['rt','wh','di','fa'].forEach(blankInv);
 
@@ -1924,59 +1902,51 @@ function renderBoard(msg) {
    * MIT Beer Game privacy rules — each role sees only:
    * Their own slots + the pipeline slots directly connected to them
    *
-   * Retailer:    rt-ord(own) rt-inc(cust demand) rt-inv rt-ship | wh-inc(=rt-ord) wh-ship(=rt-ship)
-   * Wholesaler:  wh-ord(own) wh-inc(rt orders)  wh-inv wh-ship | rt-ord(=wh-inc) rt-ship(what I sent) di-ship(=wh-ship)
-   * Distributor: di-ord(own) di-inc(wh orders)  di-inv di-ship | wh-ord(=di-inc) wh-ship(what I sent) fa-inc(=di-ord) fa-prod(=di-ship)
-   * Factory:     fa-req(own) fa-inc(di orders)  fa-inv fa-prod  | di-ord(=fa-inc) di-ship(what I sent)
+   * Retailer:    rt-ord(own) rt-inv rt-ship | wh-ship(=rt-ship)
+   * Wholesaler:  wh-ord(own) wh-inv wh-ship | rt-ord(retailer orders arriving) rt-ship(what I sent) di-ship(=wh-ship)
+   * Distributor: di-ord(own) di-inv di-ship | wh-ord(wh orders arriving) wh-ship(what I sent) fa-prod(=di-ship)
+   * Factory:     fa-req(own) fa-inv fa-prod  | di-ord(di orders arriving) di-ship(what I sent)
    */
 
   if (role === 'retailer') {
     setSlots('rt-ord-1','rt-ord-2',   m.outgoing_orders_from_me,    'amber');
-    setSlots('rt-inc-1','rt-inc-2',   m.incoming_orders_to_me,      'amber');
     setInv('rt', own.inventory, own.backlog);
     setSlots('rt-ship-1','rt-ship-2', m.incoming_shipments_to_me,   'blue');
     // Wholesaler slots visible to retailer:
-    setSlots('wh-inc-1','wh-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at wh
     setSlots('wh-ship-1','wh-ship-2', m.incoming_shipments_to_me,   'blue');  // goods wh sent to me
   }
 
   else if (role === 'wholesaler') {
     setSlots('wh-ord-1','wh-ord-2',   m.outgoing_orders_from_me,    'amber');
-    setSlots('wh-inc-1','wh-inc-2',   m.incoming_orders_to_me,      'amber');
     setInv('wh', own.inventory, own.backlog);
     setSlots('wh-ship-1','wh-ship-2', m.incoming_shipments_to_me,   'blue');
     // Retailer slots visible to wholesaler:
-    setSlots('rt-ord-1','rt-ord-2',   m.incoming_orders_to_me,      'amber'); // retailer orders = my incoming
+    setSlots('rt-ord-1','rt-ord-2',   m.incoming_orders_to_me,      'amber'); // retailer orders arriving at me
     setSlots('rt-ship-1','rt-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to retailer
     // Distributor slots visible to wholesaler (only the pipeline TO me):
     setSlots('di-ship-1','di-ship-2', m.incoming_shipments_to_me,   'blue');  // goods di sent to me = wh-ship
-    setSlots('di-inc-1','di-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at di
     // di-ord, di-inv, factory → stay blanked
   }
 
   else if (role === 'distributor') {
     setSlots('di-ord-1','di-ord-2',   m.outgoing_orders_from_me,    'amber');
-    setSlots('di-inc-1','di-inc-2',   m.incoming_orders_to_me,      'amber');
     setInv('di', own.inventory, own.backlog);
     setSlots('di-ship-1','di-ship-2', m.incoming_shipments_to_me,   'blue');
     // Wholesaler slots visible to distributor:
-    setSlots('wh-ord-1','wh-ord-2',   m.incoming_orders_to_me,      'amber'); // wh orders = my incoming
+    setSlots('wh-ord-1','wh-ord-2',   m.incoming_orders_to_me,      'amber'); // wh orders arriving at me
     setSlots('wh-ship-1','wh-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to wh
     // Factory slots visible to distributor (only the pipeline TO me):
-    setSlots('fa-inc-1','fa-inc-2',   m.outgoing_orders_from_me,    'amber'); // my orders arriving at factory
     setSlots('fa-prod-1','fa-prod-2', m.incoming_shipments_to_me,   'blue');  // factory shipped to me
     // fa-req, fa-inv, wh-inv, rt-* → stay blanked
   }
 
   else if (role === 'factory') {
     setSlots('fa-req-1','fa-req-2',   m.factory_pending_requests,   'amber'); // own prod requests
-    setSlots('fa-inc-1','fa-inc-2',   m.incoming_orders_to_me,      'amber'); // di orders arriving
     setInv('fa', own.inventory, own.backlog);
     setSlots('fa-prod-1','fa-prod-2', m.factory_production_delay,   'blue');
     // Distributor slots visible to factory:
     setSlots('di-ord-1','di-ord-2',   m.incoming_orders_to_me,      'amber'); // di orders arriving at factory
     setSlots('di-ship-1','di-ship-2', m.outgoing_shipments_from_me, 'blue');  // what I shipped to di
-    // di-inc (wholesaler→distributor orders) is NOT visible to factory; stays blanked
     // wh-*, rt-* → stay blanked
   }
 }

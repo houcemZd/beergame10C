@@ -307,20 +307,11 @@
         <div class="db-bgb-slot-col db-amber-col">
           <div class="db-bgb-slot-lbl">Orders<br>placed</div>
           {% for k,v in last_week_states.items %}{% if k == player.role %}
-          <div class="db-bgb-slot amber"><span class="db-bgb-v">{{ v.order_placed }}</span></div>
+          <div class="db-bgb-slot amber" id="db-{{ player.role }}-ord-1"><span class="db-bgb-v">{{ v.order_placed }}</span></div>
           {% endif %}{% endfor %}
           <div class="db-bgb-slot amber" id="db-{{ player.role }}-ord-2"><span class="db-bgb-v">·</span></div>
         </div>
         {% endif %}
-
-        <!-- Incoming orders from downstream -->
-        <div class="db-bgb-slot-col db-amber-col">
-          <div class="db-bgb-slot-lbl">Incoming<br>orders</div>
-          {% for k,v in last_week_states.items %}{% if k == player.role %}
-          <div class="db-bgb-slot amber"><span class="db-bgb-v">{{ v.order_received }}</span></div>
-          {% endif %}{% endfor %}
-          <div class="db-bgb-slot amber"><span class="db-bgb-v">·</span></div>
-        </div>
 
         <!-- Inventory -->
         <div class="db-bgb-inv-col">
@@ -383,20 +374,26 @@
       }
     });
 
-    // Order delay slot 2: orders in-flight from this role to upstream
+    // Order delay slots: orders in-flight from this role to upstream (both slots from pipeline)
     if (role !== 'factory') {
       const orders = pipeline
         .filter(p => p.from === role && p.type === 'order')
-        .sort((a, b) => a.weeks_away - b.weeks_away);
-      const el2 = document.getElementById('db-' + role + '-ord-2');
-      if (el2) {
-        const o = orders[1]; // slot 1 already filled from template (last week's order)
-        const span = el2.querySelector('.db-bgb-v');
-        if (span && o) {
+        .sort((a, b) => b.weeks_away - a.weeks_away); // most recent (highest weeks_away) first
+      [1, 2].forEach((slot, idx) => {
+        const el = document.getElementById('db-' + role + '-ord-' + slot);
+        if (!el) return;
+        const o = orders[idx];
+        const span = el.querySelector('.db-bgb-v');
+        if (!span) return;
+        if (o) {
           span.textContent = o.qty;
-          el2.title = o.qty + ' units order in ' + o.weeks_away + 'w';
+          el.title = o.qty + ' units ordered, arriving in ' + o.weeks_away + 'w';
+          if (o.weeks_away <= 1) el.classList.add('arriving');
+        } else {
+          span.textContent = '·';
+          span.style.color = 'var(--border)';
         }
-      }
+      });
     }
   });
 })();
