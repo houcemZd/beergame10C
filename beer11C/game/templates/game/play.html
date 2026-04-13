@@ -406,11 +406,11 @@
 .log-entry { font-size:.72rem; color:var(--muted); padding:.22rem 0; border-bottom:1px solid rgba(255,255,255,.04); font-family:var(--font-mono); }
 
 /* ── No-scroll 2-column game layout ────────────────────────────────────────── */
-.container { padding:.5rem 1rem !important; }
+.container { padding:.5rem 1rem !important; max-width:100% !important; }
 
 #game-screen {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 340px 1fr;
   gap: .75rem;
   height: calc(100vh - 56px - 1rem);
   overflow: hidden;
