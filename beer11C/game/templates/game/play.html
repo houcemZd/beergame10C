@@ -109,6 +109,7 @@
 .road-node-body {
   display:flex; flex-direction:column; align-items:center;
   flex:1; background:var(--surface); padding:.5rem .35rem .4rem; gap:5px;
+  min-height:90px;
 }
 
 /* ── Inventory box (shared base, same IDs used by JS) ─────────────────── */
@@ -715,15 +716,6 @@
   </div>
 </div>
 
-<!-- Players status -->
-<div class="card" style="padding:.75rem 1rem;">
-  <div class="card-title" style="margin-bottom:.4rem;">Players — Week Status</div>
-  <div class="ready-row" id="ready-row">
-    {% for r in roles %}<div class="ready-pill offline" id="pill-{{ r }}">○ {{ r|title }}</div>{% endfor %}
-  </div>
-  <div id="waiting-msg" style="font-size:.78rem; color:var(--muted);"></div>
-</div>
-
 <!-- Phase steps indicator -->
 {% if role != 'customer' %}
 <div class="phase-steps" id="phase-steps">
@@ -737,6 +729,15 @@
     <span>{% if role == 'factory' %}Start Production{% else %}Place Order{% endif %}</span></div>
 </div>
 {% endif %}
+
+<!-- Players status -->
+<div class="card" style="padding:.75rem 1rem;">
+  <div class="card-title" style="margin-bottom:.4rem;">Players — Week Status</div>
+  <div class="ready-row" id="ready-row">
+    {% for r in roles %}<div class="ready-pill offline" id="pill-{{ r }}">○ {{ r|title }}</div>{% endfor %}
+  </div>
+  <div id="waiting-msg" style="font-size:.78rem; color:var(--muted);"></div>
+</div>
 
 <!-- ════ PHASE 1: RECEIVE GOODS / READ PRODUCTION REQUEST ════════════════════ -->
 <div class="phase-panel" id="panel-receive">
@@ -1150,7 +1151,7 @@
 <!-- Log -->
 <div class="card" style="padding:.85rem 1rem;">
   <div class="card-title" style="margin-bottom:.4rem;">Event Log</div>
-  <div id="event-log" style="max-height:100px; overflow-y:auto;"></div>
+  <div id="event-log" style="max-height:180px; overflow-y:auto;"></div>
 </div>
 
 </div><!-- /#game-board-col -->
