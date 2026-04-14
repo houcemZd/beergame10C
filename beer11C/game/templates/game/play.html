@@ -110,6 +110,15 @@
   font-family:var(--font-mono); position:relative; gap:0;
 }
 
+/* ── Actor SVG icon base ───────────────────────────────────────────────── */
+.actor-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:20px; flex-shrink:0;
+}
+.actor-icon svg { width:100%; height:100%; }
+.actor-icon-lg { width:28px; height:28px; }
+.actor-icon-xl { width:36px; height:36px; }
+
 /* ── Warehouse node (actor column) ─────────────────────────────────────── */
 .road-node {
   display:flex; flex-direction:column; flex:0 0 100px; width:100px;
@@ -244,53 +253,71 @@
 /* Road surface */
 .road-surface {
   flex:1; min-height:58px;
-  background:linear-gradient(180deg, #0e1017 0%, #13161f 40%, #0e1017 100%);
-  border-top:3px solid #252a38; border-bottom:3px solid #252a38;
+  background:
+    linear-gradient(180deg,
+      #181c28 0%, #1a1f2c 8%,
+      #151924 35%, #151924 65%,
+      #1a1f2c 92%, #181c28 100%);
+  border-top:3px solid #2a3148; border-bottom:3px solid #2a3148;
   position:relative; overflow:hidden;
   display:flex; align-items:center; justify-content:space-around;
   padding:0 14px;
 }
-/* Road edge markings */
+/* Asphalt noise texture overlay */
 .road-surface::before {
   content:''; position:absolute; inset:0; pointer-events:none;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.04) 0%, transparent 4px, transparent calc(100% - 4px), rgba(255,255,255,.04) 100%);
+    /* Top white edge line */
+    linear-gradient(180deg,
+      rgba(255,255,255,.08) 0%, rgba(255,255,255,.08) 2px,
+      transparent 2px, transparent calc(100% - 2px),
+      rgba(255,255,255,.08) calc(100% - 2px), rgba(255,255,255,.08) 100%),
+    /* Subtle gravel texture */
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.008) 0px, transparent 2px, transparent 6px),
+    repeating-linear-gradient(0deg,
+      rgba(255,255,255,.005) 0px, transparent 3px, transparent 8px);
 }
-/* Animated centre dashes */
+/* Animated centre dashes — yellow road markings */
 .road-surface::after {
   content:''; position:absolute; top:50%; left:-200%;
-  width:400%; height:2px;
+  width:400%; height:3px;
   background:repeating-linear-gradient(90deg,
-    transparent 0, transparent 7px,
-    rgba(245,200,66,.3) 7px, rgba(245,200,66,.3) 15px);
+    transparent 0, transparent 8px,
+    rgba(245,200,66,.45) 8px, rgba(245,200,66,.45) 20px);
   animation:road-flow .75s linear infinite; pointer-events:none;
+  filter:drop-shadow(0 0 3px rgba(245,200,66,.2));
 }
 @keyframes road-flow {
   from { transform:translateY(-50%) translateX(0); }
-  to   { transform:translateY(-50%) translateX(22px); }
+  to   { transform:translateY(-50%) translateX(28px); }
 }
 
 /* ── bgb-slot on the road → truck badge ──────────────────────────────── */
 .road-surface .bgb-slot {
-  flex-shrink:0; position:relative; border-radius:3px 7px 7px 3px;
-  height:34px; min-width:44px; width:auto;
+  flex-shrink:0; position:relative; border-radius:4px 8px 8px 4px;
+  height:36px; min-width:48px; width:auto;
   display:flex; align-items:center; justify-content:center;
   transition:border-color .2s, background .2s;
 }
 .road-surface .bgb-slot.blue {
-  background:rgba(10,26,60,.85);
-  border:2px solid rgba(59,130,246,.6);
-  border-left:4px solid rgba(59,130,246,.8);
+  background:linear-gradient(135deg, rgba(10,26,60,.9) 0%, rgba(20,40,90,.85) 100%);
+  border:2px solid rgba(59,130,246,.65);
+  border-left:4px solid rgba(59,130,246,.85);
+  box-shadow:0 2px 8px rgba(59,130,246,.15);
 }
-/* Truck cab (left side protrusion via ::before) */
+/* Truck icon (SVG instead of emoji) */
 .road-surface .bgb-slot.blue::before {
-  content:'🚛'; position:absolute; left:-20px; top:50%;
-  transform:translateY(-50%); font-size:.95rem; line-height:1;
-  filter:drop-shadow(0 0 5px rgba(59,130,246,.7));
+  content:''; position:absolute; left:-22px; top:50%;
+  transform:translateY(-50%);
+  width:18px; height:14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18' fill='none'%3E%3Crect x='0' y='4' width='14' height='10' rx='2' fill='%233b82f6' opacity='0.85'/%3E%3Crect x='14' y='6' width='8' height='8' rx='1.5' fill='%232563eb' opacity='0.9'/%3E%3Crect x='15' y='7' width='6' height='4' rx='1' fill='%2393c5fd' opacity='0.5'/%3E%3Ccircle cx='5' cy='15.5' r='2' fill='%2364748b'/%3E%3Ccircle cx='5' cy='15.5' r='1' fill='%23334155'/%3E%3Ccircle cx='19' cy='15.5' r='2' fill='%2364748b'/%3E%3Ccircle cx='19' cy='15.5' r='1' fill='%23334155'/%3E%3C/svg%3E");
+  background-size:contain; background-repeat:no-repeat;
+  filter:drop-shadow(0 0 4px rgba(59,130,246,.6));
 }
 /* Cargo quantity */
 .road-surface .bgb-slot.blue .bgb-v {
-  color:#8ecbff; font-size:.9rem; font-weight:900;
+  color:#93c5fd; font-size:.9rem; font-weight:900;
   text-shadow:0 0 6px rgba(59,130,246,.6);
   padding-left:2px;
 }
@@ -312,25 +339,30 @@
 }
 .road-surface .bgb-slot:not(.blue):not(.amber):not(.arriving) .bgb-v { color:transparent; }
 
-/* ── bgb-slot in order row → envelope/document badge ────────────────── */
+/* ── bgb-slot in order row → order document badge ────────────────────── */
 .road-orders-row .bgb-slot {
-  flex-shrink:0; position:relative; border-radius:4px;
-  height:28px; min-width:44px; width:auto;
+  flex-shrink:0; position:relative; border-radius:5px;
+  height:30px; min-width:48px; width:auto;
   display:flex; align-items:center; justify-content:center;
   transition:border-color .2s, background .2s;
 }
 .road-orders-row .bgb-slot.amber {
-  background:rgba(60,42,0,.75);
-  border:1.5px solid rgba(245,200,66,.55);
-  border-top:3px solid rgba(245,200,66,.7);
+  background:linear-gradient(135deg, rgba(60,42,0,.8) 0%, rgba(80,55,0,.75) 100%);
+  border:1.5px solid rgba(245,200,66,.6);
+  border-top:3px solid rgba(245,200,66,.75);
+  box-shadow:0 2px 8px rgba(245,200,66,.12);
 }
-/* Document icon */
+/* Order document icon (SVG instead of emoji) */
 .road-orders-row .bgb-slot.amber::before {
-  content:'📄'; position:absolute; left:-18px; top:50%;
-  transform:translateY(-50%); font-size:.78rem; line-height:1;
+  content:''; position:absolute; left:-19px; top:50%;
+  transform:translateY(-50%);
+  width:14px; height:16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 18' fill='none'%3E%3Cpath d='M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z' fill='%23f5c842' opacity='0.85'/%3E%3Cpath d='M9 0l5 5h-3a2 2 0 01-2-2V0z' fill='%23fde68a' opacity='0.6'/%3E%3Crect x='3' y='8' width='8' height='1.2' rx='.6' fill='%230a0c11' opacity='0.35'/%3E%3Crect x='3' y='11' width='5' height='1.2' rx='.6' fill='%230a0c11' opacity='0.25'/%3E%3C/svg%3E");
+  background-size:contain; background-repeat:no-repeat;
+  filter:drop-shadow(0 0 3px rgba(245,200,66,.5));
 }
 .road-orders-row .bgb-slot.amber .bgb-v {
-  color:#ffd36a; font-size:.82rem; font-weight:900;
+  color:#fde68a; font-size:.82rem; font-weight:900;
   text-shadow:0 0 5px rgba(245,200,66,.5);
 }
 /* Empty order slot */
@@ -345,21 +377,21 @@
   padding:3px 4px; min-height:24px; gap:4px;
 }
 .road-seg-lbl {
-  font-size:.45rem; text-transform:uppercase; letter-spacing:.05em;
-  padding:.12rem .36rem; border-radius:999px; font-weight:700; white-space:nowrap;
+  font-size:.46rem; text-transform:uppercase; letter-spacing:.06em;
+  padding:.14rem .42rem; border-radius:999px; font-weight:700; white-space:nowrap;
 }
-.road-seg-lbl.blue  { color:#8ecbff; background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.25); }
-.road-seg-lbl.amber { color:#ffd36a; background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.22); }
+.road-seg-lbl.blue  { color:#93c5fd; background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.3); }
+.road-seg-lbl.amber { color:#fde68a; background:rgba(245,200,66,.1); border:1px solid rgba(245,200,66,.28); }
 
 /* Road direction arrows (decorative, inside road) */
 .road-flow-dir {
   position:absolute; top:50%; right:6px;
-  transform:translateY(-50%); display:flex; flex-direction:column; gap:1px;
-  pointer-events:none; opacity:.45;
+  transform:translateY(-50%); display:flex; flex-direction:column; gap:2px;
+  pointer-events:none; opacity:.55;
 }
-.rfd { font-size:.52rem; font-weight:700; }
-.rfd.blue  { color:#3b82f6; }
-.rfd.amber { color:#f5c842; }
+.rfd { font-size:.52rem; font-weight:700; letter-spacing:-.02em; }
+.rfd.blue  { color:#60a5fa; }
+.rfd.amber { color:#fbbf24; }
 
 /* ── Shared animation keyframes ──────────────────────────────────────────── */
 @keyframes pulse-arr   { 0%,100%{opacity:1} 50%{opacity:.5} }
@@ -684,17 +716,17 @@
     </h2>
     <p style="color:var(--muted); font-size:.85rem; margin-bottom:1.5rem;">{{ session.name }}</p>
     <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.85rem 1rem; margin-bottom:1.25rem; font-size:.8rem; color:var(--muted); text-align:left;">
-      {% if role == 'retailer' %}🛒 You serve customers. Demand is <strong style="color:var(--text)">visible only to you</strong>. Each turn: receive goods → confirm shipment → place order.
-      {% elif role == 'wholesaler' %}🏪 You supply the Retailer, order from the Distributor. You see only the Retailer's orders — not real demand.
-      {% elif role == 'distributor' %}🚚 You supply the Wholesaler, order from the Factory. Two steps removed from real demand.
-      {% elif role == 'factory' %}🏭 No upstream supplier. Production is your "order." Output is ready in <strong style="color:var(--text)">3 weeks</strong> (1w request + 2w production).
-      {% elif role == 'customer' %}👤 You set customer demand each week. Your submission triggers the supply chain.{% endif %}
+      {% if role == 'retailer' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><path d="M3 10l1-6h16l1 6" stroke="#f5c842" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="#f5c842" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="#f5c842" opacity="0.5"/></svg> You serve customers. Demand is <strong style="color:var(--text)">visible only to you</strong>. Each turn: receive goods → confirm shipment → place order.
+      {% elif role == 'wholesaler' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><rect x="2" y="6" width="20" height="14" rx="2" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M2 6l10 6 10-6" stroke="#3b82f6" stroke-width="2" fill="none" opacity="0.5"/><rect x="6" y="2" width="12" height="4" rx="1" fill="#3b82f6" opacity="0.5"/></svg> You supply the Retailer, order from the Distributor. You see only the Retailer's orders — not real demand.
+      {% elif role == 'distributor' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="#a855f7" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="#a855f7" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="#a855f7" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="#a855f7" stroke-width="1.5" fill="none"/></svg> You supply the Wholesaler, order from the Factory. Two steps removed from real demand.
+      {% elif role == 'factory' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="#22c55e" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="#22c55e" opacity="0.3"/><rect x="18" y="8" width="4" height="12" rx="1" fill="#22c55e" opacity="0.5"/></svg> No upstream supplier. Production is your "order." Output is ready in <strong style="color:var(--text)">3 weeks</strong> (1w request + 2w production).
+      {% elif role == 'customer' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="8" r="4.5" fill="#64748b" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> You set customer demand each week. Your submission triggers the supply chain.{% endif %}
     </div>
     <div style="margin-bottom:1.25rem;">
       <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Players in lobby</div>
       {% for r in roles %}
       <div class="lobby-player-row" id="lobby-row-{{ r }}">
-        <span>{% if r == 'customer' %}👤{% elif r == 'retailer' %}🛒{% elif r == 'wholesaler' %}🏪{% elif r == 'distributor' %}🚚{% else %}🏭{% endif %} {{ r|title }}</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;">{% if r == 'customer' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.5" fill="#64748b" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg>{% elif r == 'retailer' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 10l1-6h16l1 6" stroke="#f5c842" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="#f5c842" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="#f5c842" opacity="0.5"/></svg>{% elif r == 'wholesaler' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M2 6l10 6 10-6" stroke="#3b82f6" stroke-width="2" fill="none" opacity="0.5"/><rect x="6" y="2" width="12" height="4" rx="1" fill="#3b82f6" opacity="0.5"/></svg>{% elif r == 'distributor' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="1" y="6" width="15" height="10" rx="2" stroke="#a855f7" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="#a855f7" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="#a855f7" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="#a855f7" stroke-width="1.5" fill="none"/></svg>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="#22c55e" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="#22c55e" opacity="0.3"/><rect x="18" y="8" width="4" height="12" rx="1" fill="#22c55e" opacity="0.5"/></svg>{% endif %} {{ r|title }}</span>
         <span id="lobby-status-{{ r }}" style="font-size:.72rem; color:var(--muted);">waiting…</span>
       </div>
       {% endfor %}
@@ -771,12 +803,12 @@
 
   {% if role == 'factory' %}
   <!-- ── Factory: receive completed production ── -->
-  <div class="panel-title">📦 Step 1 — Receive Production</div>
+  <div class="panel-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="2" opacity="0.4"/><rect x="7" y="12" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg> Step 1 — Receive Production</div>
 
   <!-- Production completing this week (blue — from production delay pipeline) -->
   <div class="confirm-row" style="border-left:3px solid rgba(59,130,246,.5); padding-left:1rem;" id="recv-prod-row">
     <div>
-      <div class="confirm-label" style="font-weight:700; color:var(--wholesaler-color);">🏭 Production ready</div>
+      <div class="confirm-label" style="font-weight:700; color:var(--wholesaler-color);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg> Production ready</div>
       <div class="confirm-sub">Completed 2-week pipeline → added to inventory</div>
     </div>
     <div class="confirm-qty" id="recv-prod-qty" style="color:var(--wholesaler-color);">—</div>
@@ -789,7 +821,7 @@
   <!-- Production request starting (green — enters production pipeline now) -->
   <div class="confirm-row" id="recv-prod-start-row" style="margin-top:.5rem; border-left:3px solid rgba(34,197,94,.5); padding-left:1rem;">
     <div>
-      <div class="confirm-label" style="font-weight:700; color:var(--success);">⚙️ Production request entering pipeline</div>
+      <div class="confirm-label" style="font-weight:700; color:var(--success);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.5"/><rect x="11" y="2" width="2" height="4" rx="1" fill="currentColor" opacity="0.6"/><rect x="11" y="18" width="2" height="4" rx="1" fill="currentColor" opacity="0.6"/><rect x="18" y="11" width="4" height="2" rx="1" fill="currentColor" opacity="0.6"/><rect x="2" y="11" width="4" height="2" rx="1" fill="currentColor" opacity="0.6"/></svg> Production request entering pipeline</div>
       <div class="confirm-sub">Last week's request → 2-week production delay</div>
     </div>
     <div class="confirm-qty" id="recv-prod-start-qty" style="color:var(--success);">—</div>
@@ -802,11 +834,11 @@
 
   {% else %}
   <!-- ── All other roles: receive incoming shipment ── -->
-  <div class="panel-title">📦 Step 1 — Receive Shipment</div>
+  <div class="panel-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="2" opacity="0.4"/><rect x="7" y="12" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg> Step 1 — Receive Shipment</div>
 
   <div class="confirm-row" id="recv-row">
     <div>
-      <div class="confirm-label" style="font-weight:700; color:var(--distributor-color);">📦 Incoming shipment</div>
+      <div class="confirm-label" style="font-weight:700; color:var(--distributor-color);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="2" opacity="0.4"/><rect x="7" y="12" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg> Incoming shipment</div>
       <div class="confirm-sub">Shipped 2 weeks ago → added to inventory</div>
     </div>
     <div class="confirm-qty" id="recv-qty" style="color:var(--distributor-color);">—</div>
@@ -827,18 +859,18 @@
 <!-- ════ PHASE 2: CONFIRM SHIPMENT ══════════════════════════════════════════ -->
 <div class="phase-panel" id="panel-ship">
   <div class="panel-title">
-    {% if role == 'factory' %}🚚 Step 2 — Ship to Distributor{% else %}🚚 Step 2 — Confirm Shipment to Downstream{% endif %}
+    {% if role == 'factory' %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg> Step 2 — Ship to Distributor{% else %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg> Step 2 — Confirm Shipment to Downstream{% endif %}
   </div>
 
   <!-- Downstream order received -->
   <div class="confirm-row" style="border-left:3px solid rgba(245,200,66,.5); padding-left:1rem;">
     <div>
       <div class="confirm-label" style="font-weight:700;">
-        {% if role == 'retailer' %}👤 Customer Order Received
-        {% elif role == 'wholesaler' %}🛒 Incoming Order from Retailer
-        {% elif role == 'distributor' %}🏪 Incoming Order from Wholesaler
-        {% elif role == 'factory' %}📋 Incoming Order from Distributor
-        {% else %}📋 Incoming Order{% endif %}
+        {% if role == 'retailer' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> Customer Order Received
+        {% elif role == 'wholesaler' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/></svg> Incoming Order from Retailer
+        {% elif role == 'distributor' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg> Incoming Order from Wholesaler
+        {% elif role == 'factory' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.4"/><rect x="3" y="8" width="8" height="1.2" rx=".6" fill="currentColor" opacity="0.6"/></svg> Incoming Order from Distributor
+        {% else %}<svg width="12" height="12" viewBox="0 0 14 18" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.4"/></svg> Incoming Order{% endif %}
       </div>
       <div class="confirm-sub" id="ship-demand-sub">units demanded from you this week</div>
     </div>
@@ -849,11 +881,11 @@
   <div class="confirm-row" style="margin-top:.5rem; border-left:3px solid rgba(59,130,246,.5); padding-left:1rem;">
     <div>
       <div class="confirm-label" style="font-weight:700; color:var(--wholesaler-color);">
-        {% if role == 'retailer' %}📤 You will ship to Customer
-        {% elif role == 'wholesaler' %}📤 You will ship to Retailer
-        {% elif role == 'distributor' %}📤 You will ship to Wholesaler
-        {% elif role == 'factory' %}📤 You will ship to Distributor
-        {% else %}📤 You will ship{% endif %}
+        {% if role == 'retailer' %}⇧ You will ship to Customer
+        {% elif role == 'wholesaler' %}⇧ You will ship to Retailer
+        {% elif role == 'distributor' %}⇧ You will ship to Wholesaler
+        {% elif role == 'factory' %}⇧ You will ship to Distributor
+        {% else %}⇧ You will ship{% endif %}
       </div>
       <div class="confirm-sub" id="ship-amount-sub">min(available inventory, demand + backlog)</div>
     </div>
@@ -873,7 +905,7 @@
 <!-- ════ PHASE 3: PLACE ORDER / START PRODUCTION ══════════════════════════════ -->
 <div class="phase-panel" id="panel-order">
   <div class="panel-title">
-    {% if role == 'factory' %}🏭 Step 3 — Start New Production Run{% else %}📋 Step 3 — Place Order Upstream{% endif %}
+    {% if role == 'factory' %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/><rect x="18" y="8" width="4" height="12" rx="1" fill="currentColor" opacity="0.5"/></svg> Step 3 — Start New Production Run{% else %}<svg width="13" height="13" viewBox="0 0 14 18" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.6"/><path d="M9 0l5 5h-3a2 2 0 01-2-2V0z" fill="currentColor" opacity="0.3"/><rect x="3" y="8" width="8" height="1.2" rx=".6" fill="currentColor" opacity="0.5"/><rect x="3" y="11" width="5" height="1.2" rx=".6" fill="currentColor" opacity="0.35"/></svg> Step 3 — Place Order Upstream{% endif %}
   </div>
 
   <div id="order-submit-section">
@@ -895,7 +927,7 @@
 
     {% if role == 'factory' %}
     <div style="background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.2); border-radius:8px; padding:.7rem .9rem; margin-bottom:.75rem; font-size:.78rem; color:var(--muted);">
-      🏭 How many units do you want to start producing? Ready in <strong style="color:var(--text);">3 weeks</strong> (1w request + 2w production).
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg> How many units do you want to start producing? Ready in <strong style="color:var(--text);">3 weeks</strong> (1w request + 2w production).
     </div>
     {% endif %}
 
@@ -948,7 +980,7 @@
 <!-- Customer submit panel -->
 {% if role == 'customer' %}
 <div class="phase-panel active" id="panel-customer">
-  <div class="panel-title" style="color:var(--accent);">👤 Passer Commande — Semaine <span id="cust-week-num">{{ session.current_week|add:1 }}</span></div>
+  <div class="panel-title" style="color:var(--accent);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> Passer Commande — Semaine <span id="cust-week-num">{{ session.current_week|add:1 }}</span></div>
 
   <div id="cust-submit-section">
     <div style="font-size:.82rem; color:var(--muted); margin-bottom:.75rem;">
@@ -994,10 +1026,10 @@
 <div class="card" id="bgb-board-card" style="padding:1rem 1.1rem;">
   <div class="board-scanner"></div>
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.7rem;">
-    <div class="card-title" style="margin:0;">🛣 Supply Chain Highway</div>
-    <div style="font-size:.6rem; color:var(--muted); font-family:var(--font-mono);">
-      <span style="color:rgba(59,130,246,.85);">🚛</span> shipments &nbsp;
-      <span style="color:rgba(245,200,66,.85);">📄</span> orders
+    <div class="card-title" style="margin:0;display:inline-flex;align-items:center;gap:.35rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M4 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/><path d="M20 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/><path d="M12 4v3M12 10v3M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3" opacity="0.7"/></svg> Supply Chain Highway</div>
+    <div style="font-size:.6rem; color:var(--muted); font-family:var(--font-mono); display:flex; align-items:center; gap:.6rem;">
+      <span style="display:inline-flex;align-items:center;gap:.2rem;"><svg width="12" height="10" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="4" width="14" height="10" rx="2" fill="#3b82f6" opacity="0.85"/><rect x="14" y="6" width="8" height="8" rx="1.5" fill="#2563eb" opacity="0.9"/><circle cx="5" cy="15.5" r="2" fill="#64748b"/><circle cx="19" cy="15.5" r="2" fill="#64748b"/></svg> shipments</span>
+      <span style="display:inline-flex;align-items:center;gap:.2rem;"><svg width="10" height="12" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="#f5c842" opacity="0.85"/><path d="M9 0l5 5h-3a2 2 0 01-2-2V0z" fill="#fde68a" opacity="0.6"/></svg> orders</span>
     </div>
   </div>
   <div class="road-board-wrap">
@@ -1005,7 +1037,7 @@
 
       <!-- ── CUSTOMER ──────────────────────────────────────────────────── -->
       <div class="road-node" id="col-customer">
-        <div class="road-node-hdr bgb-actor-hdr">👤 Customer</div>
+        <div class="road-node-hdr bgb-actor-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> Customer</div>
         <div class="road-node-body" style="justify-content:center;">
           <div style="font-size:.45rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;">demand</div>
           <div class="bgb-slot amber" id="cust-ord-1" data-tip="Customer demand this week"
@@ -1026,7 +1058,7 @@
 
       <!-- ── RETAILER ──────────────────────────────────────────────────── -->
       <div class="road-node" id="col-retailer">
-        <div class="road-node-hdr bgb-actor-hdr">🛒 Retailer</div>
+        <div class="road-node-hdr bgb-actor-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="currentColor" opacity="0.5"/><circle cx="6" cy="10" r="2" fill="currentColor" opacity="0.4"/><circle cx="12" cy="10" r="2" fill="currentColor" opacity="0.4"/><circle cx="18" cy="10" r="2" fill="currentColor" opacity="0.4"/></svg> Retailer</div>
         <div class="road-node-body">
           <div class="bgb-inv-box" id="rt-inv-box">
             <div class="bgb-inv-healthbar" id="rt-health" style="width:50%;background:#22c55e;"></div>
@@ -1051,14 +1083,14 @@
           </div>
         </div>
         <div class="road-seg-labels">
-          <span class="road-seg-lbl amber">📄 orders</span>
-          <span class="road-seg-lbl blue">🚛 ships</span>
+          <span class="road-seg-lbl amber">orders ▸</span>
+          <span class="road-seg-lbl blue">◂ ships</span>
         </div>
       </div>
 
       <!-- ── WHOLESALER ─────────────────────────────────────────────────── -->
       <div class="road-node" id="col-wholesaler">
-        <div class="road-node-hdr bgb-actor-hdr">🏪 Wholesaler</div>
+        <div class="road-node-hdr bgb-actor-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M2 6l10 6 10-6" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="14" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg> Wholesaler</div>
         <div class="road-node-body">
           <div class="bgb-inv-box" id="wh-inv-box">
             <div class="bgb-inv-healthbar" id="wh-health" style="width:50%;background:#22c55e;"></div>
@@ -1083,14 +1115,14 @@
           </div>
         </div>
         <div class="road-seg-labels">
-          <span class="road-seg-lbl amber">📄 orders</span>
-          <span class="road-seg-lbl blue">🚛 ships</span>
+          <span class="road-seg-lbl amber">orders ▸</span>
+          <span class="road-seg-lbl blue">◂ ships</span>
         </div>
       </div>
 
       <!-- ── DISTRIBUTOR ────────────────────────────────────────────────── -->
       <div class="road-node" id="col-distributor">
-        <div class="road-node-hdr bgb-actor-hdr">🚚 Distributor</div>
+        <div class="road-node-hdr bgb-actor-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.4"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.4"/></svg> Distributor</div>
         <div class="road-node-body">
           <div class="bgb-inv-box" id="di-inv-box">
             <div class="bgb-inv-healthbar" id="di-health" style="width:50%;background:#22c55e;"></div>
@@ -1115,14 +1147,14 @@
           </div>
         </div>
         <div class="road-seg-labels">
-          <span class="road-seg-lbl amber">📄 orders</span>
-          <span class="road-seg-lbl blue">🚛 ships</span>
+          <span class="road-seg-lbl amber">orders ▸</span>
+          <span class="road-seg-lbl blue">◂ ships</span>
         </div>
       </div>
 
       <!-- ── FACTORY ────────────────────────────────────────────────────── -->
       <div class="road-node" id="col-factory">
-        <div class="road-node-hdr bgb-actor-hdr">🏭 Factory</div>
+        <div class="road-node-hdr bgb-actor-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/><rect x="18" y="8" width="4" height="12" rx="1" fill="currentColor" opacity="0.5"/><rect x="19" y="4" width="2" height="4" rx=".5" fill="currentColor" opacity="0.6"/><circle cx="20" cy="3.5" r="1.5" fill="currentColor" opacity="0.25"/><rect x="5" y="17" width="3" height="3" rx=".5" fill="currentColor" opacity="0.4"/><rect x="10" y="17" width="3" height="3" rx=".5" fill="currentColor" opacity="0.4"/></svg> Factory</div>
         <div class="road-node-body">
           <div class="bgb-inv-box" id="fa-inv-box">
             <div class="bgb-inv-healthbar" id="fa-health" style="width:50%;background:#22c55e;"></div>
@@ -1131,15 +1163,15 @@
           </div>
           <!-- Internal production pipeline -->
           <div class="factory-pipeline">
-            <div class="fac-pipeline-header">⚙️ Production Pipeline</div>
+            <div class="fac-pipeline-header">⚙ Production Pipeline</div>
             <div class="fac-pipe-row">
               <div class="fac-pipe-col">
-                <div class="fac-pipe-lbl amber">📋 Req (1w)</div>
+                <div class="fac-pipe-lbl amber">Req (1w)</div>
                 <div class="bgb-slot" id="fa-req-1" data-tip="Production request: entered 1-week delay → converts to production next week"><span class="bgb-v">·</span></div>
               </div>
               <div class="fac-pipe-arrow">→</div>
               <div class="fac-pipe-col">
-                <div class="fac-pipe-lbl blue">⚙️ Prod (2w)</div>
+                <div class="fac-pipe-lbl blue">Prod (2w)</div>
                 <div class="bgb-slot" id="fa-prod-1" data-tip="In production (2-week delay) — completing now"><span class="bgb-v">·</span></div>
                 <div class="bgb-slot" id="fa-prod-2" data-tip="In production (2-week delay) — completing next week"><span class="bgb-v">·</span></div>
               </div>
@@ -1156,15 +1188,15 @@
 <div class="card" style="padding:.85rem 1rem;">
   <div class="card-title" style="margin-bottom:.4rem;">Pipeline Detail</div>
   <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--wholesaler-color); margin-bottom:.35rem;">
-    {% if role == 'factory' %}🏭 In Production — Production Delay (2 weeks){% else %}📦 Shipping Delay — Incoming{% endif %}
+    {% if role == 'factory' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/></svg> In Production — Production Delay (2 weeks){% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="2" opacity="0.4"/></svg> Shipping Delay — Incoming{% endif %}
   </div>
   <div id="pipeline-in"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
   <div style="border-top:1px solid var(--border); margin:.5rem 0;"></div>
   {% if role == 'factory' %}
-  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;">📋 Production Requests — Order Delay (1 week)</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;"><svg width="11" height="13" viewBox="0 0 14 18" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.5"/></svg> Production Requests — Order Delay (1 week)</div>
   <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None pending.</div></div>
   {% else %}
-  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;">📋 Orders Placed — Outgoing</div>
+  <div style="font-size:.72rem; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:.35rem;"><svg width="11" height="13" viewBox="0 0 14 18" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.5"/></svg> Orders Placed — Outgoing</div>
   <div id="pipeline-out"><div style="color:var(--muted); font-size:.78rem;">None in transit.</div></div>
   {% endif %}
 </div>
