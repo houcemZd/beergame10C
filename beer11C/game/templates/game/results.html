@@ -96,13 +96,13 @@
 <!-- Page header -->
 <div class="results-header fade-up">
   <div class="results-header-main">
-    <h2>🏆 Results — <span style="color:var(--accent)">{{ session.name }}</span></h2>
+    <h2 style="display:inline-flex;align-items:center;gap:.5rem;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M8 21h8M12 17v4" stroke="#f5c842" stroke-width="2" stroke-linecap="round"/><path d="M5 3h14l-2 9a5 5 0 01-10 0L5 3z" fill="#f5c842" opacity="0.85" stroke="#f5c842" stroke-width="1.5"/><path d="M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2" stroke="#f5c842" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/></svg> Results — <span style="color:var(--accent)">{{ session.name }}</span></h2>
     <p>{{ session.max_weeks }} weeks completed · Final scoreboard</p>
   </div>
   <div style="display:flex; gap:.6rem; flex-shrink:0; align-items:flex-start; flex-wrap:wrap;">
     <a href="{% url 'dashboard' session.id %}" class="btn btn-ghost btn-sm">← Dashboard</a>
     <a href="{% url 'home' %}" class="btn btn-ghost btn-sm">Sessions</a>
-    <a href="{% url 'new_game' %}" class="btn btn-primary btn-sm">🚀 Play Again</a>
+    <a href="{% url 'new_game' %}" class="btn btn-primary btn-sm">Play Again</a>
   </div>
 </div>
 
@@ -112,7 +112,7 @@
   <div class="kpi-box {% if player.role == winner_role %}winner{% endif %}"
        style="--kpi-cl:var(--{{ player.role }}-color);">
     {% if player.role == winner_role %}
-      <div class="kpi-winner-badge">🏆 Winner</div>
+      <div class="kpi-winner-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M5 3h14l-2 9a5 5 0 01-10 0L5 3z" fill="currentColor" opacity="0.85"/><path d="M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Winner</div>
     {% endif %}
     <div class="kpi-label"><span class="role-badge role-{{ player.role }}">{{ player.role }}</span></div>
     <div class="kpi-value" style="color:var(--{{ player.role }}-color);">
@@ -129,10 +129,55 @@
   </div>
 </div>
 
+<!-- Podium — lowest cost = winner = tallest bar -->
+<div class="result-card" style="text-align:center; margin-bottom:1.5rem;">
+  <div class="card-title" style="text-align:left;">Scoreboard Podium — Lowest Cost Wins</div>
+  <div class="podium" id="podium-viz">
+    <!-- built by JS below -->
+  </div>
+  <div style="font-size:.68rem; color:var(--muted);">Lower cost = better performance. The winner is the role with the lowest total cost.</div>
+</div>
+<script>
+(function(){
+  const players = [{% for p in players %}{"role":"{{ p.role }}","cost":{{ p.total_cost|floatformat:0 }}}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const COLORS  = {retailer:'#f5c842',wholesaler:'#3b82f6',distributor:'#a855f7',factory:'#22c55e'};
+  // Sort ascending by cost (lowest = rank 1 = winner)
+  const sorted = [...players].sort((a,b)=>a.cost-b.cost);
+  const maxCost = Math.max(...players.map(p=>p.cost));
+  const minCost = Math.min(...players.map(p=>p.cost));
+
+  // Rearrange: 2nd, 1st, 3rd, 4th for podium visual effect
+  const podiumOrder = [1, 0, 2, 3];
+  const container = document.getElementById('podium-viz');
+  if (!container) return;
+
+  podiumOrder.forEach(idx => {
+    const p = sorted[idx];
+    if (!p) return;
+    const rank = idx + 1;
+    const color = COLORS[p.role] || '#64748b';
+    // Bar height: winner = 120px, scaled down for others
+    const pct = maxCost > 0 ? 1 - ((p.cost - minCost) / (maxCost - minCost + 1)) : 1;
+    const barH = Math.max(40, Math.round(40 + pct * 100));
+
+    const slot = document.createElement('div');
+    slot.className = 'podium-slot';
+    slot.innerHTML = `
+      <div class="podium-rank">#${rank}</div>
+      <div class="podium-role"><span class="role-badge role-${p.role}">${p.role}</span></div>
+      <div style="font-family:var(--font-mono); font-size:.78rem; color:var(--muted); margin-bottom:.2rem;">$${p.cost.toLocaleString()}</div>
+      <div class="podium-bar" style="height:${barH}px; background:${color}22; border:1.5px solid ${color}55; ${rank===1?'border-color:'+color+';box-shadow:0 0 18px '+color+'44;':''}">
+        ${rank===1?`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:${color}"><path d="M5 3h14l-2 9a5 5 0 01-10 0L5 3z" fill="currentColor" opacity="0.85"/><path d="M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`:''}
+      </div>`;
+    container.appendChild(slot);
+  });
+})();
+</script>
+
 <!-- Bullwhip Effect -->
 {% if bullwhip %}
 <div class="result-card">
-  <div class="card-title">📈 Bullwhip Effect Index (σ_orders / σ_demand)</div>
+  <div class="card-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> Bullwhip Effect Index (σ_orders / σ_demand)</div>
   <p style="color:var(--muted); font-size:.8rem; margin-bottom:1.25rem; line-height:1.55;">
     A ratio &gt; 1 means the role <em>amplifies</em> demand variability — the classic bullwhip.
     Ratio = 1 is perfect demand matching.
@@ -162,31 +207,31 @@
 
 <!-- Inventory history chart -->
 <div class="result-card">
-  <div class="card-title">📦 Inventory History — All Roles</div>
+  <div class="card-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="2" opacity="0.4"/><rect x="7" y="12" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg> Inventory History — All Roles</div>
   <div class="chart-wrap"><canvas id="inventoryChart"></canvas></div>
 </div>
 
 <!-- Orders + Backlog -->
 <div class="charts-grid-2">
   <div class="result-card" style="margin-bottom:0;">
-    <div class="card-title">📋 Orders Placed — Bullwhip Amplification</div>
+    <div class="card-title"><svg width="12" height="12" viewBox="0 0 14 18" fill="none" style="vertical-align:middle;"><path d="M2 0h7l5 5v11a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="currentColor" opacity="0.5"/><path d="M9 0l5 5h-3a2 2 0 01-2-2V0z" fill="currentColor" opacity="0.3"/></svg> Orders Placed — Bullwhip Amplification</div>
     <div class="chart-wrap"><canvas id="ordersChart"></canvas></div>
   </div>
   <div class="result-card" style="margin-bottom:0;">
-    <div class="card-title">⚠️ Backlog Over Time</div>
+    <div class="card-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" fill="none" opacity="0.75"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg> Backlog Over Time</div>
     <div class="chart-wrap"><canvas id="backlogChart"></canvas></div>
   </div>
 </div>
 
 <!-- Cumulative cost -->
 <div class="result-card" style="margin-top:1.5rem;">
-  <div class="card-title">💰 Cumulative Cost Comparison</div>
+  <div class="card-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><line x1="12" y1="1" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg> Cumulative Cost Comparison</div>
   <div class="chart-wrap"><canvas id="costChart"></canvas></div>
 </div>
 
 <!-- Bottom actions -->
 <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0 3rem;">
-  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">🚀 Play Again</a>
+  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">Play Again</a>
   <a href="{% url 'home' %}" class="btn btn-ghost">← All Sessions</a>
 </div>
 

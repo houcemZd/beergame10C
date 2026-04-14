@@ -108,7 +108,7 @@
   <div class="join-card">
 
     <div class="role-hero">
-      <span class="role-emoji">{{ emoji }}</span>
+      <span class="role-emoji">{% if role == 'customer' %}<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--role-cl,#f5c842);"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg>{% elif role == 'retailer' %}<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--role-cl,#f5c842);"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="rgba(245,200,66,.06)"/><rect x="9" y="14" width="6" height="8" rx="1" fill="currentColor" opacity="0.4"/><rect x="4" y="14" width="4" height="4" rx="1" fill="currentColor" opacity="0.3"/></svg>{% elif role == 'wholesaler' %}<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--role-cl,#3b82f6);"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="rgba(59,130,246,.08)"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.45"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.2" opacity="0.3"/><rect x="6" y="14" width="4" height="4" rx="1" fill="currentColor" opacity="0.35"/><rect x="14" y="14" width="4" height="4" rx="1" fill="currentColor" opacity="0.35"/></svg>{% elif role == 'distributor' %}<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--role-cl,#a855f7);"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="rgba(168,85,247,.06)"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="rgba(168,85,247,.12)"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="4" y="9" width="8" height="4" rx="1" fill="currentColor" opacity="0.25"/></svg>{% elif role == 'factory' %}<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--role-cl,#22c55e);"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="rgba(34,197,94,.06)"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.25"/><rect x="4" y="8" width="2" height="4" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="7" width="2" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="14" y="6" width="2" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>{% else %}{{ emoji }}{% endif %}</span>
       <div class="role-title">
         You are the
         <span class="role-badge role-{{ role }}" style="font-size:.9rem; padding:.28rem .8rem; vertical-align:middle;">{{ role }}</span>
@@ -119,7 +119,7 @@
     {% if already_claimed %}
     <!-- ── Fast rejoin ── -->
     <div class="rejoin-box">
-      <div style="font-size:1.6rem; margin-bottom:.4rem;">👋</div>
+      <div style="margin-bottom:.4rem;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 11l3 3L22 4" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="#22c55e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/></svg></div>
       <div style="font-family:var(--font-mono); color:var(--success); font-size:.95rem; margin-bottom:.2rem;">
         This role belongs to you
       </div>
@@ -139,20 +139,26 @@
     <!-- ── First join ── -->
     <div class="role-desc">
       {% if role == 'customer' %}
-        👤 <strong>End Customer:</strong> You place orders every week. Your behaviour triggers the bullwhip effect across the chain.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.85"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.65"/></svg>
+        <strong>End Customer:</strong> You place orders every week. Your behaviour triggers the bullwhip effect across the chain.
       {% elif role == 'retailer' %}
-        🛒 <strong>Retailer:</strong> You serve the customer. You're the only role that sees real demand. Orders go upstream to the Wholesaler.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="currentColor" opacity="0.45"/></svg>
+        <strong>Retailer:</strong> You serve the customer. You're the only role that sees real demand. Orders go upstream to the Wholesaler.
       {% elif role == 'wholesaler' %}
-        🏪 <strong>Wholesaler:</strong> You supply the Retailer and order from the Distributor. Real demand is hidden from you.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg>
+        <strong>Wholesaler:</strong> You supply the Retailer and order from the Distributor. Real demand is hidden from you.
       {% elif role == 'distributor' %}
-        🚚 <strong>Distributor:</strong> You supply the Wholesaler and order from the Factory. Two hops from the customer.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+        <strong>Distributor:</strong> You supply the Wholesaler and order from the Factory. Two hops from the customer.
       {% elif role == 'factory' %}
-        🏭 <strong>Factory:</strong> You produce goods. Production delay: <strong>2 weeks</strong>. No upstream supplier.
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <strong>Factory:</strong> You produce goods. Production delay: <strong>2 weeks</strong>. No upstream supplier.
       {% endif %}
     </div>
 
     <div class="delay-tip">
-      ⏱ <strong style="color:var(--text);">Reminder:</strong> All orders and shipments have a <strong style="color:var(--text);">2-week delay</strong>. Plan ahead — don't panic!
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;opacity:.7;"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <strong style="color:var(--text);">Reminder:</strong> All orders and shipments have a <strong style="color:var(--text);">2-week delay</strong>. Plan ahead — don't panic!
     </div>
 
     <form method="POST">
