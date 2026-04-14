@@ -393,24 +393,41 @@ class ProcessWeekTest(TestCase):
             self.assertEqual(player.history.count(), 1)
 
     def test_process_week_double_submit_protection(self):
-        """Second call with stale expected_current should return empty."""
+        """A second call with a stale session (current_week still 0) must be a no-op."""
         self.session.pending_customer_demand = 4
-        self.session.save()
+        self.session.save(update_fields=['pending_customer_demand'])
         players = {p.id: 4 for p in self.session.players.all()}
-        process_week(self.session, players)
-        # Simulate stale session object: don't refresh, so current_week is still 0
-        # But the DB row already advanced to 1, so the guard should catch it.
-        stale_session = GameSession.objects.get(pk=self.session.pk)
-        # Manually verify the guard condition: after first process_week,
-        # session.current_week in DB == 1.
-        self.assertEqual(stale_session.current_week, 1)
-        # A second call starting from week 0 would fail because the session
-        # object we pass still has current_week=0 (the expected_current).
-        # But select_for_update + re-read detects the mismatch and returns {}.
-        # NOTE: SQLite doesn't support row-level locking, so we just verify
-        # the week advanced correctly.
+
+        # First call processes week 1 and advances DB to current_week=1.
+        summary = process_week(self.session, players)
+        self.assertIn('retailer', summary)
+
+        # Refresh so the Python object reflects the new week.
         self.session.refresh_from_db()
         self.assertEqual(self.session.current_week, 1)
+
+        # Build a *stale* session object with current_week=0 (simulates a second
+        # concurrent request that read the session before the first one committed).
+        # We must NOT call .save() on the stale object — that would overwrite
+        # current_week back to 0 in the DB and corrupt the test state.
+        stale = GameSession.objects.get(pk=self.session.pk)
+        stale.current_week = 0  # manually rewind to simulate the stale read
+
+        # Set up demand for the second call (use update_fields to avoid touching current_week).
+        self.session.pending_customer_demand = 4
+        self.session.save(update_fields=['pending_customer_demand'])
+
+        # Second call: expected_current=0 but DB already has current_week=1.
+        # The select_for_update re-read detects the mismatch → returns {}.
+        result = process_week(stale, players)
+        self.assertEqual(result, {})
+
+        # Week must not have advanced a second time.
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.current_week, 1)
+        # WeeklyState records for week 1 must exist exactly once per player.
+        for player in self.session.players.all():
+            self.assertEqual(player.history.filter(week=1).count(), 1)
 
     def test_process_week_finishes_game(self):
         self.session.max_weeks = 1
