@@ -2364,7 +2364,7 @@ function animateBoardOrder(role, orderQty) {
   // Factory: production request has 1-week delay → slot 1 (only one req slot)
   // Non-factory: newly placed order → slot 2 (slot 1 holds the arriving-now order)
   const slotId = role === 'factory' ? 'fa-req-1' : pre + '-ord-2';
-  const label  = role === 'factory' ? '1w' : '1w';
+  const label  = '1w';
   setTimeout(() => {
     const box = document.getElementById(slotId);
     if (!box) return;
