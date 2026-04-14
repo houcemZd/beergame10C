@@ -267,7 +267,7 @@
 <!-- Delete confirm -->
 <div class="del-overlay" id="del-dialog">
   <div class="del-box">
-    <div style="font-size:2rem; margin-bottom:.5rem;">🗑️</div>
+    <div style="margin-bottom:.5rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/><path d="M10 11v6M14 11v6" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg></div>
     <h3 style="font-family:var(--font-mono); font-size:1rem; margin-bottom:.4rem;">Supprimer la partie ?</h3>
     <p style="color:var(--muted); font-size:.82rem; margin-bottom:1.25rem;" id="del-name"></p>
     <div style="display:flex; gap:.75rem; justify-content:center;">
@@ -291,13 +291,13 @@
   <!-- Action cards -->
   <div class="action-grid">
     <div class="action-card create" onclick="toggleCreate()">
-      <div class="action-icon">🚀</div>
+      <div class="action-icon"><svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 6C24 6 14 18 14 28a10 10 0 0020 0C34 18 24 6 24 6z" fill="#f5c842" opacity="0.85"/><ellipse cx="24" cy="28" rx="5" ry="5" fill="#0a0c11" opacity="0.6"/><path d="M16 38l-5 4" stroke="#f5c842" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><path d="M32 38l5 4" stroke="#f5c842" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/><path d="M24 6V3" stroke="#f5c842" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/></svg></div>
       <div class="action-title">Créer une partie</div>
       <div class="action-desc">Configurez et lancez une nouvelle session. Invitez vos joueurs.</div>
       <div class="action-badge badge-new">Nouvelle</div>
     </div>
     <div class="action-card join" onclick="toggleJoin()">
-      <div class="action-icon">🔗</div>
+      <div class="action-icon"><svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="24" r="8" stroke="#3b82f6" stroke-width="2.5" fill="none" opacity="0.85"/><circle cx="32" cy="24" r="8" stroke="#3b82f6" stroke-width="2.5" fill="rgba(59,130,246,.12)" opacity="0.85"/><path d="M20 18 Q24 14 28 18" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/><path d="M20 30 Q24 34 28 30" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/></svg></div>
       <div class="action-title">Rejoindre</div>
       <div class="action-desc">Entrez un code ou utilisez le lien d'invitation reçu.</div>
       <div class="action-badge badge-join">Via lien</div>
@@ -307,7 +307,7 @@
 
 <!-- ── Join-by-code panel ─────────────────────────────────────────────────── -->
 <div class="join-panel" id="join-panel">
-  <div style="font-family:var(--font-mono); font-size:.8rem; color:var(--accent); margin-bottom:.75rem; text-transform:uppercase; letter-spacing:.1em;">🔗 Rejoindre via lien</div>
+    <div style="font-family:var(--font-mono); font-size:.8rem; color:var(--accent); margin-bottom:.75rem; text-transform:uppercase; letter-spacing:.1em;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="14" r="8" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"/><path d="M12 14V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 2V0M12 2l2-1M12 2l-2-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7"/><path d="M8 17l8-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/></svg> Rejoindre via lien</div>
   <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;">
     Collez le lien d'invitation complet reçu de l'organisateur, ou choisissez une partie ouverte ci-dessous.
   </p>
@@ -323,7 +323,7 @@
 <!-- ── Create panel ───────────────────────────────────────────────────────── -->
 <div class="create-panel" id="create-panel">
   <div class="card">
-    <div style="font-family:var(--font-mono); font-size:.8rem; color:var(--accent); margin-bottom:1.25rem; text-transform:uppercase; letter-spacing:.1em;">🚀 Nouvelle partie</div>
+    <div style="font-family:var(--font-mono); font-size:.8rem; color:var(--accent); margin-bottom:1.25rem; text-transform:uppercase; letter-spacing:.1em;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M12 4C12 4 6 11 6 16a6 6 0 0012 0C18 11 12 4 12 4z" fill="currentColor" opacity="0.7"/><circle cx="12" cy="16" r="2" fill="currentColor" opacity="0.4"/></svg> Nouvelle partie</div>
     <form method="POST" action="{% url 'new_game' %}">
       {% csrf_token %}
 
@@ -339,12 +339,12 @@
         <label style="display:block; font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Mode de jeu</label>
         <div class="mode-grid">
           <div class="mode-opt selected" id="card-single" onclick="selectMode('single')">
-            <div class="mode-opt-icon">🖥️</div>
+            <div class="mode-opt-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="10" r="3" fill="currentColor" opacity="0.4"/></svg></div>
             <div class="mode-opt-title">Solo</div>
             <div class="mode-opt-desc">Vous contrôlez les 4 rôles</div>
           </div>
           <div class="mode-opt" id="card-multi" onclick="selectMode('multi')">
-            <div class="mode-opt-icon">👥</div>
+            <div class="mode-opt-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="9" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="16" cy="9" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 20c0-3.3 2.7-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.5"/><path d="M22 20c0-3.3-2.7-6-6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.5"/><path d="M8 14c0-3.3 2.7-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/></svg></div>
             <div class="mode-opt-title">Multijoueur</div>
             <div class="mode-opt-desc">5 joueurs en temps réel</div>
           </div>
@@ -368,10 +368,10 @@
       </div>
 
       <div style="background:rgba(245,200,66,.06); border:1px solid rgba(245,200,66,.18); border-radius:8px; padding:.75rem; margin-bottom:1.25rem; font-size:.76rem; color:var(--muted);">
-        📦 Stock initial: <strong style="color:var(--text);">12 unités</strong> &nbsp;·&nbsp;
-        ⏱ Délais: <strong style="color:var(--text);">2 semaines</strong> &nbsp;·&nbsp;
-        💰 Stockage: <strong style="color:var(--text);">0.50$/u/sem</strong> &nbsp;·&nbsp;
-        ❗ Rupture: <strong style="color:var(--text);">1.00$/u/sem</strong>
+        Stock initial: <strong style="color:var(--text);">12 unités</strong> &nbsp;·&nbsp;
+        Délais: <strong style="color:var(--text);">2 semaines</strong> &nbsp;·&nbsp;
+        Stockage: <strong style="color:var(--text);">0.50$/u/sem</strong> &nbsp;·&nbsp;
+        Rupture: <strong style="color:var(--text);">1.00$/u/sem</strong>
       </div>
 
       <div style="display:flex; gap:.65rem;">
@@ -407,7 +407,7 @@
 <!-- ── Live sessions ──────────────────────────────────────────────────────── -->
 {% if lobby_sessions %}
 <div style="margin-bottom:2.5rem;">
-  <div class="section-title">🟡 Parties ouvertes — rejoindre maintenant</div>
+  <div class="section-title"><span style="display:inline-flex;align-items:center;gap:.35rem;"><span style="width:7px;height:7px;border-radius:50%;background:#f5c842;box-shadow:0 0 6px #f5c842;animation:blink 2.2s infinite;display:inline-block;"></span>Parties ouvertes — rejoindre maintenant</span></div>
   {% for s in lobby_sessions %}
   <div class="game-card">
     <div class="game-status-dot dot-lobby"></div>
@@ -418,7 +418,7 @@
     <div class="game-slots">
       {% for ps in s.player_sessions.all %}
       <div class="slot-pip {% if ps.name %}filled{% else %}empty{% endif %}" title="{{ ps.role|title }}">
-        {% if ps.role == 'customer' %}👤{% elif ps.role == 'retailer' %}🛒{% elif ps.role == 'wholesaler' %}🏪{% elif ps.role == 'distributor' %}🚚{% else %}🏭{% endif %}
+        {% if ps.role == 'customer' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg>{% elif ps.role == 'retailer' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/></svg>{% elif ps.role == 'wholesaler' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg>{% elif ps.role == 'distributor' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>{% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>{% endif %}
       </div>
       {% endfor %}
     </div>
@@ -437,7 +437,7 @@
 
 {% if active_sessions %}
 <div style="margin-bottom:2.5rem;">
-  <div class="section-title">🟢 Parties en cours</div>
+  <div class="section-title"><span style="display:inline-flex;align-items:center;gap:.35rem;"><span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);display:inline-block;"></span>Parties en cours</span></div>
   {% for s in active_sessions %}
   <div class="game-card">
     <div class="game-status-dot dot-playing"></div>
@@ -462,14 +462,14 @@
 
 {% if my_sessions %}
 <div style="margin-bottom:2.5rem;">
-  <div class="section-title">📁 Mes parties</div>
+  <div class="section-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;opacity:.7;"><path d="M4 20V7l8-4 8 4v13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="9" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.4"/></svg> Mes parties</div>
   {% for s in my_sessions %}
   <div class="game-card">
     <div class="game-status-dot {% if s.status == 'lobby' %}dot-lobby{% elif s.is_active %}dot-playing{% else %}dot-finished{% endif %}"></div>
     <div class="game-info">
       <div class="game-name">{{ s.name }}</div>
       <div class="game-meta">
-        {% if s.player_sessions.exists %}👥 Multi{% else %}🖥️ Solo{% endif %}
+        {% if s.player_sessions.exists %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;opacity:.6;"><circle cx="8" cy="9" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16" cy="9" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/></svg> Multi{% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;opacity:.6;"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 17v4M8 21h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Solo{% endif %}
         · {{ s.current_week }}/{{ s.max_weeks }} sem.
         · {{ s.created_at|timesince }} ago
       </div>
@@ -495,10 +495,10 @@
 
 {% if not lobby_sessions and not active_sessions and not my_sessions %}
 <div style="text-align:center; color:var(--muted); padding:3.5rem 1rem;">
-  <div style="font-size:3.5rem; margin-bottom:1rem; filter:drop-shadow(0 0 16px rgba(245,200,66,.25));">🍺</div>
+  <div style="font-size:3.5rem; margin-bottom:1rem; filter:drop-shadow(0 0 16px rgba(245,200,66,.25));"><svg width="56" height="56" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="18" height="19" rx="3" fill="#f5c842" opacity="0.9"/><ellipse cx="13" cy="8" rx="9" ry="3.5" fill="#fff" opacity="0.85"/><ellipse cx="9" cy="6.8" rx="3.5" ry="3" fill="#fff" opacity="0.8"/><ellipse cx="15" cy="6" rx="3" ry="2.8" fill="#fff" opacity="0.75"/><ellipse cx="20" cy="7" rx="2.5" ry="2.2" fill="#fff" opacity="0.72"/><path d="M22 12 Q29 12 29 18 Q29 24 22 24" stroke="#f5c842" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.9"/><rect x="5" y="10" width="16" height="16" rx="2" fill="#e8a820" opacity="0.55"/><circle cx="10" cy="18" r="1.2" fill="#fff" opacity="0.25"/><circle cx="14" cy="22" r="0.8" fill="#fff" opacity="0.2"/><circle cx="17" cy="16" r="1" fill="#fff" opacity="0.22"/></svg></div>
   <div style="font-family:var(--font-mono); font-size:1rem; margin-bottom:.5rem; color:var(--text);">No sessions yet</div>
   <div style="font-size:.83rem; margin-bottom:1.5rem;">Create your first game above to get started!</div>
-  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">🚀 New Game</a>
+  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">New Game</a>
 </div>
 {% endif %}
 

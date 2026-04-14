@@ -83,14 +83,14 @@
   </div>
   <div style="display:flex; gap:.45rem; flex-wrap:wrap; align-items:center;">
     {% if session.is_finished %}
-    <a href="{% url 'results' session.id %}" class="btn btn-primary btn-sm">📊 Results</a>
+    <a href="{% url 'results' session.id %}" class="btn btn-primary btn-sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="2" y="12" width="4" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="10" y="7" width="4" height="15" rx="1" fill="currentColor" opacity="0.7"/><rect x="18" y="2" width="4" height="20" rx="1" fill="currentColor" opacity="0.9"/></svg> Results</a>
     {% endif %}
     <a href="{% url 'customer_view' session.id %}" class="btn btn-ghost btn-sm" style="border-color:rgba(245,200,66,.35); color:var(--accent);">
-      👤 Customer
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> Customer
     </a>
     {% for r in roles %}
     <a href="{% url 'client_view' session.id r %}" class="btn btn-ghost btn-sm" style="font-size:.72rem; padding:.25rem .6rem;">
-      {% if r == 'retailer' %}🛒{% elif r == 'wholesaler' %}🏪{% elif r == 'distributor' %}🚚{% else %}🏭{% endif %}{{ r|slice:":4"|upper }}
+      {% if r == 'retailer' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="currentColor" opacity="0.5"/></svg>{% elif r == 'wholesaler' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg>{% elif r == 'distributor' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>{% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>{% endif %}{{ r|slice:":4"|upper }}
     </a>
     {% endfor %}
     <a href="{% url 'home' %}" class="btn btn-ghost btn-sm">← Sessions</a>
@@ -115,7 +115,7 @@
 <div class="demand-card">
   <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
     <div style="display:flex; align-items:center; gap:.75rem;">
-      <span style="font-size:1.6rem; filter:drop-shadow(0 0 8px rgba(245,200,66,.4));">👤</span>
+      <span style="font-size:1.6rem; filter:drop-shadow(0 0 8px rgba(245,200,66,.4));"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.5" fill="#f5c842" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#f5c842" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg></span>
       <div>
         <div style="font-family:var(--font-mono); font-size:.78rem; color:var(--accent); font-weight:700; letter-spacing:.08em;">
           CUSTOMER DEMAND — WEEK {{ session.current_week|add:1 }}
@@ -162,9 +162,9 @@
         {% for role, s in last_week_states.items %}
           {% if role == player.role %}
           <div style="margin-top:.75rem; font-size:.72rem; color:var(--muted); display:flex; gap:.65rem; flex-wrap:wrap;">
-            <span>📦 Rcvd: <strong style="color:var(--text)">{{ s.shipment_received }}</strong></span>
-            <span>📤 Sent: <strong style="color:var(--text)">{{ s.shipment_sent }}</strong></span>
-            <span>📋 Ord: <strong style="color:var(--text)">{{ s.order_placed }}</strong></span>
+            <span>▼ Rcvd: <strong style="color:var(--text)">{{ s.shipment_received }}</strong></span>
+            <span>▲ Sent: <strong style="color:var(--text)">{{ s.shipment_sent }}</strong></span>
+            <span>↑ Ord: <strong style="color:var(--text)">{{ s.order_placed }}</strong></span>
           </div>
           {% endif %}
         {% endfor %}
@@ -190,7 +190,7 @@
 {% if not session.is_finished %}
 <div style="display:flex; justify-content:center; margin-bottom:2.5rem;">
   <button type="submit" class="btn btn-primary" style="font-size:1rem; padding:.8rem 2.75rem;">
-    ⏭ Advance to Week {{ session.current_week|add:1 }}
+    ▶ Advance to Week {{ session.current_week|add:1 }}
   </button>
 </div>
 </form>
@@ -210,8 +210,8 @@
 
       <!-- Customer node -->
       <div style="display:flex; flex-direction:column; align-items:center; flex:0 0 72px; min-width:72px;">
-        <div style="font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; padding:.3rem .2rem .25rem; text-align:center; height:26px; display:flex; align-items:center; justify-content:center;">
-          👤 Customer
+        <div style="font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; padding:.3rem .2rem .25rem; text-align:center; height:26px; display:flex; align-items:center; justify-content:center; gap:.2rem;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="12" cy="8" r="4.5" fill="currentColor" opacity="0.9"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/></svg> Customer
         </div>
         <div style="flex:1; display:flex; align-items:center; justify-content:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.5rem .3rem; width:100%; text-align:center; min-height:90px;">
           <div>
@@ -246,7 +246,7 @@
           {% elif player.role == 'distributor' %}background:rgba(168,85,247,.1); color:#d8a4ff;
           {% elif player.role == 'factory' %}background:rgba(34,197,94,.1); color:#4ade80;
           {% endif %}">
-          {% if player.role == 'retailer' %}🛒{% elif player.role == 'wholesaler' %}🏪{% elif player.role == 'distributor' %}🚚{% else %}🏭{% endif %}
+          {% if player.role == 'retailer' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M3 10l1-6h16l1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 10v10a2 2 0 002 2h14a2 2 0 002-2V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="9" y="14" width="6" height="8" rx="1" fill="currentColor" opacity="0.5"/></svg>{% elif player.role == 'wholesaler' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="6" y="2" width="12" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg>{% elif player.role == 'distributor' %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="1" y="6" width="15" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 9h4l3 4v3h-7V9z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="19" cy="17.5" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>{% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><path d="M2 20V10l5-4v4l5-4v4l5-4v10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="2" y="16" width="20" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>{% endif %}
           {{ player.role|capfirst }}
         </div>
 
