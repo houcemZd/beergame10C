@@ -604,8 +604,9 @@ document.querySelectorAll('[id^="pill-"]').forEach(function(el) {
   ROLE_URLS[role] = el.textContent.trim();
 });
 
-var EMOJIS = { customer:'\u{1F464}', retailer:'\u{1F6D2}', wholesaler:'\u{1F3EA}', distributor:'\u{1F69A}', factory:'\u{1F3ED}' };
+var EMOJIS = { customer:'\uD83D\uDC64', retailer:'\uD83D\uDED2', wholesaler:'\uD83C\uDFEA', distributor:'\uD83D\uDE9A', factory:'\uD83C\uDFED' };
 var ROLE_COLORS = { customer:'var(--muted)', retailer:'var(--retailer-color)', wholesaler:'var(--wholesaler-color)', distributor:'var(--distributor-color)', factory:'var(--factory-color)' };
+var VALID_COLORS = Object.keys(ROLE_COLORS).reduce(function(acc, k) { acc[ROLE_COLORS[k]] = true; return acc; }, {});
 var POLL_MS = 3000;
 
 var isGameLive = false;
@@ -701,8 +702,8 @@ function updateUI(d) {
     if (pb) pb.style.width = pct + '%';
 
     if (msg) {
-      if (d.is_finished) { msg.textContent = '\u{1F3C6} Game finished'; msg.style.color = 'var(--accent)'; }
-      else { msg.textContent = '\u{1F4E1} Week ' + d.current_week + ' / ' + d.max_weeks + ' \u2014 live'; msg.style.color = 'var(--success)'; }
+      if (d.is_finished) { msg.textContent = '\uD83C\uDFC6 Game finished'; msg.style.color = 'var(--accent)'; }
+      else { msg.textContent = '\uD83D\uDCE1 Week ' + d.current_week + ' / ' + d.max_weeks + ' \u2014 live'; msg.style.color = 'var(--success)'; }
     }
 
     var demandBanner = document.getElementById('demand-banner');
@@ -765,7 +766,8 @@ function updateChat(messages) {
     var div = document.createElement('div');
     div.className = 'chat-msg';
     var roleColor = ROLE_COLORS[m.role] || 'var(--muted)';
-    div.innerHTML = '<span class="chat-msg-author" style="color:' + roleColor + ';">' + (EMOJIS[m.role] || '\u{1F3AE}') + ' ' + escapeHtml(m.author) + '</span> <span class="chat-msg-body">' + escapeHtml(m.body) + '</span><span class="chat-msg-time">' + m.time + '</span>';
+    if (!VALID_COLORS[roleColor]) roleColor = 'var(--muted)';
+    div.innerHTML = '<span class="chat-msg-author" style="color:' + roleColor + ';">' + (EMOJIS[m.role] || '\uD83C\uDFAE') + ' ' + escapeHtml(m.author) + '</span> <span class="chat-msg-body">' + escapeHtml(m.body) + '</span><span class="chat-msg-time">' + m.time + '</span>';
     container.appendChild(div);
     lastChatId = Math.max(lastChatId, m.id);
   });
@@ -807,12 +809,12 @@ function startGame() {
       } else {
         toast(d.error || 'Failed to start', '');
         btn.disabled = false;
-        btn.textContent = '\u{1F680} Start Game';
+        btn.textContent = '\uD83D\uDE80 Start Game';
       }
     }).catch(function() {
       toast('Network error', '');
       btn.disabled = false;
-      btn.textContent = '\u{1F680} Start Game';
+      btn.textContent = '\uD83D\uDE80 Start Game';
     });
 }
 
@@ -828,15 +830,24 @@ function showCountdown(callback) {
     if (count > 0) { numEl.textContent = count; }
     else {
       clearInterval(interval);
-      numEl.textContent = '\u{1F680}';
+      numEl.textContent = '\uD83D\uDE80';
       setTimeout(function() { overlay.classList.remove('active'); callback(); }, 600);
     }
   }, 800);
 }
 
+var _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+
 function playJoinSound() {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = getAudioCtx();
+    if (!ctx) return;
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
@@ -959,7 +970,7 @@ function doCopy(btn) {
   if (!url) return;
   function doIt() {
     btn.textContent = '\u2713 Copied!'; btn.classList.add('copied');
-    setTimeout(function() { btn.textContent = '\u{1F4CB} Copy'; btn.classList.remove('copied'); }, 2200);
+    setTimeout(function() { btn.textContent = '\uD83D\uDCCB Copy'; btn.classList.remove('copied'); }, 2200);
     toast('Link copied \u2014 ' + role, 'ok');
   }
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -972,7 +983,7 @@ function doCopyAll() {
   var btn = document.getElementById('copy-all-btn');
   function doIt() {
     if (btn) { btn.textContent = '\u2713 All Copied!'; btn.classList.add('copied'); }
-    setTimeout(function() { if (btn) { btn.textContent = '\u{1F4CB} Copy All Links'; btn.classList.remove('copied'); } }, 2200);
+    setTimeout(function() { if (btn) { btn.textContent = '\uD83D\uDCCB Copy All Links'; btn.classList.remove('copied'); } }, 2200);
     toast('All links copied to clipboard', 'ok');
   }
   if (navigator.clipboard && navigator.clipboard.writeText) {
