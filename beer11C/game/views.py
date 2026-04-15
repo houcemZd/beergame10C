@@ -1,6 +1,7 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -9,6 +10,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import (
     GameSession, Player, CustomerDemand,
     PlayerSession, PipelineShipment, PipelineOrder,
+    LobbyMessage,
 )
 from .services import initialise_session, process_week, get_chart_data, get_bullwhip_data, _ai_order
 
@@ -232,6 +234,18 @@ def lobby(request, session_id):
     initial_ships    = first_ship.quantity  if first_ship  else 4
     initial_inv      = initial_players[0].inventory if initial_players else 12
 
+    # Game settings for the info card
+    first_player = initial_players[0] if initial_players else None
+    game_settings = {
+        'initial_inventory': first_player.inventory if first_player else 12,
+        'holding_cost':      first_player.holding_cost if first_player else 0.5,
+        'backlog_cost':      first_player.backlog_cost if first_player else 1.0,
+        'max_weeks':         session.max_weeks,
+        'pipeline_delay':    2,
+    }
+
+    is_host = (session.created_by == request.user)
+
     return render(request, 'game/lobby.html', {
         'session':         session,
         'role_links':      role_links,
@@ -239,6 +253,8 @@ def lobby(request, session_id):
         'initial_orders':  initial_orders,
         'initial_ships':   initial_ships,
         'initial_inv':     initial_inv,
+        'game_settings':   game_settings,
+        'is_host':         is_host,
     })
 
 
@@ -252,6 +268,12 @@ def lobby_status(request, session_id):
     names       = {ps.role: ps.name for ps in player_sessions if ps.name}
     game_started = session.status == GameSession.STATUS_PLAYING
     is_finished  = session.status == GameSession.STATUS_FINISHED
+
+    # Ready roles (players who have marked themselves ready in the lobby)
+    ready_roles = session.ready_role_list
+
+    # Host info
+    is_host = (session.created_by == request.user)
 
     # Include live player board data so the lobby can act as a spectator view
     players_data = []
@@ -282,10 +304,23 @@ def lobby_status(request, session_id):
             session.current_week + 1,
         )
 
+    # Recent chat messages (last 50)
+    chat_messages = []
+    for msg in session.lobby_messages.order_by('-created_at')[:50]:
+        chat_messages.append({
+            'id':     msg.id,
+            'author': msg.author_name,
+            'role':   msg.author_role,
+            'body':   msg.body,
+            'time':   msg.created_at.strftime('%H:%M'),
+        })
+    chat_messages.reverse()
+
     return JsonResponse({
         'joined':        joined,
         'connected':     connected,
         'names':         names,
+        'ready':         ready_roles,
         'game_started':  game_started,
         'is_finished':   is_finished,
         'status':        session.status,
@@ -294,6 +329,8 @@ def lobby_status(request, session_id):
         'players':       players_data,
         'last_demand':   last_demand,
         'pipeline':      pipeline_data,
+        'is_host':       is_host,
+        'chat':          chat_messages,
     })
 
 
@@ -353,6 +390,47 @@ def join_game(request, token):
         'default_name': default_name,
         'already_claimed': bool(ps.user and ps.user == request.user),
     })
+
+# ── Start game (host-only) ────────────────────────────────────────────────────
+@login_required
+@require_POST
+def lobby_start_game(request, session_id):
+    """Allow the host to start the game directly from the lobby."""
+    session = get_object_or_404(GameSession, id=session_id)
+    if session.created_by != request.user:
+        return JsonResponse({'error': 'Only the host can start the game.'}, status=403)
+    if session.status != GameSession.STATUS_LOBBY:
+        return JsonResponse({'error': 'Game is not in lobby state.'}, status=400)
+    # Require at least 2 roles to have joined
+    joined_count = session.player_sessions.exclude(name='').count()
+    if joined_count < 2:
+        return JsonResponse({'error': 'At least 2 players must join before starting.'}, status=400)
+    session.status = GameSession.STATUS_PLAYING
+    session.save(update_fields=['status'])
+    return JsonResponse({'ok': True, 'redirect': reverse('lobby', args=[session.id])})
+
+
+# ── Lobby chat ────────────────────────────────────────────────────────────────
+@login_required
+@require_POST
+def lobby_chat(request, session_id):
+    """Post a chat message in the lobby."""
+    session = get_object_or_404(GameSession, id=session_id)
+    body = request.POST.get('body', '').strip()[:300]
+    if not body:
+        return JsonResponse({'error': 'Empty message.'}, status=400)
+    author_name = request.user.first_name or request.user.username
+    # Find role for this user in the session
+    ps = session.player_sessions.filter(user=request.user).first()
+    author_role = ps.role if ps else 'host'
+    LobbyMessage.objects.create(
+        game_session=session,
+        author_name=author_name,
+        author_role=author_role,
+        body=body,
+    )
+    return JsonResponse({'ok': True})
+
 
 # ── Multiplayer supply-chain player ───────────────────────────────────────────
 @login_required

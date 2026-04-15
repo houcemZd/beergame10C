@@ -243,3 +243,20 @@ class PlayerSession(models.Model):
 
     def __str__(self):
         return f"{self.role} @ {self.game_session.name} ({self.token[:8]}…)"
+
+
+class LobbyMessage(models.Model):
+    """Simple chat message for the pre-game lobby."""
+    game_session = models.ForeignKey(
+        GameSession, on_delete=models.CASCADE, related_name='lobby_messages',
+    )
+    author_name = models.CharField(max_length=100)
+    author_role = models.CharField(max_length=20, blank=True, default='')
+    body        = models.CharField(max_length=300)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.author_role}] {self.author_name}: {self.body[:40]}"

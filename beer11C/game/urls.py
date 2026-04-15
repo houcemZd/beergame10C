@@ -14,6 +14,8 @@ urlpatterns = [
     # Multiplayer
     path('game/<int:session_id>/lobby/',            views.lobby,            name='lobby'),
     path('game/<int:session_id>/lobby-status/',     views.lobby_status,     name='lobby_status'),
+    path('game/<int:session_id>/lobby-start/',      views.lobby_start_game, name='lobby_start_game'),
+    path('game/<int:session_id>/lobby-chat/',       views.lobby_chat,       name='lobby_chat'),
     path('join/<str:token>/',                       views.join_game,        name='join_game'),
     path('game/<int:session_id>/play/',             views.play,             name='play'),
     path('game/<int:session_id>/customer/',         views.customer_view,    name='customer_view'),
