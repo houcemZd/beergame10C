@@ -23,46 +23,59 @@ built with Django + Django Channels (WebSockets) for real-time multiplayer.
 ## Project Structure
 
 ```
-beer_game/
+beer11C/                     ← Django project root (run commands from here)
 ├── manage.py
 ├── requirements.txt
-├── README.md
+├── setup.sh                 ← Optional environment setup script
 │
 ├── beer_game/               ← Django project config
-│   ├── settings.py          ← Channels + Redis config
+│   ├── settings.py          ← Security settings; reads SECRET_KEY/DEBUG from env
 │   ├── urls.py
 │   ├── asgi.py              ← ASGI entry point (required for WebSockets)
 │   └── wsgi.py
 │
-└── game/                    ← Main app
+└── game/                    ← Main application
     ├── models.py            ← GameSession, Player, PlayerSession, Pipeline models
-    ├── services.py          ← Game engine: process_week(), AI policy, chart data
-    ├── consumers.py         ← WebSocket consumer (real-time multiplayer brain)
-    ├── views.py             ← HTTP views: home, lobby, join, play, dashboard
+    ├── services.py          ← Game engine (phase-gated): open/close week, AI policy
+    ├── consumers.py         ← WebSocket consumer (real-time multiplayer)
+    ├── views.py             ← HTTP views with session-ownership authorization
+    ├── accounts_views.py    ← Login / register / logout views
     ├── routing.py           ← WebSocket URL routing
     ├── urls.py              ← HTTP URL routing
-    └── templates/game/
-        ├── base.html        ← Dark design system (Space Mono + DM Sans)
-        ├── home.html        ← Session list
-        ├── new_game.html    ← Create game (single/multi toggle)
-        ├── lobby.html       ← Host view: share invite links
-        ├── join.html        ← Player joins with their name
-        ├── play.html        ← Real-time multiplayer game screen
-        ├── dashboard.html   ← Single-player game screen
-        └── results.html     ← End-game KPIs + bullwhip analysis
+    ├── templatetags/
+    │   └── game_extras.py   ← Template filters: get_item, currency, role_display…
+    ├── migrations/          ← Database migrations (including indexes)
+    └── templates/
+        ├── accounts/
+        │   ├── login.html
+        │   └── register.html
+        └── game/
+            ├── base.html        ← Dark design system (Space Mono + DM Sans)
+            ├── home.html        ← Session list
+            ├── new_game.html    ← Create game (single/multi toggle)
+            ├── game_init.html   ← Configure initial state
+            ├── lobby.html       ← Host view: share invite links
+            ├── join.html        ← Player joins with their name
+            ├── play.html        ← Real-time multiplayer game screen
+            ├── customer_play.html ← Real-time customer screen
+            ├── dashboard.html   ← Single-player game screen
+            ├── client_view.html ← Read-only per-role view
+            ├── customer_view.html ← Customer demand overview
+            └── results.html     ← End-game KPIs + bullwhip analysis
 ```
 
 ---
 
 ## Installation & Setup
 
-### 1. Clone / download the project
+### 1. Clone the repository
 
 ```bash
-cd beer_game
+git clone https://github.com/houcemZd/beergame10C.git
+cd beergame10C/beer11C
 ```
 
-### 2. Create virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv venv
@@ -76,7 +89,20 @@ venv\Scripts\activate           # Windows
 pip install -r requirements.txt
 ```
 
-### 4. Start Redis
+### 4. Configure environment variables
+
+Create a `.env` file (or export variables in your shell) for production use:
+
+```bash
+export SECRET_KEY="your-strong-random-key-here"
+export DEBUG="False"
+export ALLOWED_HOSTS="yourdomain.com,www.yourdomain.com"
+```
+
+> **Local development:** if `SECRET_KEY` is not set, a hard-coded insecure key is
+> used as a fallback. Never deploy without setting `SECRET_KEY`.
+
+### 5. Start Redis
 
 Redis is required for Django Channels' channel layer (real-time messaging).
 
@@ -95,22 +121,23 @@ brew install redis && brew services start redis
 ```
 
 **Option C — No Redis (local dev only):**
-Change `settings.py` channel layer to in-memory:
-```python
-CHANNEL_LAYERS = {
-    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
-}
-```
-⚠️ InMemoryChannelLayer only works if all players are on the same server process.
-   Do NOT use in production.
+The server auto-detects Redis on startup. If Redis is unavailable it falls back
+to `InMemoryChannelLayer` automatically. ⚠️ Only works with a single process —
+do NOT use in production.
 
-### 5. Run migrations
+### 6. Run migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 6. Start the server
+### 7. Collect static files (production only)
+
+```bash
+python manage.py collectstatic
+```
+
+### 8. Start the server
 
 ```bash
 # Development (Daphne handles both HTTP + WebSocket)
@@ -217,27 +244,35 @@ demonstrating how information asymmetry causes amplification up the chain.
 For a demo on a server:
 
 ```bash
+export SECRET_KEY="your-real-secret-key"
+export DEBUG="False"
+export ALLOWED_HOSTS="your-domain.com"
 pip install daphne
+cd beer11C
+python manage.py migrate
+python manage.py collectstatic
 daphne -b 0.0.0.0 -p 8000 beer_game.asgi:application
 ```
 
-Make sure Redis is running and accessible. Update `settings.py`:
-```python
-SECRET_KEY = 'your-real-secret-key'
-DEBUG = False
-ALLOWED_HOSTS = ['your-domain.com']
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
-    }
-}
-```
+Make sure Redis is running and accessible. The settings file auto-detects Redis
+and switches to `RedisChannelLayer` automatically.
 
 Free hosting options:
 - **Railway.app** — supports Redis + WebSockets natively
 - **Render.com** — add a Redis service alongside the web service
 - **Fly.io** — Docker-based, full WebSocket support
+
+---
+
+## Running Tests
+
+```bash
+cd beer11C
+python manage.py test game.tests --verbosity=2
+```
+
+The test suite covers models, the game engine (services), HTTP views (including
+authorization checks), and template filters — 146 tests in total.
 
 ---
 

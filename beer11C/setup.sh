@@ -80,48 +80,9 @@ if ! python3 -c "import daphne" 2>/dev/null; then
 fi
 ok "Dependencies up to date (daphne ✓)"
 
-# ── 3. Copy updated project files ──────────────────────────────────────────────
+# ── 3. Source files are managed by git ────────────────────────────────────────
 sep
-info "Copying updated source files..."
-
-TEMPLATES_DIR="$APP_DIR/templates/$APP_NAME"
-mkdir -p "$TEMPLATES_DIR"
-
-# Helper: copy file and report
-copy_file() {
-  local src="$1" dst="$2"
-  if [ -f "$src" ]; then
-    cp "$src" "$dst"
-    ok "$(basename $src) → ${dst#$PROJECT_ROOT/}"
-  else
-    warn "Not found (skip): $src"
-  fi
-}
-
-# Python source files
-copy_file "$SCRIPT_DIR/models.py"         "$APP_DIR/models.py"
-copy_file "$SCRIPT_DIR/consumers.py"      "$APP_DIR/consumers.py"
-copy_file "$SCRIPT_DIR/services.py"       "$APP_DIR/services.py"
-copy_file "$SCRIPT_DIR/views.py"          "$APP_DIR/views.py"
-copy_file "$SCRIPT_DIR/urls.py"           "$APP_DIR/urls.py"
-copy_file "$SCRIPT_DIR/accounts_views.py" "$APP_DIR/accounts_views.py"
-
-# HTML templates — game templates
-copy_file "$SCRIPT_DIR/play.html"         "$TEMPLATES_DIR/play.html"
-copy_file "$SCRIPT_DIR/lobby.html"        "$TEMPLATES_DIR/lobby.html"
-copy_file "$SCRIPT_DIR/home.html"         "$TEMPLATES_DIR/home.html"
-copy_file "$SCRIPT_DIR/base.html"         "$TEMPLATES_DIR/base.html"
-
-# Accounts templates (login / register)
-ACCOUNTS_TEMPLATES_DIR="$APP_DIR/templates/accounts"
-mkdir -p "$ACCOUNTS_TEMPLATES_DIR"
-copy_file "$SCRIPT_DIR/login.html"    "$ACCOUNTS_TEMPLATES_DIR/login.html"
-copy_file "$SCRIPT_DIR/register.html" "$ACCOUNTS_TEMPLATES_DIR/register.html"
-
-# Optional templates (copy if present)
-for tmpl in join.html new_game.html game_init.html results.html dashboard.html customer_play.html customer_view.html client_view.html; do
-  [ -f "$SCRIPT_DIR/$tmpl" ] && copy_file "$SCRIPT_DIR/$tmpl" "$TEMPLATES_DIR/$tmpl"
-done
+ok "Source files are up to date (managed by git — run 'git pull' to update)"
 
 # ── 4. Apply migration for new PlayerSession fields ────────────────────────────
 sep
