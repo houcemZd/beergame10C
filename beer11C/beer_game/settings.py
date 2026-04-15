@@ -12,11 +12,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '192.168.1.169',
-    '192.168.1.183'
 ]
-CSRF_TRUSTED_ORIGINS = [
-    'http://192.168.1.169:8000', 'http://192.168.1.183:8000']
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,17 +50,17 @@ def _redis_available():
 
 if _redis_available():
     CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+        }
     }
-}
-
 else:
     CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
     }
-}
 
 TEMPLATES = [
     {
