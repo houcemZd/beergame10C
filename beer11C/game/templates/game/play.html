@@ -922,7 +922,33 @@ body.crit-alert::after {
   to   { --toast-angle:360deg; }
 }
 @property --toast-angle {
-  syntax:'<angle>'; initial-value:0deg; inherits:false;
+  syntax: "<angle>"; initial-value: 0deg; inherits: false;
+}
+
+/* ── Accessibility: respect prefers-reduced-motion ──────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-particle,
+  .smoke-puff,
+  .truck-exhaust-puff,
+  .confetti-piece,
+  .speed-line,
+  .particle,
+  .float-num,
+  .board-scanner,
+  .grade-S,
+  .lobby-box,
+  .lobby-player-row.ready-state,
+  #week-flash-inner.active { animation:none !important; }
+  body.shaking #game-screen,
+  body.shake-light #game-screen { animation:none !important; }
+  body.crit-alert::after { animation:none !important; }
+  .road-surface::after { animation:none !important; }
+  .road-node:hover,
+  .road-node.you:hover { transform:none !important; }
+  .hud-card::after { animation:none !important; }
+  #bgb-board-card { animation:none !important; }
+  #week-flash.flashing .cine-bar { height:0 !important; }
+  .vfx-flash { animation:none !important; display:none !important; }
 }
 
 /* ── Phase panel glass morphism ─────────────────────────────────────────── */
@@ -971,7 +997,7 @@ body.crit-alert::after {
   box-shadow:0 0 6px currentColor;
 }
 
-/* ── Game-over confetti (CSS confetti pieces) ───────────────────────────── */
+/* ── Confetti (CSS confetti pieces) ──────────────────────────────────────── */
 .confetti-piece {
   position:fixed; pointer-events:none; z-index:9989;
   width:8px; height:12px; border-radius:2px;
@@ -2920,8 +2946,11 @@ function achieveToast(msg) {
 (function initAmbientParticles() {
   const container = document.getElementById('ambient-particles');
   if (!container) return;
+  // Respect reduced motion preference
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const COLORS = ['rgba(245,200,66,.12)','rgba(59,130,246,.08)','rgba(168,85,247,.08)','rgba(34,197,94,.06)','rgba(255,255,255,.05)'];
-  for (let i = 0; i < 20; i++) {
+  const COUNT = Math.min(12, navigator.hardwareConcurrency > 4 ? 14 : 8);
+  for (let i = 0; i < COUNT; i++) {
     const p = document.createElement('div');
     p.className = 'ambient-particle';
     const size = 2 + Math.random() * 5;
@@ -2977,21 +3006,29 @@ function spawnSpeedLines() {
 
 // ── Confetti burst (game over) ─────────────────────────────────────────────
 function spawnConfetti() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const COLORS = ['#f5c842','#3b82f6','#a855f7','#22c55e','#ef4444','#ec4899','#f97316','#ffffff'];
-  for (let i = 0; i < 60; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left    = Math.random() * 100 + 'vw';
-    piece.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-    piece.style.setProperty('--dur', (2 + Math.random() * 2.5) + 's');
-    piece.style.setProperty('--delay', (Math.random() * 1.2) + 's');
-    piece.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
-    piece.style.width  = (5 + Math.random() * 6) + 'px';
-    piece.style.height = (8 + Math.random() * 10) + 'px';
-    piece.style.borderRadius = Math.random() > .5 ? '2px' : '50%';
-    document.body.appendChild(piece);
-    piece.addEventListener('animationend', () => piece.remove(), {once:true});
+  const TOTAL = 40;
+  let i = 0;
+  function batch() {
+    const end = Math.min(i + 8, TOTAL);
+    for (; i < end; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left    = Math.random() * 100 + 'vw';
+      piece.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+      piece.style.setProperty('--dur', (2 + Math.random() * 2.5) + 's');
+      piece.style.setProperty('--delay', (Math.random() * 1.2) + 's');
+      piece.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+      piece.style.width  = (5 + Math.random() * 6) + 'px';
+      piece.style.height = (8 + Math.random() * 10) + 'px';
+      piece.style.borderRadius = Math.random() > .5 ? '2px' : '50%';
+      document.body.appendChild(piece);
+      piece.addEventListener('animationend', () => piece.remove(), {once:true});
+    }
+    if (i < TOTAL) requestAnimationFrame(batch);
   }
+  requestAnimationFrame(batch);
 }
 
 // ── Button ripple effect ───────────────────────────────────────────────────
