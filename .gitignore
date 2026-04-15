@@ -1,4 +1,45 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Database
 db.sqlite3
+*.db
+
+# Environment & secrets
+.env
+.env.*
+*.env
+
+# Virtual environments
+venv/
+.venv/
+env/
+.venv*/
+
+# Static file collection output
+staticfiles/
+
+# Uploaded media
+media/
+
+# Editor / OS artefacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Node (if frontend tooling is ever added)
+node_modules/
+
+# Coverage & test artefacts
+.coverage
+htmlcov/
+.pytest_cache/

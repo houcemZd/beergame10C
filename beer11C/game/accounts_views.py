@@ -5,7 +5,8 @@ Login · Register · Logout
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
@@ -21,7 +22,7 @@ def login_view(request):
         if user:
             login(request, user)
             return redirect(request.GET.get('next', 'home'))
-        messages.error(request, 'Identifiant ou mot de passe incorrect.')
+        messages.error(request, 'Invalid username or password.')
 
     return render(request, 'accounts/login.html')
 
@@ -39,13 +40,19 @@ def register_view(request):
 
         errors = []
         if not username:
-            errors.append("Le nom d'utilisateur est requis.")
+            errors.append("Username is required.")
         elif User.objects.filter(username=username).exists():
-            errors.append("Ce nom d'utilisateur est déjà pris.")
-        if len(password1) < 8:
-            errors.append("Le mot de passe doit contenir au moins 8 caractères.")
+            # Use a generic message to avoid revealing which usernames exist.
+            errors.append("Registration failed. Please try a different username or check your details.")
+
         if password1 != password2:
-            errors.append("Les mots de passe ne correspondent pas.")
+            errors.append("Passwords do not match.")
+        else:
+            # Run Django's built-in password validators (length, common, numeric, similarity).
+            try:
+                validate_password(password1)
+            except ValidationError as exc:
+                errors.extend(exc.messages)
 
         if errors:
             for e in errors:
@@ -56,7 +63,7 @@ def register_view(request):
                 password=password1, first_name=first_name,
             )
             login(request, user)
-            messages.success(request, f"Bienvenue, {first_name or username} !")
+            messages.success(request, f"Welcome, {first_name or username}!")
             return redirect('home')
 
     return render(request, 'accounts/register.html')

@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
@@ -22,6 +22,40 @@ ROLE_EMOJIS  = {
 }
 SUPPLY_ROLES = ['retailer', 'wholesaler', 'distributor', 'factory']
 ALL_ROLES    = ['customer', 'retailer', 'wholesaler', 'distributor', 'factory']
+
+
+# ── Authorization helpers ─────────────────────────────────────────────────────
+
+def _is_session_creator(request, session):
+    """Return True if the logged-in user created this session.
+
+    If created_by is None (legacy sessions without an owner) we allow access so
+    existing games are not inadvertently locked out.
+    """
+    if session.created_by is None:
+        return True
+    return session.created_by_id == request.user.pk
+
+
+def _is_session_member(request, session):
+    """Return True if the user is creator OR holds a player slot in this session."""
+    if _is_session_creator(request, session):
+        return True
+    return session.player_sessions.filter(user=request.user).exists()
+
+
+def _require_creator(request, session):
+    """Return a 403 response if the user is not the session creator, else None."""
+    if not _is_session_creator(request, session):
+        return HttpResponseForbidden("Only the session creator can perform this action.")
+    return None
+
+
+def _require_member(request, session):
+    """Return a 403 response if the user has no stake in the session, else None."""
+    if not _is_session_member(request, session):
+        return HttpResponseForbidden("You are not a member of this game session.")
+    return None
 
 
 def _sorted_players(players):
@@ -61,7 +95,10 @@ def _build_pipeline_data(players, current_week):
 # ── Home ──────────────────────────────────────────────────────────────────────
 @login_required
 def home(request):
-    all_sessions = GameSession.objects.select_related('created_by').order_by('-created_at')
+    # Limit to 100 most recent sessions to avoid unbounded memory / timeout.
+    all_sessions = list(
+        GameSession.objects.select_related('created_by').order_by('-created_at')[:100]
+    )
 
     # Open multiplayer lobbies anyone can join
     lobby_sessions = [
@@ -79,13 +116,15 @@ def home(request):
         if s.created_by == request.user
     ]
 
+    total_count    = GameSession.objects.count()
+    finished_count = GameSession.objects.filter(status=GameSession.STATUS_FINISHED).count()
     stats = {
-        'total':    all_sessions.count(),
+        'total':    total_count,
         'active':   len(active_sessions),
         'lobby':    len(lobby_sessions),
-        'finished': all_sessions.filter(status=GameSession.STATUS_FINISHED).count(),
+        'finished': finished_count,
     }
-    weeks_options = [(12,'court'), (20,'standard'), (30,'long'), (40,'étendu')]
+    weeks_options = [(12, 'short'), (20, 'standard'), (30, 'long'), (40, 'extended')]
 
     return render(request, 'game/home.html', {
         'lobby_sessions':  lobby_sessions,
@@ -133,6 +172,9 @@ def game_init(request, session_id):
     Player sets: initial inventory, orders placed (pipeline), incoming orders (pipeline).
     """
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_creator(request, session)
+    if denied:
+        return denied
 
     if request.method == 'POST':
         # Read initial parameters from form
@@ -174,6 +216,9 @@ def game_init(request, session_id):
 @login_required
 def lobby(request, session_id):
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return denied
     role_links = []
     for ps in sorted(session.player_sessions.all(), key=lambda p: ALL_ROLES.index(p.role)):
         join_url = request.build_absolute_uri(f'/join/{ps.token}/')
@@ -224,6 +269,9 @@ def lobby(request, session_id):
 @login_required
 def lobby_status(request, session_id):
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     player_sessions = list(session.player_sessions.all())
     joined      = [ps.role for ps in player_sessions if ps.name]
     connected   = [ps.role for ps in player_sessions if ps.is_connected]
@@ -378,6 +426,9 @@ def lobby_start_game(request, session_id):
 def lobby_chat(request, session_id):
     """Post a chat message in the lobby."""
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     body = request.POST.get('body', '').strip()[:300]
     if not body:
         return JsonResponse({'error': 'Empty message.'}, status=400)
@@ -436,6 +487,9 @@ def customer_play(request, session_id):
 @login_required
 def dashboard(request, session_id):
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return denied
     players = _sorted_players(session.players.prefetch_related('history').all())
 
     chart_data    = json.dumps(get_chart_data(session))
@@ -475,6 +529,9 @@ def dashboard(request, session_id):
 @login_required
 def next_turn(request, session_id):
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_creator(request, session)
+    if denied:
+        return denied
     if not session.is_active or session.is_finished:
         return redirect('dashboard', session_id=session_id)
 
@@ -510,6 +567,9 @@ def client_view(request, session_id, role):
     if role not in CHAIN_ORDER:
         return redirect('dashboard', session_id=session_id)
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return denied
     player  = get_object_or_404(Player, session=session, role=role)
     upstream = player.get_upstream()
     incoming = list(PipelineShipment.objects.filter(
@@ -534,6 +594,9 @@ def client_view(request, session_id, role):
 def customer_view(request, session_id):
     """Single-player customer overview — shows demand history and retailer state."""
     session  = get_object_or_404(GameSession, id=session_id)
+    denied   = _require_member(request, session)
+    if denied:
+        return denied
     retailer = session.players.filter(role='retailer').first()
     demand_history = list(CustomerDemand.objects.filter(session=session).order_by('week'))
     return render(request, 'game/customer_view.html', {
@@ -559,7 +622,11 @@ def customer_view(request, session_id):
 @require_POST
 @login_required
 def reset_game(request, session_id):
-    get_object_or_404(GameSession, id=session_id).delete()
+    session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_creator(request, session)
+    if denied:
+        return denied
+    session.delete()
     return redirect('home')
 
 
@@ -567,10 +634,13 @@ def reset_game(request, session_id):
 @login_required
 def delete_session(request, session_id):
     """GET: confirm page. POST: delete."""
-    if request.method == 'POST':
-        get_object_or_404(GameSession, id=session_id).delete()
-        return redirect('home')
     session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_creator(request, session)
+    if denied:
+        return denied
+    if request.method == 'POST':
+        session.delete()
+        return redirect('home')
     return render(request, 'game/home.html', {
         'sessions': GameSession.objects.order_by('-created_at'),
         'confirm_delete': session,
@@ -581,6 +651,9 @@ def delete_session(request, session_id):
 @login_required
 def results(request, session_id):
     session    = get_object_or_404(GameSession, id=session_id)
+    denied     = _require_member(request, session)
+    if denied:
+        return denied
     players    = _sorted_players(session.players.prefetch_related('history').all())
     chart_data = json.dumps(get_chart_data(session))
     bullwhip   = get_bullwhip_data(session)
@@ -602,7 +675,11 @@ def results(request, session_id):
 # ── Chart API ─────────────────────────────────────────────────────────────────
 @login_required
 def chart_data_api(request, session_id):
-    return JsonResponse(get_chart_data(get_object_or_404(GameSession, id=session_id)))
+    session = get_object_or_404(GameSession, id=session_id)
+    denied  = _require_member(request, session)
+    if denied:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    return JsonResponse(get_chart_data(session))
 
 
 

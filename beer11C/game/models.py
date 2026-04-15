@@ -1,33 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# PATCH 1 — models.py additions
-# Add these fields to your existing models.py
-# Then run: python manage.py makemigrations && python manage.py migrate
-# ─────────────────────────────────────────────────────────────────────────────
-
-# ── ADD to GameSession (after created_at line) ────────────────────────────────
-#
-#   created_by = models.ForeignKey(
-#       'auth.User',
-#       null=True, blank=True,
-#       on_delete=models.SET_NULL,
-#       related_name='created_games',
-#   )
-#
-# ── ADD to PlayerSession (after is_connected line) ────────────────────────────
-#
-#   user = models.ForeignKey(
-#       'auth.User',
-#       null=True, blank=True,
-#       on_delete=models.SET_NULL,
-#       related_name='player_sessions',
-#   )
-#   disconnected_at = models.DateTimeField(null=True, blank=True)
-#   last_week_summary = models.JSONField(null=True, blank=True)
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# Full updated models.py follows — replace your existing file entirely.
-# ─────────────────────────────────────────────────────────────────────────────
-
 from django.db import models
 from django.contrib.auth.models import User
 import secrets
@@ -168,8 +138,14 @@ class PipelineOrder(models.Model):
     sender          = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='sent_orders')
     quantity        = models.IntegerField()
     placed_on_week  = models.IntegerField()
-    arrives_on_week = models.IntegerField()
-    fulfilled       = models.BooleanField(default=False)
+    arrives_on_week = models.IntegerField(db_index=True)
+    fulfilled       = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['sender', 'arrives_on_week', 'fulfilled'],
+                         name='po_sender_arrives_idx'),
+        ]
 
     def __str__(self):
         return f"Order {self.quantity} from {self.sender} arriving W{self.arrives_on_week}"
@@ -179,8 +155,14 @@ class PipelineShipment(models.Model):
     receiver        = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='incoming_shipments')
     quantity        = models.IntegerField()
     shipped_on_week = models.IntegerField()
-    arrives_on_week = models.IntegerField()
-    delivered       = models.BooleanField(default=False)
+    arrives_on_week = models.IntegerField(db_index=True)
+    delivered       = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['receiver', 'arrives_on_week', 'delivered'],
+                         name='ps_recv_arrives_idx'),
+        ]
 
     def __str__(self):
         return f"Shipment {self.quantity} to {self.receiver} arriving W{self.arrives_on_week}"
@@ -214,7 +196,7 @@ class PlayerSession(models.Model):
     ]
 
     game_session  = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='player_sessions')
-    role          = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role          = models.CharField(max_length=20, choices=ROLE_CHOICES, db_index=True)
     token         = models.CharField(max_length=64, unique=True, default=secrets.token_urlsafe)
     name          = models.CharField(max_length=100, blank=True, default='')
     is_connected  = models.BooleanField(default=False)
