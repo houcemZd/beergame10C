@@ -23,49 +23,45 @@ built with Django + Django Channels (WebSockets) for real-time multiplayer.
 ## Project Structure
 
 ```
-beergame10C/                 ← Repository root
-├── .gitignore
-├── README.md
+beer11C/                     ← Django project root (run commands from here)
+├── manage.py
+├── requirements.txt
+├── setup.sh                 ← Optional environment setup script
 │
-└── beer11C/                 ← Django project root (contains manage.py)
-    ├── manage.py
-    ├── requirements.txt
-    ├── setup.sh             ← Optional environment setup script
-    │
-    ├── beer_game/           ← Django project config
-    │   ├── settings.py      ← Security settings; reads SECRET_KEY/DEBUG from env
-    │   ├── urls.py
-    │   ├── asgi.py          ← ASGI entry point (required for WebSockets)
-    │   └── wsgi.py
-    │
-    └── game/                ← Main application
-        ├── models.py        ← GameSession, Player, PlayerSession, Pipeline models
-        ├── services.py      ← Game engine (phase-gated): open/close week, AI policy
-        ├── consumers.py     ← WebSocket consumer (real-time multiplayer)
-        ├── views.py         ← HTTP views with session-ownership authorization
-        ├── accounts_views.py← Login / register / logout views
-        ├── routing.py       ← WebSocket URL routing
-        ├── urls.py          ← HTTP URL routing
-        ├── templatetags/
-        │   └── game_extras.py ← Template filters: get_item, currency, role_display…
-        ├── migrations/      ← Database migrations (including indexes)
-        └── templates/
-            ├── accounts/
-            │   ├── login.html
-            │   └── register.html
-            └── game/
-                ├── base.html        ← Dark design system (Space Mono + DM Sans)
-                ├── home.html        ← Session list
-                ├── new_game.html    ← Create game (single/multi toggle)
-                ├── game_init.html   ← Configure initial state
-                ├── lobby.html       ← Host view: share invite links
-                ├── join.html        ← Player joins with their name
-                ├── play.html        ← Real-time multiplayer game screen
-                ├── customer_play.html ← Real-time customer screen
-                ├── dashboard.html   ← Single-player game screen
-                ├── client_view.html ← Read-only per-role view
-                ├── customer_view.html ← Customer demand overview
-                └── results.html     ← End-game KPIs + bullwhip analysis
+├── beer_game/               ← Django project config
+│   ├── settings.py          ← Security settings; reads SECRET_KEY/DEBUG from env
+│   ├── urls.py
+│   ├── asgi.py              ← ASGI entry point (required for WebSockets)
+│   └── wsgi.py
+│
+└── game/                    ← Main application
+    ├── models.py            ← GameSession, Player, PlayerSession, Pipeline models
+    ├── services.py          ← Game engine (phase-gated): open/close week, AI policy
+    ├── consumers.py         ← WebSocket consumer (real-time multiplayer)
+    ├── views.py             ← HTTP views with session-ownership authorization
+    ├── accounts_views.py    ← Login / register / logout views
+    ├── routing.py           ← WebSocket URL routing
+    ├── urls.py              ← HTTP URL routing
+    ├── templatetags/
+    │   └── game_extras.py   ← Template filters: get_item, currency, role_display…
+    ├── migrations/          ← Database migrations (including indexes)
+    └── templates/
+        ├── accounts/
+        │   ├── login.html
+        │   └── register.html
+        └── game/
+            ├── base.html        ← Dark design system (Space Mono + DM Sans)
+            ├── home.html        ← Session list
+            ├── new_game.html    ← Create game (single/multi toggle)
+            ├── game_init.html   ← Configure initial state
+            ├── lobby.html       ← Host view: share invite links
+            ├── join.html        ← Player joins with their name
+            ├── play.html        ← Real-time multiplayer game screen
+            ├── customer_play.html ← Real-time customer screen
+            ├── dashboard.html   ← Single-player game screen
+            ├── client_view.html ← Read-only per-role view
+            ├── customer_view.html ← Customer demand overview
+            └── results.html     ← End-game KPIs + bullwhip analysis
 ```
 
 ---
