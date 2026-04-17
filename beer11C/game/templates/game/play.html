@@ -870,8 +870,13 @@ body.crit-alert::after {
   100% { opacity:0; }
 }
 
-/* ── Grade S pulse disabled for performance ─────────────────────────────── */
-.grade-S { animation:none; }
+/* ── Grade S legendary pulse ────────────────────────────────────────────── */
+.grade-S { animation:grade-s-legendary 2.5s ease infinite; }
+body.lite-mode .grade-S { animation:none; }
+@keyframes grade-s-legendary {
+  0%,100%{ box-shadow:0 0 22px rgba(168,85,247,.55); transform:scale(1); }
+  50%    { box-shadow:0 0 40px rgba(168,85,247,.85); transform:scale(1.08); }
+}
 
 /* ── Lobby character-select entrance ────────────────────────────────────── */
 .lobby-box {
@@ -1959,7 +1964,16 @@ const WS_URL     = `${WS_SCHEME}://${location.host}{{ ws_path }}`;
 const MY_ROLE    = "{{ role }}";
 const MAX_WEEKS  = {{ session.max_weeks }};
 const SESSION_ID = {{ session.id }};
-const LITE_MODE  = true; // reduce visual/audio load to keep gameplay smooth
+const LITE_MODE  = (() => {
+  const qp = new URLSearchParams(location.search).get('lite');
+  if (qp === '0' || qp === 'false') return false;
+  if (qp === '1' || qp === 'true') return true;
+  try {
+    const saved = localStorage.getItem('beergame_lite_mode');
+    if (saved === '0' || saved === '1') return saved === '1';
+  } catch (e) {}
+  return true; // safer default for slower devices
+})();
 
 const ROLES  = ['customer','retailer','wholesaler','distributor','factory'];
 const COLORS = {retailer:'#f5c842',wholesaler:'#3b82f6',distributor:'#a855f7',factory:'#22c55e'};
@@ -4034,6 +4048,7 @@ doSubmitOrder = function() {
 // Tutorial no longer auto-opens on first visit (performance + UX).
 
 // ── Boot ───────────────────────────────────────────────────────────────────
+if (LITE_MODE) document.body.classList.add('lite-mode');
 {% if session.status == 'playing' %}
 gameStarted = true;
 document.getElementById('lobby-overlay').classList.add('hidden');
