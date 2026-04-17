@@ -268,7 +268,7 @@ class LobbyStartGameAuthorizationTest(TestCase):
         self.session.refresh_from_db()
         self.assertEqual(self.session.status, GameSession.STATUS_PLAYING)
 
-    def test_anonymous_user_with_ownerless_session_gets_403(self):
+    def test_authenticated_non_staff_user_with_ownerless_session_gets_403(self):
         """Any non-staff user must not be able to start a session whose creator was deleted."""
         ownerless = _make_session(user=None, status=GameSession.STATUS_LOBBY)
         _make_player_session(ownerless, 'retailer', user=self.owner)
