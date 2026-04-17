@@ -251,8 +251,8 @@ class LobbyStartGameAuthorizationTest(TestCase):
         self.staff.is_staff = True
         self.staff.save(update_fields=['is_staff'])
         self.session = _make_session(user=self.owner, status=GameSession.STATUS_LOBBY)
-        _make_player_session(self.session, 'retailer', user=self.owner).name = 'Owner'
-        _make_player_session(self.session, 'wholesaler', user=self.other).name = 'Other'
+        _make_player_session(self.session, 'retailer', user=self.owner)
+        _make_player_session(self.session, 'wholesaler', user=self.other)
         PlayerSession.objects.filter(game_session=self.session, role='retailer').update(name='Owner')
         PlayerSession.objects.filter(game_session=self.session, role='wholesaler').update(name='Other')
 
