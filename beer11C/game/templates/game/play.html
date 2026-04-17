@@ -2849,9 +2849,10 @@ function setSlots(id1, id2, items, cls) {
   const arr = Array.isArray(items) ? items : [];
   if (cls === 'amber') {
     // Orders go → (right): slot2 is the nearest order, slot1 the next one.
+    // If only one order exists, slot1 stays empty.
     const sorted = [...arr].sort((a,b) => (a.weeks_away || 0) - (b.weeks_away || 0));
-    setSlot(id2, sorted[0], cls);
-    setSlot(id1, sorted[1], cls);
+    setSlot(id2, sorted[0] || null, cls);
+    setSlot(id1, sorted[1] || null, cls);
   } else {
     // Shipments go ← (left): slot1 (LEFT) = arriving this week, slot2 (RIGHT) = arriving later
     const sorted = [...arr].sort((a,b) => a.weeks_away - b.weeks_away);
