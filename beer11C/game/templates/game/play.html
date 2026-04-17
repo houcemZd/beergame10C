@@ -2116,6 +2116,15 @@ function handle(msg) {
       break;
     }
 
+    // Downstream player confirmed receipt — notify the upstream player
+    case 'shipment_received': {
+      const receiver = (msg.by_role || '').charAt(0).toUpperCase() + (msg.by_role || '').slice(1);
+      const qty      = msg.quantity ?? 0;
+      toast(`📥 ${receiver} received ${qty} units from your shipment`, 'success');
+      log('sys', `📥 Delivery confirmed: ${qty} units received by ${receiver}`);
+      break;
+    }
+
     // Downstream player ordered — notify the upstream player directly
     case 'order_incoming': {
       const sender = (msg.from_role || '').charAt(0).toUpperCase() + (msg.from_role || '').slice(1);

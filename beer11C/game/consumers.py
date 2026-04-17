@@ -330,6 +330,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self._broadcast_board_to_others(ps.role)
         await self._broadcast_ready_status()
 
+        # Notify the upstream partner that their shipment was received
+        received_qty = result.get('received', 0)
+        if received_qty > 0:
+            await self._notify_shipment_received(ps.role, received_qty)
+
     # ── Phase 2: Confirm Ship ─────────────────────────────────────────────────
 
     async def _handle_confirm_ship(self):
@@ -487,7 +492,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         so all clients stay in sync throughout the week turn.
         Each role receives a state view built from their own perspective,
         respecting the MIT beer game information-hiding rules.
+
+        phases + connected are fetched once and embedded in every board_update
+        so the observer's phase pills update atomically with the board, without
+        having to wait for the separately-sent ready_status message.
         """
+        phases    = await self._get_all_phases()
+        connected = await self._get_connected_roles()
         for role in ALL_ROLES:
             if role == acting_role:
                 continue
@@ -496,7 +507,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'type':        'broadcast_state_update',
                 'target_role': role,
                 'payload': {
-                    'type': 'board_update',
+                    'type':      'board_update',
+                    'phases':    phases,
+                    'connected': connected,
                     **state,
                 },
             })
@@ -510,6 +523,24 @@ class GameConsumer(AsyncWebsocketConsumer):
         'retailer': 'wholesaler', 'wholesaler': 'distributor',
         'distributor': 'factory',
     }
+
+    async def _notify_shipment_received(self, acting_role, received_qty):
+        """
+        After confirm_receive: tell the upstream partner that their shipment was delivered.
+        Factory confirms production arriving to itself — no external upstream to notify.
+        """
+        upstream_role = self._UPSTREAM.get(acting_role)
+        if not upstream_role:
+            return
+        await self.channel_layer.group_send(self.group_name, {
+            'type':        'broadcast_state_update',
+            'target_role': upstream_role,
+            'payload': {
+                'type':     'shipment_received',
+                'by_role':  acting_role,
+                'quantity': received_qty,
+            },
+        })
 
     async def _notify_shipment_dispatched(self, acting_role, shipped, arrives_week):
         """
