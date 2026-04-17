@@ -343,6 +343,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         result = await database_sync_to_async(apply_ship)(ps)
         ps     = await self._get_player_session()
+        session = await self._get_session()
 
         # Build updated state so client can refresh the board
         state = await self._build_state_for_role(ps.role)
@@ -364,6 +365,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         # Sync all other players' boards and phase pills
         await self._broadcast_board_to_others(ps.role)
         await self._broadcast_ready_status()
+
+        # Notify the downstream partner that a shipment is heading their way
+        shipped = result.get('shipped', 0)
+        if shipped > 0:
+            playing_week = session.current_week + 1
+            await self._notify_shipment_dispatched(ps.role, shipped, playing_week + 2)
 
     # ── Phase 3: Submit Order ─────────────────────────────────────────────────
 
@@ -446,6 +453,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self._broadcast_board_to_others(ps.role)
         await self._broadcast_ready_status()
 
+        # Notify the upstream partner that an order is heading their way
+        # (factory self-orders have no external upstream — _notify_order_placed handles that)
+        order_qty = result.get('order_placed', 0)
+        if order_qty > 0:
+            playing_week = session.current_week + 1
+            delay = 1 if role == 'factory' else 2
+            await self._notify_order_placed(role, order_qty, playing_week + delay)
+
         # When all phases done, notify everyone to show "week ready" button
         # The week closes only when all actors explicitly click week_ready
         if await self._all_phase_done():
@@ -485,6 +500,54 @@ class GameConsumer(AsyncWebsocketConsumer):
                     **state,
                 },
             })
+
+    # Downstream/upstream map used for targeted partner notifications
+    _DOWNSTREAM = {
+        'retailer': 'customer', 'wholesaler': 'retailer',
+        'distributor': 'wholesaler', 'factory': 'distributor',
+    }
+    _UPSTREAM = {
+        'retailer': 'wholesaler', 'wholesaler': 'distributor',
+        'distributor': 'factory',
+    }
+
+    async def _notify_shipment_dispatched(self, acting_role, shipped, arrives_week):
+        """
+        After confirm_ship: tell the downstream partner that a shipment is on its way.
+        The customer has no WebSocket panel, so we skip that case.
+        """
+        downstream_role = self._DOWNSTREAM.get(acting_role)
+        if not downstream_role or downstream_role == 'customer':
+            return
+        await self.channel_layer.group_send(self.group_name, {
+            'type':        'broadcast_state_update',
+            'target_role': downstream_role,
+            'payload': {
+                'type':         'shipment_incoming',
+                'from_role':    acting_role,
+                'quantity':     shipped,
+                'arrives_week': arrives_week,
+            },
+        })
+
+    async def _notify_order_placed(self, acting_role, qty, arrives_week):
+        """
+        After submit_order: tell the upstream partner that a new order is heading their way.
+        Factory self-orders have no external upstream to notify.
+        """
+        upstream_role = self._UPSTREAM.get(acting_role)
+        if not upstream_role:
+            return
+        await self.channel_layer.group_send(self.group_name, {
+            'type':        'broadcast_state_update',
+            'target_role': upstream_role,
+            'payload': {
+                'type':         'order_incoming',
+                'from_role':    acting_role,
+                'quantity':     qty,
+                'arrives_week': arrives_week,
+            },
+        })
 
     async def _broadcast_all_phases_done(self):
         """Notify all players that everyone has completed their phases."""
