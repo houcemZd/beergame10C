@@ -201,6 +201,25 @@ class ApplyReceiveTest(TestCase):
         self.assertIn('received', result)
         self.assertIn('new_inventory', result)
 
+    def test_wholesaler_receive_consumes_arriving_retailer_order(self):
+        ps = self.session.player_sessions.get(role='wholesaler')
+        retailer = self.session.players.get(role='retailer')
+        week = self.session.current_week + 1
+
+        self.assertTrue(
+            PipelineOrder.objects.filter(
+                sender=retailer, arrives_on_week=week, fulfilled=False
+            ).exists()
+        )
+
+        apply_receive(ps)
+
+        self.assertFalse(
+            PipelineOrder.objects.filter(
+                sender=retailer, arrives_on_week=week, fulfilled=False
+            ).exists()
+        )
+
 
 class ApplyShipTest(TestCase):
     def setUp(self):
@@ -253,6 +272,12 @@ class ApplyShipTest(TestCase):
         player.refresh_from_db()
         self.assertEqual(result['shipped'], 0)
         self.assertGreater(player.backlog, 0)
+
+    def test_wholesaler_ship_uses_staged_demand_after_receive(self):
+        ps = self._advance_to_ship('wholesaler')
+        result = apply_ship(ps)
+        self.assertEqual(result['demand_received'], 4)
+        self.assertEqual(result['shipped'], 4)
 
 
 class ApplyOrderTest(TestCase):

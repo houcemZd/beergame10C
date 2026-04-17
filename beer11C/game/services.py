@@ -242,24 +242,35 @@ def apply_receive(ps):
             )
         pending_requests.update(fulfilled=True)
 
-        # Peek at the distributor's order arriving this week so the Phase 2
-        # ship panel shows the correct demand (not the production request).
-        # apply_ship will re-read and mark these fulfilled later.
+        # Consume the distributor's order arriving this week so it leaves the
+        # order pipeline right after receive confirmation.
         downstream = player.get_downstream()  # distributor
         if downstream:
             dist_orders = PipelineOrder.objects.filter(
                 sender=downstream, arrives_on_week=week, fulfilled=False
             )
             distributor_order = sum(o.quantity for o in dist_orders)
+            dist_orders.update(fulfilled=True)
 
         # Overwrite pending_order_qty with the distributor's real order so:
         # a) phase_ship panel (sent below) shows correct demand, and
         # b) reconnect in PHASE_SHIP also sees the correct demand.
         ps.pending_order_qty = distributor_order
+    elif ps.role in ('wholesaler', 'distributor'):
+        # Consume downstream orders arriving this week as soon as receive is
+        # confirmed, so the downstream can place a fresh order in the pipeline.
+        downstream = player.get_downstream()
+        if downstream:
+            arriving_orders = PipelineOrder.objects.filter(
+                sender=downstream, arrives_on_week=week, fulfilled=False
+            )
+            incoming_order_qty = sum(o.quantity for o in arriving_orders)
+            arriving_orders.update(fulfilled=True)
+            ps.pending_order_qty = incoming_order_qty
 
     ps.turn_phase = PlayerSession.PHASE_SHIP
     save_fields = ['turn_phase', 'pending_received_qty']
-    if ps.role == 'factory':
+    if ps.role in ('factory', 'wholesaler', 'distributor'):
         save_fields.append('pending_order_qty')
     ps.save(update_fields=save_fields)
 
@@ -302,18 +313,9 @@ def apply_ship(ps):
         # Update staging to reflect real demand
         ps.pending_order_qty = order_qty
     else:
+        # Downstream orders are consumed during apply_receive; ship phase uses
+        # the staged quantity captured in pending_order_qty.
         order_qty = ps.pending_order_qty
-
-        # Mark the downstream PipelineOrders as fulfilled NOW (so upstream doesn't double-count)
-        downstream = player.get_downstream()
-        if downstream:
-            arriving_orders = PipelineOrder.objects.filter(
-                sender=downstream, arrives_on_week=week, fulfilled=False
-            )
-            # Recalculate in case of late customer demand updates
-            order_qty = sum(o.quantity for o in arriving_orders)
-            arriving_orders.update(fulfilled=True)
-            ps.pending_order_qty = order_qty
 
     total_demand = order_qty + player.backlog
     available    = player.inventory
