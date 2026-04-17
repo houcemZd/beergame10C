@@ -32,6 +32,8 @@ def _is_session_creator(request, session):
     If created_by is None (legacy sessions without an owner) we allow access so
     existing games are not inadvertently locked out.
     """
+    if request.user.is_staff:
+        return True
     if session.created_by is None:
         return True
     return session.created_by_id == request.user.pk
@@ -407,7 +409,7 @@ def join_game(request, token):
 def lobby_start_game(request, session_id):
     """Allow the host to start the game directly from the lobby."""
     session = get_object_or_404(GameSession, id=session_id)
-    if session.created_by != request.user:
+    if not _is_session_creator(request, session):
         return JsonResponse({'error': 'Only the host can start the game.'}, status=403)
     if session.status != GameSession.STATUS_LOBBY:
         return JsonResponse({'error': 'Game is not in lobby state.'}, status=400)
@@ -680,6 +682,5 @@ def chart_data_api(request, session_id):
     if denied:
         return JsonResponse({'error': 'Forbidden'}, status=403)
     return JsonResponse(get_chart_data(session))
-
 
 

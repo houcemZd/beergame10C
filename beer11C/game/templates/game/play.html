@@ -2848,11 +2848,10 @@ function setSlot(id, item, cls) {
 function setSlots(id1, id2, items, cls) {
   const arr = Array.isArray(items) ? items : [];
   if (cls === 'amber') {
-    // Orders go → (right): slot2 (RIGHT) = arriving this week, slot1 (LEFT) = arriving later
-    const thisWeek = arr.find(i => (i.weeks_away || 0) === 0) || null;
-    const nextWeek = arr.find(i => (i.weeks_away || 0) > 0)  || null;
-    setSlot(id1, nextWeek, cls);
-    setSlot(id2, thisWeek, cls);
+    // Orders go → (right): slot2 is the nearest order, slot1 the next one.
+    const sorted = [...arr].sort((a,b) => (a.weeks_away || 0) - (b.weeks_away || 0));
+    setSlot(id2, sorted[0], cls);
+    setSlot(id1, sorted[1], cls);
   } else {
     // Shipments go ← (left): slot1 (LEFT) = arriving this week, slot2 (RIGHT) = arriving later
     const sorted = [...arr].sort((a,b) => a.weeks_away - b.weeks_away);
@@ -3148,8 +3147,8 @@ function animateBoardShip(role, shippedQty, newInv, newBlg) {
 function animateBoardOrder(role, orderQty) {
   const pre    = role === 'factory' ? 'fa' : role.slice(0,2);
   // Factory: production request has 1-week delay → slot 1 (only one req slot)
-  // Non-factory: newly placed order → slot 2 (slot 1 holds the arriving-now order)
-  const slotId = role === 'factory' ? 'fa-req-1' : pre + '-ord-2';
+  // Non-factory: newly placed order enters the later pipeline slot.
+  const slotId = role === 'factory' ? 'fa-req-1' : pre + '-ord-1';
   const label  = '1w';
   setTimeout(() => {
     const box = document.getElementById(slotId);

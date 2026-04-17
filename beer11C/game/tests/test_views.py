@@ -104,6 +104,9 @@ class GameInitAuthorizationTest(TestCase):
     def setUp(self):
         self.owner = _make_user('owner', 'securepass99')
         self.other = _make_user('other', 'securepass99')
+        self.staff = _make_user('staff', 'securepass99')
+        self.staff.is_staff = True
+        self.staff.save(update_fields=['is_staff'])
         self.session = _make_session(user=self.owner)
 
     def test_owner_can_access(self):
@@ -115,6 +118,11 @@ class GameInitAuthorizationTest(TestCase):
         self.client.login(username='other', password='securepass99')
         r = self.client.get(reverse('game_init', args=[self.session.id]))
         self.assertEqual(r.status_code, 403)
+
+    def test_staff_user_can_access(self):
+        self.client.login(username='staff', password='securepass99')
+        r = self.client.get(reverse('game_init', args=[self.session.id]))
+        self.assertEqual(r.status_code, 200)
 
 
 class DashboardAuthorizationTest(TestCase):
@@ -145,6 +153,9 @@ class ResetGameAuthorizationTest(TestCase):
     def setUp(self):
         self.owner = _make_user('owner', 'securepass99')
         self.other = _make_user('other', 'securepass99')
+        self.staff = _make_user('staff', 'securepass99')
+        self.staff.is_staff = True
+        self.staff.save(update_fields=['is_staff'])
         self.session = _make_session(user=self.owner)
 
     def test_owner_can_reset(self):
@@ -159,11 +170,20 @@ class ResetGameAuthorizationTest(TestCase):
         self.assertEqual(r.status_code, 403)
         self.assertTrue(GameSession.objects.filter(id=self.session.id).exists())
 
+    def test_staff_user_can_reset(self):
+        self.client.login(username='staff', password='securepass99')
+        r = self.client.post(reverse('reset_game', args=[self.session.id]))
+        self.assertRedirects(r, reverse('home'))
+        self.assertFalse(GameSession.objects.filter(id=self.session.id).exists())
+
 
 class NextTurnAuthorizationTest(TestCase):
     def setUp(self):
         self.owner = _make_user('owner', 'securepass99')
         self.other = _make_user('other', 'securepass99')
+        self.staff = _make_user('staff', 'securepass99')
+        self.staff.is_staff = True
+        self.staff.save(update_fields=['is_staff'])
         self.session = _make_session(user=self.owner)
         initialise_session(self.session)
 
@@ -173,6 +193,14 @@ class NextTurnAuthorizationTest(TestCase):
             'customer_demand': '4',
         })
         self.assertEqual(r.status_code, 403)
+
+    def test_staff_user_can_advance_turn(self):
+        self.client.login(username='staff', password='securepass99')
+        r = self.client.post(reverse('next_turn', args=[self.session.id]), {
+            'customer_demand': '4',
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.url, reverse('dashboard', args=[self.session.id]))
 
 
 class ResultsAuthorizationTest(TestCase):
@@ -213,6 +241,32 @@ class LobbyStatusAuthorizationTest(TestCase):
         self.client.login(username='other', password='securepass99')
         r = self.client.get(reverse('lobby_status', args=[self.session.id]))
         self.assertEqual(r.status_code, 403)
+
+
+class LobbyStartGameAuthorizationTest(TestCase):
+    def setUp(self):
+        self.owner = _make_user('owner', 'securepass99')
+        self.other = _make_user('other', 'securepass99')
+        self.staff = _make_user('staff', 'securepass99')
+        self.staff.is_staff = True
+        self.staff.save(update_fields=['is_staff'])
+        self.session = _make_session(user=self.owner, status=GameSession.STATUS_LOBBY)
+        _make_player_session(self.session, 'retailer', user=self.owner).name = 'Owner'
+        _make_player_session(self.session, 'wholesaler', user=self.other).name = 'Other'
+        PlayerSession.objects.filter(game_session=self.session, role='retailer').update(name='Owner')
+        PlayerSession.objects.filter(game_session=self.session, role='wholesaler').update(name='Other')
+
+    def test_non_owner_non_staff_gets_403(self):
+        self.client.login(username='other', password='securepass99')
+        r = self.client.post(reverse('lobby_start_game', args=[self.session.id]))
+        self.assertEqual(r.status_code, 403)
+
+    def test_staff_user_can_start_game(self):
+        self.client.login(username='staff', password='securepass99')
+        r = self.client.post(reverse('lobby_start_game', args=[self.session.id]))
+        self.assertEqual(r.status_code, 200)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.status, GameSession.STATUS_PLAYING)
 
 
 class ChartDataAPIAuthorizationTest(TestCase):
