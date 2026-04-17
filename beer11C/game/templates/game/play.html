@@ -432,13 +432,22 @@
   60%  { transform:scale(1.06) translateX(-3px); opacity:1; }
   100% { transform:scale(1) translateX(0); opacity:1; }
 }
+/* Order consumed on receive — slides toward upstream (right) and fades */
+@keyframes order-consume {
+  0%   { transform:translateX(0) scale(1);   opacity:1; }
+  30%  { transform:translateX(8px) scale(1.07); opacity:1;
+          border-color:rgba(34,197,94,.7); box-shadow:0 0 12px rgba(34,197,94,.4); }
+  85%  { transform:translateX(26px) scale(.85); opacity:0; }
+  100% { transform:translateX(0) scale(1);   opacity:0; }
+}
 
-.anim-arrive  { animation:slot-arrive  .7s ease forwards; }
-.anim-depart  { animation:slot-depart  .5s ease forwards; }
-.anim-inv-rcv { animation:inv-receive  .8s ease forwards; }
-.anim-inv-shp { animation:inv-ship     .7s ease forwards; }
-.anim-order   { animation:order-placed .6s ease forwards; }
-.anim-ship    { animation:ship-appear  .5s ease forwards; }
+.anim-arrive         { animation:slot-arrive    .7s ease forwards; }
+.anim-depart         { animation:slot-depart    .5s ease forwards; }
+.anim-inv-rcv        { animation:inv-receive    .8s ease forwards; }
+.anim-inv-shp        { animation:inv-ship       .7s ease forwards; }
+.anim-order          { animation:order-placed   .6s ease forwards; }
+.anim-ship           { animation:ship-appear    .5s ease forwards; }
+.anim-order-consume  { animation:order-consume  .55s cubic-bezier(.22,1,.36,1) forwards; }
 
 /* Pipeline detail items */
 .pl-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border-radius:6px; padding:.4rem .7rem; font-size:.78rem; margin-bottom:.3rem; border-left:3px solid transparent; }
@@ -3026,7 +3035,9 @@ function updateChart(history) {
  * animateBoardReceive — called after "Confirm Receipt"
  * Factory: prod-delay slots depart (completing) → inventory pulses green
  *          prod-request slot moves to prod-delay (production started)
+ *          distributor's arriving order (di-ord-2) departs
  * Others: ship slots depart → inventory pulses green
+ *         downstream's arriving order (ord-2) departs to signal consumption
  */
 function animateBoardReceive(role, receivedQty, newInv, newBlg) {
   const pre = role === 'factory' ? 'fa' : role.slice(0,2);
@@ -3068,6 +3079,12 @@ function animateBoardReceive(role, receivedQty, newInv, newBlg) {
     setTimeout(() => flashDepart(slot2Id), 120);
   }
 
+  // Animate the arriving downstream order departing (order consumed by this receive)
+  const incomingOrdSlot = getIncomingOrderSlot(role);
+  if (incomingOrdSlot) {
+    setTimeout(() => flashOrderConsume(incomingOrdSlot), 80);
+  }
+
   // Inventory box receives — pulse green then update value
   setTimeout(() => {
     const invBox = document.getElementById(pre + '-inv-box');
@@ -3087,7 +3104,7 @@ function animateBoardReceive(role, receivedQty, newInv, newBlg) {
       if ((newBlg ?? 0) > 0) { blgEl.className = 'bgb-backlog nonzero'; blgEl.textContent = `backlog: ${newBlg}`; }
       else                   { blgEl.className = 'bgb-backlog zero';    blgEl.textContent = 'backlog: 0'; }
     }
-  }, 250);
+  }, 280);
 }
 
 /**
@@ -3172,6 +3189,39 @@ function flashDepart(slotId) {
     const vEl = box.querySelector('.bgb-v');
     if (vEl) vEl.textContent = '·';
   }, {once:true});
+}
+
+/**
+ * Returns the slot id of the order arriving THIS WEEK from downstream.
+ * For amber slots, slot 2 (RIGHT) always holds the arriving-this-week order.
+ * wholesaler  → rt-ord-2  (retailer's order arriving now)
+ * distributor → wh-ord-2  (wholesaler's order arriving now)
+ * factory     → di-ord-2  (distributor's order arriving now)
+ */
+function getIncomingOrderSlot(role) {
+  const map = {
+    wholesaler:  'rt-ord-2',
+    distributor: 'wh-ord-2',
+    factory:     'di-ord-2',
+  };
+  return map[role] || null;
+}
+
+/**
+ * Plays the order-consume animation on the given order slot, then clears it.
+ * Only animates if the slot currently holds an amber (filled) order.
+ */
+function flashOrderConsume(slotId) {
+  const box = document.getElementById(slotId);
+  if (!box) return;
+  if (!box.classList.contains('amber')) return;  // nothing to animate
+  box.classList.add('anim-order-consume');
+  box.addEventListener('animationend', () => {
+    box.classList.remove('anim-order-consume', 'amber', 'arriving');
+    box.style.opacity = '';
+    const vEl = box.querySelector('.bgb-v');
+    if (vEl) vEl.textContent = '·';
+  }, {once: true});
 }
 
 function getDownstreamShipSlot(role) {
