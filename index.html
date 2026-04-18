@@ -134,6 +134,8 @@
 
   <script>
     const roles = ["retailer", "wholesaler", "distributor", "factory"];
+    const HOLDING_COST_PER_UNIT = 0.5;
+    const BACKLOG_COST_PER_UNIT = 1.0;
     const downstream = {
       retailer: null,
       wholesaler: "retailer",
@@ -166,6 +168,7 @@
     }
 
     function demandForWeek(week) {
+      // Classic MIT profile: stable 4 units for weeks 1-4, then 8 with -1/0/+1 noise.
       const base = week <= 4 ? 4 : 8;
       return Math.max(0, base + (Math.floor(Math.random() * 3) - 1));
     }
@@ -260,7 +263,7 @@
           state.shipPipes[downstream[r]][1] += shipped;
         }
 
-        player.totalCost += (player.inventory * 0.5) + (player.backlog * 1.0);
+        player.totalCost += (player.inventory * HOLDING_COST_PER_UNIT) + (player.backlog * BACKLOG_COST_PER_UNIT);
       });
 
       const orders = {
