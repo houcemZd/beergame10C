@@ -28,7 +28,7 @@ def _normalize_host(value: str) -> str:
     if not value:
         return ''
 
-    if value in {'*'} or value.startswith('.'):
+    if value == '*' or value.startswith('.'):
         return value
 
     # Handles values like "example.com", "example.com:443", and full URLs.
@@ -41,8 +41,10 @@ def _normalize_host(value: str) -> str:
         return ''
 
     host = value.split('/', 1)[0].strip()
-    if host.startswith('[') and ']' in host:
-        return host[1:host.index(']')]
+    if host.startswith('['):
+        closing_bracket = host.find(']')
+        if closing_bracket > 1:
+            return host[1:closing_bracket]
     if host.count(':') == 1:
         return host.split(':', 1)[0].strip()
     return host
@@ -61,6 +63,7 @@ for host_value in _raw_allowed_hosts:
     normalized_host = _normalize_host(host_value)
     if normalized_host:
         _extra_hosts.append(normalized_host)
+# De-duplicate while preserving insertion order.
 ALLOWED_HOSTS = list(dict.fromkeys(['localhost', '127.0.0.1'] + _extra_hosts))
 
 # CSRF trusted origins — set via env for cross-device access
