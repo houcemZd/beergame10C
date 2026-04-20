@@ -28,17 +28,34 @@ def _normalize_host(value: str) -> str:
     if not value:
         return ''
 
+    if value in {'*'} or value.startswith('.'):
+        return value
+
     # Handles values like "example.com", "example.com:443", and full URLs.
     parsed = urlparse(value if '://' in value else f'//{value}')
     if parsed.hostname:
         return parsed.hostname
 
-    return value.split('/')[0].split(':')[0].strip()
+    # If a URL-like value was provided but cannot be parsed to a hostname, reject it.
+    if '://' in value:
+        return ''
+
+    host = value.split('/', 1)[0].strip()
+    if host.startswith('[') and ']' in host:
+        return host[1:host.index(']')]
+    if host.count(':') == 1:
+        return host.split(':', 1)[0].strip()
+    return host
 
 
 _raw_allowed_hosts = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
-_raw_allowed_hosts.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip())
-_raw_allowed_hosts.append(os.environ.get('RENDER_EXTERNAL_URL', '').strip())
+_render_external_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if _render_external_hostname:
+    _raw_allowed_hosts.append(_render_external_hostname)
+
+_render_external_url = os.environ.get('RENDER_EXTERNAL_URL', '').strip()
+if _render_external_url:
+    _raw_allowed_hosts.append(_render_external_url)
 _extra_hosts = []
 for host_value in _raw_allowed_hosts:
     normalized_host = _normalize_host(host_value)
