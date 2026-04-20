@@ -26,13 +26,7 @@ def normalize_host(value: str) -> str:
             return host
         if host.count(':') == 1:
             return host.split(':', 1)[0].strip()
+        return host
 
     parsed = urlparse(value)
-    if parsed.hostname:
-        return parsed.hostname
-
-    # If a URL-like value was provided but cannot be parsed to a hostname, reject it.
-    if '://' in value:
-        return ''
-
-    return ''
+    return parsed.hostname or ''

@@ -4,6 +4,9 @@ from beer_game.host_utils import normalize_host
 
 
 class NormalizeHostTest(SimpleTestCase):
+    def test_domain(self):
+        self.assertEqual(normalize_host('example.com'), 'example.com')
+
     def test_domain_and_port(self):
         self.assertEqual(normalize_host('example.com:443'), 'example.com')
 
