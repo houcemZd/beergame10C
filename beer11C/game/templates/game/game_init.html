@@ -469,10 +469,10 @@ function applyScenario(inv, orders, incoming, demandMode, demandValues, btn) {
   }
   // Visual confirmation on the button
   if (btn) {
-    const orig = btn.textContent;
+    const originalText = btn.textContent;
     btn.textContent = '✓ Applied';
     btn.style.color = 'var(--success, #22c55e)';
-    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1600);
+    setTimeout(() => { btn.textContent = originalText; btn.style.color = ''; }, 1600);
   }
   // Scroll to demand card so the user can see the mode change
   const demandCard = document.getElementById('demand-card');
