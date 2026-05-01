@@ -387,6 +387,8 @@
      PRE-GAME SECTION
 ════════════════════════════════════════════════════════════════════════════ -->
 <div id="section-pregame">
+
+{% if is_member %}
 <div class="lobby-grid">
 
 <!-- ══ LEFT: Role invite cards ══════════════════════════════════════════════ -->
@@ -532,6 +534,44 @@
   </button>
   <div style="font-size:.7rem; color:var(--muted); margin-top:.5rem;" id="host-start-hint">
     At least 2 players must join before you can start
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- ══ SPECTATOR pre-game view (not a member) ════════════════════════════════ -->
+<div class="card" style="text-align:center; padding:2rem 1.5rem; margin-bottom:1.5rem;">
+  <div style="font-size:2.5rem; margin-bottom:.5rem;">👀</div>
+  <div style="font-family:var(--font-mono); font-size:1rem; font-weight:700; margin-bottom:.35rem;">Spectating</div>
+  <div style="color:var(--muted); font-size:.82rem; margin-bottom:1.25rem;">
+    This game is waiting for players to join. Once the host starts the game you'll see the live board here.
+  </div>
+  <div class="settings-grid" style="max-width:380px; margin:0 auto;">
+    <div class="settings-item">
+      <div class="settings-item-label">Session</div>
+      <div class="settings-item-value" style="font-size:.82rem;">{{ session.name }}</div>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-label">Max Weeks</div>
+      <div class="settings-item-value">{{ game_settings.max_weeks }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Spectator lobby chat -->
+<div class="card" style="padding:0; margin-bottom:1.5rem;">
+  <div style="padding:.75rem 1rem .4rem; display:flex; align-items:center; gap:.4rem;">
+    <div class="card-title" style="margin:0;">&#128172; Lobby Chat</div>
+    <div style="font-size:.6rem; color:var(--muted2); margin-left:auto;">live</div>
+  </div>
+  <div class="chat-box">
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty" id="chat-empty">No messages yet. Say hello! &#128075;</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" type="text" placeholder="Type a message as spectator..." maxlength="300" autocomplete="off" />
+      <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
+    </div>
   </div>
 </div>
 {% endif %}
