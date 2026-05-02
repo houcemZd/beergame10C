@@ -1,3 +1,4 @@
+{% load i18n %}
 {% extends "game/base.html" %}
 {% load i18n %}
 {% block title %}Profile — {{ request.user.username }}{% endblock %}
@@ -102,7 +103,7 @@
     <div class="danger-zone">
       <div class="danger-zone-title">⚠️ {% trans "Danger Zone" %}</div>
       <p style="font-size:.78rem; color:var(--muted); margin-bottom:.85rem;">
-        {% trans "Permanently delete your account and all associated data. This action cannot be undone." %}
+        {% trans "{% trans "Permanently delete your account and all associated data. This action cannot be undone." %}" %}
       </p>
       <form method="POST" action="{% url 'delete_account' %}"
             onsubmit="return confirm('{% trans "Are you sure? This will permanently delete your account and cannot be undone." %}')">
