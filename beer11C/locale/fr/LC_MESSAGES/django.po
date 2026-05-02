@@ -1,0 +1,360 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-02 13:03-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: French <fr@li.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: game/templates/accounts/login.html:3
+msgid "Beer Game — Sign In"
+msgstr "Beer Game — Connexion"
+
+#: game/templates/accounts/login.html:196
+msgid "MIT Supply Chain Simulation"
+msgstr "Simulation de Chaîne d’Approvisionnement MIT"
+
+#: game/templates/accounts/login.html:199
+msgid ""
+"Real-time multiplayer simulation. Manage your supply chain link, place "
+"orders, and discover why small demand variations create large oscillations — "
+"the bullwhip effect."
+msgstr ""
+
+#: game/templates/accounts/login.html:203
+msgid "Customer"
+msgstr "Client"
+
+#: game/templates/accounts/login.html:205 game/templates/game/play.html:3839
+msgid "Retailer"
+msgstr "Détaillant"
+
+#: game/templates/accounts/login.html:207 game/templates/game/play.html:3839
+msgid "Wholesaler"
+msgstr "Grossiste"
+
+#: game/templates/accounts/login.html:209 game/templates/game/play.html:3839
+msgid "Distributor"
+msgstr "Distributeur"
+
+#: game/templates/accounts/login.html:211 game/templates/game/play.html:3839
+msgid "Factory"
+msgstr "Usine"
+
+#: game/templates/accounts/login.html:217
+msgid "Real-time"
+msgstr "Temps réel"
+
+#: game/templates/accounts/login.html:217
+msgid "WebSockets for a smooth and simultaneous experience"
+msgstr "WebSockets pour une expérience fluide et simultanée"
+
+#: game/templates/accounts/login.html:221
+msgid "5 players"
+msgstr "5 joueurs"
+
+#: game/templates/accounts/login.html:221
+msgid "Customer, Retailer, Wholesaler, Distributor, Factory"
+msgstr "Client, Détaillant, Grossiste, Distributeur, Usine"
+
+#: game/templates/accounts/login.html:225
+msgid "Bullwhip analysis"
+msgstr "Analyse effet coup de fouet"
+
+#: game/templates/accounts/login.html:225
+msgid "Charts and statistics at game end"
+msgstr "Graphiques et statistiques en fin de partie"
+
+#: game/templates/accounts/login.html:229
+msgid "Multi-device"
+msgstr "Multi-appareils"
+
+#: game/templates/accounts/login.html:229
+msgid "Play from any screen on the network"
+msgstr "Jouez depuis n’importe quel écran du réseau"
+
+#: game/templates/accounts/login.html:238
+msgid "Sign In"
+msgstr "Se connecter"
+
+#: game/templates/accounts/login.html:239
+msgid "Sign in to play or create a game"
+msgstr "Connectez-vous pour jouer ou créer une partie"
+
+#: game/templates/accounts/login.html:251
+#: game/templates/accounts/register.html:55
+msgid "Username"
+msgstr "Identifiant"
+
+#: game/templates/accounts/login.html:253
+msgid "Your username"
+msgstr "Votre identifiant"
+
+#: game/templates/accounts/login.html:258
+#: game/templates/accounts/register.html:69
+msgid "Password"
+msgstr "Mot de passe"
+
+#: game/templates/accounts/login.html:264
+msgid "Sign In →"
+msgstr "Se connecter →"
+
+#: game/templates/accounts/login.html:268
+msgid "No account yet?"
+msgstr "Pas encore de compte ?"
+
+#: game/templates/accounts/login.html:271
+msgid "Create a free account"
+msgstr "Créer un compte gratuit"
+
+#: game/templates/accounts/profile.html:42
+msgid "games created"
+msgstr "parties créées"
+
+#: game/templates/accounts/profile.html:43
+msgid "roles played"
+msgstr "rôles joués"
+
+#: game/templates/accounts/profile.html:59
+msgid "Edit Profile"
+msgstr "Modifier le profil"
+
+#: game/templates/accounts/profile.html:64
+msgid "Display Name"
+msgstr "Nom d’affichage"
+
+#: game/templates/accounts/profile.html:65
+msgid "Your name"
+msgstr "Votre nom"
+
+#: game/templates/accounts/profile.html:71
+msgid "Save Changes"
+msgstr "Enregistrer"
+
+#: game/templates/accounts/profile.html:79
+msgid "Recent Roles Played"
+msgstr "Rôles récents joués"
+
+#: game/templates/accounts/profile.html:93
+msgid "Account Actions"
+msgstr "Actions du compte"
+
+#: game/templates/accounts/profile.html:97
+msgid "Disconnect / Log out"
+msgstr "Déconnexion"
+
+#: game/templates/accounts/profile.html:99
+msgid "Back to Sessions"
+msgstr "Retour aux sessions"
+
+#: game/templates/accounts/profile.html:103
+msgid "Danger Zone"
+msgstr "Zone dangereuse"
+
+#: game/templates/accounts/profile.html:105
+msgid ""
+"Permanently delete your account and all associated data. This action cannot "
+"be undone."
+msgstr ""
+"Supprimer définitivement votre compte et toutes les données associées. Cette "
+"action est irréversible."
+
+#: game/templates/accounts/profile.html:108
+msgid ""
+"Are you sure? This will permanently delete your account and cannot be undone."
+msgstr ""
+"Êtes-vous sûr(e) ? Cette action supprimera définitivement votre compte."
+
+#: game/templates/accounts/profile.html:110
+msgid "Delete My Account"
+msgstr "Supprimer mon compte"
+
+#: game/templates/accounts/register.html:3
+msgid "Create Account — Beer Game"
+msgstr "Créer un compte — Beer Game"
+
+#: game/templates/accounts/register.html:36
+msgid "Create a player account"
+msgstr "Créer un compte joueur"
+
+#: game/templates/accounts/register.html:50
+msgid "First name"
+msgstr "Prénom"
+
+#: game/templates/accounts/register.html:63
+msgid "Email (optional)"
+msgstr "Email (optionnel)"
+
+#: game/templates/accounts/register.html:71
+msgid "8 characters minimum"
+msgstr "8 caractères minimum"
+
+#: game/templates/accounts/register.html:78
+msgid "Confirm password"
+msgstr "Confirmer le mot de passe"
+
+#: game/templates/accounts/register.html:80
+msgid "Repeat the password"
+msgstr "Répétez le mot de passe"
+
+#: game/templates/accounts/register.html:84
+msgid "Create my account →"
+msgstr "Créer mon compte →"
+
+#: game/templates/accounts/register.html:89
+msgid "Already registered?"
+msgstr "Déjà inscrit(e) ?"
+
+#: game/templates/accounts/register.html:89
+msgid "Sign in"
+msgstr "Se connecter"
+
+#: game/templates/game/base.html:449
+msgid "Sessions"
+msgstr "Sessions"
+
+#: game/templates/game/base.html:450
+msgid "Admin"
+msgstr "Admin"
+
+#: game/templates/game/base.html:451
+msgid "+ New Game"
+msgstr "+ Nouvelle partie"
+
+#: game/templates/game/game_init.html:82
+msgid "Game Setup"
+msgstr "Configuration de la partie"
+
+#: game/templates/game/game_init.html:112
+msgid "Initial Inventory"
+msgstr "Inventaire initial"
+
+#: game/templates/game/game_init.html:431 game/templates/game/home.html:278
+#: game/templates/game/new_game.html:177
+msgid "Cancel"
+msgstr "Annuler"
+
+#: game/templates/game/home.html:272
+msgid "Delete this game?"
+msgstr "Supprimer la partie ?"
+
+#: game/templates/game/home.html:276 game/templates/game/home.html:431
+#: game/templates/game/home.html:456 game/templates/game/home.html:490
+#: game/templates/game/home.html:589
+msgid "Delete"
+msgstr "Supprimer"
+
+#: game/templates/game/home.html:589
+msgid "This action cannot be undone."
+msgstr "Cette action est irréversible."
+
+#: game/templates/game/lobby.html:477
+msgid "Players"
+msgstr "Joueurs"
+
+#: game/templates/game/lobby.html:525
+msgid "Type a message..."
+msgstr "Saisissez un message…"
+
+#: game/templates/game/lobby.html:526 game/templates/game/lobby.html:599
+msgid "Send"
+msgstr "Envoyer"
+
+#: game/templates/game/play.html:1970
+msgid "Inventory History"
+msgstr "Historique des stocks"
+
+#: game/templates/game/results.html:135 game/templates/game/results.html:411
+msgid "Play Again"
+msgstr "Rejouer"
+
+#: game/templates/game/results.html:369
+msgid "Role"
+msgstr "Rôle"
+
+#~ msgid "units"
+#~ msgstr "unités"
+
+#~ msgid "Submit Demand"
+#~ msgstr "Valider la demande"
+
+#~ msgid "Game Over"
+#~ msgstr "Fin de partie"
+
+#~ msgid "View Results"
+#~ msgstr "Voir les résultats"
+
+#~ msgid "Demand History"
+#~ msgstr "Historique des demandes"
+
+#~ msgid "Back"
+#~ msgstr "Retour"
+
+#~ msgid "Customer Demand"
+#~ msgstr "Demande client"
+
+#~ msgid "weeks"
+#~ msgstr "semaines"
+
+#~ msgid "Start Game"
+#~ msgstr "Démarrer la partie"
+
+#~ msgid "Chat"
+#~ msgstr "Chat"
+
+#~ msgid "Game Settings"
+#~ msgstr "Paramètres de la partie"
+
+#~ msgid "No messages yet."
+#~ msgstr "Aucun message pour l’instant."
+
+#~ msgid "Copied!"
+#~ msgstr "Copié !"
+
+#~ msgid "week"
+#~ msgstr "semaine"
+
+#~ msgid "Incoming Order"
+#~ msgstr "Commande reçue"
+
+#~ msgid "Place Order"
+#~ msgstr "Passer la commande"
+
+#~ msgid "History"
+#~ msgstr "Historique"
+
+#~ msgid "Your Order"
+#~ msgstr "Votre commande"
+
+#~ msgid "Cost:"
+#~ msgstr "Coût :"
+
+#~ msgid "Inventory:"
+#~ msgstr "Inventaire :"
+
+#~ msgid "Results"
+#~ msgstr "Résultats"
+
+#~ msgid "Winner"
+#~ msgstr "Gagnant"
+
+#~ msgid "Score"
+#~ msgstr "Score"
+
+#~ msgid "Bullwhip Effect"
+#~ msgstr "Effet coup de fouet"
+
+#~ msgid "Cumulative Cost"
+#~ msgstr "Coût cumulatif"

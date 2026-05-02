@@ -1,0 +1,282 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-02 13:03-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: game/templates/accounts/login.html:3
+msgid "Beer Game — Sign In"
+msgstr ""
+
+#: game/templates/accounts/login.html:196
+msgid "MIT Supply Chain Simulation"
+msgstr ""
+
+#: game/templates/accounts/login.html:199
+msgid ""
+"Real-time multiplayer simulation. Manage your supply chain link, place "
+"orders, and discover why small demand variations create large oscillations — "
+"the bullwhip effect."
+msgstr ""
+
+#: game/templates/accounts/login.html:203
+msgid "Customer"
+msgstr ""
+
+#: game/templates/accounts/login.html:205 game/templates/game/play.html:3839
+msgid "Retailer"
+msgstr ""
+
+#: game/templates/accounts/login.html:207 game/templates/game/play.html:3839
+msgid "Wholesaler"
+msgstr ""
+
+#: game/templates/accounts/login.html:209 game/templates/game/play.html:3839
+msgid "Distributor"
+msgstr ""
+
+#: game/templates/accounts/login.html:211 game/templates/game/play.html:3839
+msgid "Factory"
+msgstr ""
+
+#: game/templates/accounts/login.html:217
+msgid "Real-time"
+msgstr ""
+
+#: game/templates/accounts/login.html:217
+msgid "WebSockets for a smooth and simultaneous experience"
+msgstr ""
+
+#: game/templates/accounts/login.html:221
+msgid "5 players"
+msgstr ""
+
+#: game/templates/accounts/login.html:221
+msgid "Customer, Retailer, Wholesaler, Distributor, Factory"
+msgstr ""
+
+#: game/templates/accounts/login.html:225
+msgid "Bullwhip analysis"
+msgstr ""
+
+#: game/templates/accounts/login.html:225
+msgid "Charts and statistics at game end"
+msgstr ""
+
+#: game/templates/accounts/login.html:229
+msgid "Multi-device"
+msgstr ""
+
+#: game/templates/accounts/login.html:229
+msgid "Play from any screen on the network"
+msgstr ""
+
+#: game/templates/accounts/login.html:238
+msgid "Sign In"
+msgstr ""
+
+#: game/templates/accounts/login.html:239
+msgid "Sign in to play or create a game"
+msgstr ""
+
+#: game/templates/accounts/login.html:251
+#: game/templates/accounts/register.html:55
+msgid "Username"
+msgstr ""
+
+#: game/templates/accounts/login.html:253
+msgid "Your username"
+msgstr ""
+
+#: game/templates/accounts/login.html:258
+#: game/templates/accounts/register.html:69
+msgid "Password"
+msgstr ""
+
+#: game/templates/accounts/login.html:264
+msgid "Sign In →"
+msgstr ""
+
+#: game/templates/accounts/login.html:268
+msgid "No account yet?"
+msgstr ""
+
+#: game/templates/accounts/login.html:271
+msgid "Create a free account"
+msgstr ""
+
+#: game/templates/accounts/profile.html:42
+msgid "games created"
+msgstr ""
+
+#: game/templates/accounts/profile.html:43
+msgid "roles played"
+msgstr ""
+
+#: game/templates/accounts/profile.html:59
+msgid "Edit Profile"
+msgstr ""
+
+#: game/templates/accounts/profile.html:64
+msgid "Display Name"
+msgstr ""
+
+#: game/templates/accounts/profile.html:65
+msgid "Your name"
+msgstr ""
+
+#: game/templates/accounts/profile.html:71
+msgid "Save Changes"
+msgstr ""
+
+#: game/templates/accounts/profile.html:79
+msgid "Recent Roles Played"
+msgstr ""
+
+#: game/templates/accounts/profile.html:93
+msgid "Account Actions"
+msgstr ""
+
+#: game/templates/accounts/profile.html:97
+msgid "Disconnect / Log out"
+msgstr ""
+
+#: game/templates/accounts/profile.html:99
+msgid "Back to Sessions"
+msgstr ""
+
+#: game/templates/accounts/profile.html:103
+msgid "Danger Zone"
+msgstr ""
+
+#: game/templates/accounts/profile.html:105
+msgid ""
+"Permanently delete your account and all associated data. This action cannot "
+"be undone."
+msgstr ""
+
+#: game/templates/accounts/profile.html:108
+msgid ""
+"Are you sure? This will permanently delete your account and cannot be undone."
+msgstr ""
+
+#: game/templates/accounts/profile.html:110
+msgid "Delete My Account"
+msgstr ""
+
+#: game/templates/accounts/register.html:3
+msgid "Create Account — Beer Game"
+msgstr ""
+
+#: game/templates/accounts/register.html:36
+msgid "Create a player account"
+msgstr ""
+
+#: game/templates/accounts/register.html:50
+msgid "First name"
+msgstr ""
+
+#: game/templates/accounts/register.html:63
+msgid "Email (optional)"
+msgstr ""
+
+#: game/templates/accounts/register.html:71
+msgid "8 characters minimum"
+msgstr ""
+
+#: game/templates/accounts/register.html:78
+msgid "Confirm password"
+msgstr ""
+
+#: game/templates/accounts/register.html:80
+msgid "Repeat the password"
+msgstr ""
+
+#: game/templates/accounts/register.html:84
+msgid "Create my account →"
+msgstr ""
+
+#: game/templates/accounts/register.html:89
+msgid "Already registered?"
+msgstr ""
+
+#: game/templates/accounts/register.html:89
+msgid "Sign in"
+msgstr ""
+
+#: game/templates/game/base.html:449
+msgid "Sessions"
+msgstr ""
+
+#: game/templates/game/base.html:450
+msgid "Admin"
+msgstr ""
+
+#: game/templates/game/base.html:451
+msgid "+ New Game"
+msgstr ""
+
+#: game/templates/game/game_init.html:82
+msgid "Game Setup"
+msgstr ""
+
+#: game/templates/game/game_init.html:112
+msgid "Initial Inventory"
+msgstr ""
+
+#: game/templates/game/game_init.html:431 game/templates/game/home.html:278
+#: game/templates/game/new_game.html:177
+msgid "Cancel"
+msgstr ""
+
+#: game/templates/game/home.html:272
+msgid "Delete this game?"
+msgstr ""
+
+#: game/templates/game/home.html:276 game/templates/game/home.html:431
+#: game/templates/game/home.html:456 game/templates/game/home.html:490
+#: game/templates/game/home.html:589
+msgid "Delete"
+msgstr ""
+
+#: game/templates/game/home.html:589
+msgid "This action cannot be undone."
+msgstr ""
+
+#: game/templates/game/lobby.html:477
+msgid "Players"
+msgstr ""
+
+#: game/templates/game/lobby.html:525
+msgid "Type a message..."
+msgstr ""
+
+#: game/templates/game/lobby.html:526 game/templates/game/lobby.html:599
+msgid "Send"
+msgstr ""
+
+#: game/templates/game/play.html:1970
+msgid "Inventory History"
+msgstr ""
+
+#: game/templates/game/results.html:135 game/templates/game/results.html:411
+msgid "Play Again"
+msgstr ""
+
+#: game/templates/game/results.html:369
+msgid "Role"
+msgstr ""

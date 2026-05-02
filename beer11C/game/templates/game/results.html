@@ -1,4 +1,5 @@
 {% extends "game/base.html" %}
+{% load i18n %}
 {% load game_extras %}
 {% block title %}Results — {{ session.name }}{% endblock %}
 
@@ -131,7 +132,7 @@
     <a href="{% url 'dashboard' session.id %}" class="btn btn-ghost btn-sm">← Dashboard</a>
     <a href="{% url 'home' %}" class="btn btn-ghost btn-sm">Sessions</a>
     <a href="{% url 'export_csv' session.id %}" class="btn btn-ghost btn-sm">⬇ CSV Export</a>
-    <a href="{% url 'new_game' %}" class="btn btn-primary btn-sm">Play Again</a>
+    <a href="{% url 'new_game' %}" class="btn btn-primary btn-sm">{% trans "Play Again" %}</a>
   </div>
 </div>
 
@@ -365,7 +366,7 @@
   <table class="analytics-table">
     <thead>
       <tr>
-        <th>Role</th>
+        <th>{% trans "Role" %}</th>
         <th>Avg. Order</th>
         <th>Order Variance</th>
         <th>Avg. Inventory</th>
@@ -407,7 +408,7 @@
 
 <!-- Bottom actions -->
 <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0 3rem;">
-  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">Play Again</a>
+  <a href="{% url 'new_game' %}" class="btn btn-primary" style="padding:.65rem 1.5rem;">{% trans "Play Again" %}</a>
   <a href="{% url 'home' %}" class="btn btn-ghost">← All Sessions</a>
 </div>
 
